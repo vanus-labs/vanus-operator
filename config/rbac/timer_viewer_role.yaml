@@ -1,0 +1,20 @@
+# permissions for end users to view timers.
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRole
+metadata:
+  name: timer-viewer-role
+rules:
+- apiGroups:
+  - vanus.linkall.com
+  resources:
+  - timers
+  verbs:
+  - get
+  - list
+  - watch
+- apiGroups:
+  - vanus.linkall.com
+  resources:
+  - timers/status
+  verbs:
+  - get
