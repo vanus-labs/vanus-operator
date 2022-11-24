@@ -1,0 +1,6 @@
+apiVersion: vanus.linkall.com/v1alpha1
+kind: Timer
+metadata:
+  name: timer-sample
+spec:
+  # TODO(user): Add fields here

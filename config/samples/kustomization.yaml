@@ -1,0 +1,8 @@
+## Append samples you want in your CSV to this file as resources ##
+resources:
+- vanus_v1alpha1_controller.yaml
+- vanus_v1alpha1_store.yaml
+- vanus_v1alpha1_trigger.yaml
+- vanus_v1alpha1_timer.yaml
+- vanus_v1alpha1_gateway.yaml
+#+kubebuilder:scaffold:manifestskustomizesamples
