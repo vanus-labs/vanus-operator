@@ -143,6 +143,25 @@ metadata:
   namespace: default
 spec:
   ports:
+  - name: proxy
+    nodePort: 30001
+    port: 8080
+    targetPort: 8080
+  - name: cloudevents
+    nodePort: 30002
+    port: 8081
+    targetPort: 8081
+  selector:
+    app: vanus-gateway
+  type: NodePort
+
+apiVersion: v1
+kind: Service
+metadata:
+  name: vanus-gateway
+  namespace: default
+spec:
+  ports:
   - name: put
     nodePort: 30011
     port: 8080

@@ -81,24 +81,22 @@ const (
 	// ServiceAccountName is the ServiceAccount name of Vanus cluster
 	ServiceAccountName = "vanus-operator"
 
-	ContainerPortNameGrpc       = "grpc"
-	ContainerPortNameEtcdClient = "etcd-client"
-	ContainerPortNameEtcdPeer   = "etcd-peer"
-	ContainerPortNameMetrics    = "metrics"
-	ContainerPortNameHttpPut    = "httpput"
-	ContainerPortNameHttpGet    = "httpget"
-	ContainerPortNameCtrlProxy  = "ctrl-proxy"
+	ContainerPortNameGrpc        = "grpc"
+	ContainerPortNameEtcdClient  = "etcd-client"
+	ContainerPortNameEtcdPeer    = "etcd-peer"
+	ContainerPortNameMetrics     = "metrics"
+	ContainerPortNameProxy       = "proxy"
+	ContainerPortNameCloudevents = "cloudevents"
 
 	ControllerPortGrpc       = 2048
 	ControllerPortEtcdClient = 2379
 	ControllerPortEtcdPeer   = 2380
 	ControllerPortMetrics    = 2112
 
-	StorePortGrpc        = 11811
-	TriggerPortGrpc      = 2148
-	GatewayPortHttpPut   = 8080
-	GatewayPortHttpGet   = 8081
-	GatewayPortCtrlProxy = 8082
+	StorePortGrpc          = 11811
+	TriggerPortGrpc        = 2148
+	GatewayPortProxy       = 8080
+	GatewayPortCloudevents = 8081
 
 	HeadlessService = "None"
 
