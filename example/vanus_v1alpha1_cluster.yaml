@@ -155,29 +155,6 @@ spec:
     app: vanus-gateway
   type: NodePort
 
-apiVersion: v1
-kind: Service
-metadata:
-  name: vanus-gateway
-  namespace: default
-spec:
-  ports:
-  - name: put
-    nodePort: 30011
-    port: 8080
-    targetPort: 8080
-  - name: get
-    nodePort: 30012
-    port: 8081
-    targetPort: 8081
-  - name: ctrl-proxy
-    nodePort: 30013
-    port: 8082
-    targetPort: 8082
-  selector:
-    app: vanus-gateway
-  type: NodePort
-
 ---
 apiVersion: vanus.linkall.com/v1alpha1
 kind: Controller
@@ -188,7 +165,7 @@ spec:
   # replicas is the number of controllers.
   replicas: 3
   # controllerImage is the customized docker image repo of the RocketMQ Controller
-  image: public.ecr.aws/vanus/controller:v0.4.0
+  image: public.ecr.aws/vanus/controller:v0.5.0
   # imagePullPolicy is the image pull policy
   imagePullPolicy: IfNotPresent
   volumeClaimTemplates:
@@ -211,7 +188,7 @@ spec:
   # replicas is the number of stores.
   replicas: 3
   # storeImage is the customized docker image repo of the RocketMQ Controller
-  image: public.ecr.aws/vanus/store:v0.4.0
+  image: public.ecr.aws/vanus/store:v0.5.0
   # imagePullPolicy is the image pull policy
   imagePullPolicy: IfNotPresent
   volumeClaimTemplates:
@@ -232,7 +209,7 @@ metadata:
   namespace: default
 spec:
   # triggerImage is the customized docker image repo of the RocketMQ Controller
-  image: public.ecr.aws/vanus/trigger:v0.4.0
+  image: public.ecr.aws/vanus/trigger:v0.5.0
   # imagePullPolicy is the image pull policy
   imagePullPolicy: IfNotPresent
 
@@ -244,7 +221,7 @@ metadata:
   namespace: default
 spec:
   # timerImage is the customized docker image repo of the RocketMQ Controller
-  image: public.ecr.aws/vanus/timer:v0.4.0
+  image: public.ecr.aws/vanus/timer:v0.5.0
   # imagePullPolicy is the image pull policy
   imagePullPolicy: IfNotPresent
 
@@ -256,6 +233,6 @@ metadata:
   namespace: default
 spec:
   # gatewayImage is the customized docker image repo of the Vanus Controller
-  image: public.ecr.aws/vanus/gateway:v0.4.0
+  image: public.ecr.aws/vanus/gateway:v0.5.0
   # imagePullPolicy is the image pull policy
   imagePullPolicy: IfNotPresent
