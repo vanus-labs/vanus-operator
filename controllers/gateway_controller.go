@@ -166,14 +166,11 @@ func getEnvForGateway(gateway *vanusv1alpha1.Gateway) []corev1.EnvVar {
 
 func getPortsForGateway(gateway *vanusv1alpha1.Gateway) []corev1.ContainerPort {
 	defaultPorts := []corev1.ContainerPort{{
-		Name:          cons.ContainerPortNameHttpPut,
-		ContainerPort: cons.GatewayPortHttpPut,
+		Name:          cons.ContainerPortNameProxy,
+		ContainerPort: cons.GatewayPortProxy,
 	}, {
-		Name:          cons.ContainerPortNameHttpGet,
-		ContainerPort: cons.GatewayPortHttpGet,
-	}, {
-		Name:          cons.ContainerPortNameCtrlProxy,
-		ContainerPort: cons.GatewayPortCtrlProxy,
+		Name:          cons.ContainerPortNameCloudevents,
+		ContainerPort: cons.GatewayPortCloudevents,
 	}}
 	return defaultPorts
 }
