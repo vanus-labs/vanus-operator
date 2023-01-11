@@ -87,21 +87,35 @@ const (
 	ContainerPortNameMetrics     = "metrics"
 	ContainerPortNameProxy       = "proxy"
 	ContainerPortNameCloudevents = "cloudevents"
+	ContainerPortNameSinkProxy   = "sinkproxy"
 
 	ControllerPortGrpc       = 2048
 	ControllerPortEtcdClient = 2379
 	ControllerPortEtcdPeer   = 2380
 	ControllerPortMetrics    = 2112
 
-	StorePortGrpc          = 11811
-	TriggerPortGrpc        = 2148
-	GatewayPortProxy       = 8080
-	GatewayPortCloudevents = 8081
+	StorePortGrpc              = 11811
+	TriggerPortGrpc            = 2148
+	GatewayNodePortProxy       = 30001
+	GatewayNodePortCloudevents = 30002
+	GatewayPortProxy           = 8080
+	GatewayPortCloudevents     = 8081
+	GatewayPortSinkProxy       = 8082
 
 	HeadlessService = "None"
 
 	// RequeueIntervalInSecond is an universal interval of the reconcile function
 	RequeueIntervalInSecond = 6
+)
+
+const (
+	DefaultNamespace = "vanus"
+
+	DefaultControllerName = "vanus-controller"
+	DefaultStoreName      = "vanus-store"
+	DefaultTriggerName    = "vanus-trigger"
+	DefaultTimerName      = "vanus-timer"
+	DefaultGatewayName    = "vanus-gateway"
 )
 
 var (
@@ -122,4 +136,9 @@ var (
 
 	// svc of controller for brokers
 	ControllerAccessPoint = ""
+)
+
+var (
+	DefaultControllerReplicas int32 = 3
+	DefaultStoreReplicas      int32 = 3
 )

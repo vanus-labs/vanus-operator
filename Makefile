@@ -109,7 +109,26 @@ test: manifests generate fmt vet envtest ## Run tests.
 
 .PHONY: build
 build: generate fmt vet ## Build manager binary.
-	go build -o bin/manager main.go
+	go build -o bin/manager cmd/manager/main.go
+	go build -o bin/apiserver cmd/apiserver/main.go
+
+# install swagger binary file
+.PHONY: install-swagger
+install-swagger:
+	@go install github.com/go-swagger/go-swagger/cmd/swagger@v0.27.0
+
+# vaild swagger
+.PHONY: valid-swagger
+valid-swagger:
+	swagger validate ./api/swagger.yaml
+
+# gen swagger 
+.PHONY: gen-swagger
+gen-swagger:
+	swagger validate ./api/swagger.yaml
+	rm -rf ./api/restapi
+	rm -rf ./api/models
+	swagger generate server --target ./api --spec ./api/swagger.yaml --exclude-main  --name vanus
 
 .PHONY: run
 run: manifests generate fmt vet ## Run a controller from your host.
@@ -129,9 +148,11 @@ ifndef ignore-not-found
   ignore-not-found = false
 endif
 
-ifeq ($(origin VANUS_NAMESPACE), undefined)
-VANUS_NAMESPACE := default
-endif
+# Default deployment is under the vanus namespace, and it does not support specifying other namespaces.
+# TODO(jiangkai): Support for specifying namespaces
+# ifeq ($(origin VANUS_NAMESPACE), undefined)
+# VANUS_NAMESPACE := default
+# endif
 
 .PHONY: install
 install: manifests kustomize ## Install CRDs into the K8s cluster specified in ~/.kube/config.
@@ -145,21 +166,25 @@ uninstall: manifests kustomize ## Uninstall CRDs from the K8s cluster specified 
 deploy: install ## Deploy controller to the K8s cluster specified in ~/.kube/config.
     ## cd config/manager && $(KUSTOMIZE) edit set image controller=${IMG}
     ## $(KUSTOMIZE) build config/default | kubectl apply -f -
-	$(KUSTOMIZE) build deploy/namespace | sed 's@default@$(VANUS_NAMESPACE)@' | kubectl apply -f -
-	$(KUSTOMIZE) build deploy | sed 's@default@$(VANUS_NAMESPACE)@' | kubectl apply -f -
+    ## $(KUSTOMIZE) build deploy/namespace | sed 's@default@$(VANUS_NAMESPACE)@' | kubectl apply -f -
+    ## $(KUSTOMIZE) build deploy | sed 's@default@$(VANUS_NAMESPACE)@' | kubectl apply -f -
+	$(KUSTOMIZE) build deploy | kubectl apply -f -
 
 .PHONY: undeploy
 undeploy: uninstall ## Undeploy controller from the K8s cluster specified in ~/.kube/config. Call with ignore-not-found=true to ignore resource not found errors during deletion.
     ## $(KUSTOMIZE) build config/default | kubectl delete --ignore-not-found=$(ignore-not-found) -f -
-	$(KUSTOMIZE) build deploy | sed 's@default@$(VANUS_NAMESPACE)@' | kubectl delete --ignore-not-found=$(ignore-not-found) -f -
+    ## $(KUSTOMIZE) build deploy | sed 's@default@$(VANUS_NAMESPACE)@' | kubectl delete --ignore-not-found=$(ignore-not-found) -f -
+	$(KUSTOMIZE) build deploy | kubectl delete --ignore-not-found=$(ignore-not-found) -f -
 
 .PHONY: cluster
 cluster: manifests kustomize ## Deploy Vanus cluster to the K8s cluster specified in ~/.kube/config.
-	$(KUSTOMIZE) build example | sed 's@default@$(VANUS_NAMESPACE)@' | kubectl apply -f -
+    ## $(KUSTOMIZE) build example | sed 's@default@$(VANUS_NAMESPACE)@' | kubectl apply -f -
+	$(KUSTOMIZE) build example | kubectl apply -f -
 
 .PHONY: uncluster
 uncluster: ## Undeploy Vanus cluster from the K8s cluster specified in ~/.kube/config. Call with ignore-not-found=true to ignore resource not found errors during deletion.
-	$(KUSTOMIZE) build example | sed 's@default@$(VANUS_NAMESPACE)@' | kubectl delete --ignore-not-found=$(ignore-not-found) -f -
+    ## $(KUSTOMIZE) build example | sed 's@default@$(VANUS_NAMESPACE)@' | kubectl delete --ignore-not-found=$(ignore-not-found) -f -
+	$(KUSTOMIZE) build example | kubectl delete --ignore-not-found=$(ignore-not-found) -f -
 
 ##@ Build Dependencies
 

@@ -17,7 +17,9 @@ limitations under the License.
 package controllers
 
 import (
+	"bytes"
 	"context"
+	"fmt"
 	"time"
 
 	cons "github.com/linkall-labs/vanus-operator/internal/constants"
@@ -27,6 +29,7 @@ import (
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/runtime"
 	"k8s.io/apimachinery/pkg/types"
+	"k8s.io/apimachinery/pkg/util/intstr"
 	ctrl "sigs.k8s.io/controller-runtime"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/controller-runtime/pkg/controller/controllerutil"
@@ -83,6 +86,16 @@ func (r *GatewayReconciler) Reconcile(ctx context.Context, req ctrl.Request) (ct
 	err = r.Get(ctx, types.NamespacedName{Name: gatewayDeployment.Name, Namespace: gatewayDeployment.Namespace}, dep)
 	if err != nil {
 		if errors.IsNotFound(err) {
+			// Create Gateway ConfigMap
+			gatewayConfigMap := r.generateConfigMapForGateway(gateway)
+			logger.Info("Creating a new Gateway ConfigMap.", "ConfigMap.Namespace", gatewayConfigMap.Namespace, "ConfigMap.Name", gatewayConfigMap.Name)
+			err = r.Create(ctx, gatewayConfigMap)
+			if err != nil {
+				logger.Error(err, "Failed to create new Gateway ConfigMap", "ConfigMap.Namespace", gatewayConfigMap.Namespace, "ConfigMap.Name", gatewayConfigMap.Name)
+				return ctrl.Result{}, err
+			} else {
+				logger.Info("Successfully create Gateway ConfigMap")
+			}
 			logger.Info("Creating a new Gateway Deployment.", "Deployment.Namespace", gatewayDeployment.Namespace, "Deployment.Name", gatewayDeployment.Name)
 			err = r.Create(ctx, gatewayDeployment)
 			if err != nil {
@@ -91,6 +104,27 @@ func (r *GatewayReconciler) Reconcile(ctx context.Context, req ctrl.Request) (ct
 			} else {
 				logger.Info("Successfully create Gateway Deployment")
 			}
+			gatewaySvc := r.generateSvcForGateway(gateway)
+			// Create Gateway Service
+			// Check if the service already exists, if not create a new one
+			svc := &corev1.Service{}
+			err = r.Get(ctx, types.NamespacedName{Name: gatewaySvc.Name, Namespace: gatewaySvc.Namespace}, svc)
+			if err != nil {
+				if errors.IsNotFound(err) {
+					logger.Info("Creating a new Gateway Service.", "Service.Namespace", gatewaySvc.Namespace, "Service.Name", gatewaySvc.Name)
+					err = r.Create(ctx, gatewaySvc)
+					if err != nil {
+						logger.Error(err, "Failed to create new Gateway Service", "Service.Namespace", gatewaySvc.Namespace, "Service.Name", gatewaySvc.Name)
+						return ctrl.Result{}, err
+					} else {
+						logger.Info("Successfully create Gateway Service")
+					}
+				} else {
+					logger.Error(err, "Failed to get Gateway Service.")
+					return ctrl.Result{RequeueAfter: time.Duration(cons.RequeueIntervalInSecond) * time.Second}, err
+				}
+			}
+			return ctrl.Result{}, nil
 		} else {
 			logger.Error(err, "Failed to get Gateway Deployment.")
 			return ctrl.Result{RequeueAfter: time.Duration(cons.RequeueIntervalInSecond) * time.Second}, err
@@ -98,6 +132,18 @@ func (r *GatewayReconciler) Reconcile(ctx context.Context, req ctrl.Request) (ct
 	}
 
 	// TODO(jiangkai): Update Gateway Deployment
+	// TODO(jiangkai): Currently, only the updated mirror version is supported
+	if gateway.Spec.Image != dep.Spec.Template.Spec.Containers[0].Image {
+		logger.Info("Updating Gateway Deployment.", "Deployment.Namespace", gatewayDeployment.Namespace, "Deployment.Name", gatewayDeployment.Name)
+		dep.Spec.Template.Spec.Containers[0].Image = gateway.Spec.Image
+		err = r.Update(ctx, dep)
+		if err != nil {
+			logger.Error(err, "Failed to update Gateway Deployment", "Deployment.Namespace", gatewayDeployment.Namespace, "Deployment.Name", gatewayDeployment.Name)
+			return ctrl.Result{}, err
+		} else {
+			logger.Info("Successfully update Gateway Deployment")
+		}
+	}
 
 	return ctrl.Result{}, nil
 }
@@ -109,6 +155,29 @@ func (r *GatewayReconciler) SetupWithManager(mgr ctrl.Manager) error {
 		Complete(r)
 }
 
+func (r *GatewayReconciler) generateConfigMapForGateway(gateway *vanusv1alpha1.Gateway) *corev1.ConfigMap {
+	data := make(map[string]string)
+	value := bytes.Buffer{}
+	value.WriteString("port: 8080\n")
+	value.WriteString("controllers:\n")
+	// TODO(jiangkai): The timer needs to know the number of replicas of the controller，current default 3 replicas. Suggestted to use the service domain name for forwarding.
+	for i := int32(0); i < 3; i++ {
+		value.WriteString(fmt.Sprintf("  - vanus-controller-%d.vanus-controller:2048\n", i))
+	}
+	data["gateway.yaml"] = value.String()
+	gatewayConfigMap := &corev1.ConfigMap{
+		ObjectMeta: metav1.ObjectMeta{
+			Namespace:  gateway.Namespace,
+			Name:       "config-gateway",
+			Finalizers: []string{metav1.FinalizerOrphanDependents},
+		},
+		Data: data,
+	}
+
+	controllerutil.SetControllerReference(gateway, gatewayConfigMap, r.Scheme)
+	return gatewayConfigMap
+}
+
 // returns a Gateway Deployment object
 func (r *GatewayReconciler) getDeploymentForGateway(gateway *vanusv1alpha1.Gateway) *appsv1.Deployment {
 	labels := labelsForGateway(gateway.Name)
@@ -117,6 +186,7 @@ func (r *GatewayReconciler) getDeploymentForGateway(gateway *vanusv1alpha1.Gatew
 		ObjectMeta: metav1.ObjectMeta{
 			Name:      gateway.Name,
 			Namespace: gateway.Namespace,
+			Labels:    labels,
 		},
 		Spec: appsv1.DeploymentSpec{
 			Replicas: gateway.Spec.Replicas,
@@ -129,12 +199,11 @@ func (r *GatewayReconciler) getDeploymentForGateway(gateway *vanusv1alpha1.Gatew
 					Annotations: annotations,
 				},
 				Spec: corev1.PodSpec{
-					ServiceAccountName: cons.ServiceAccountName,
 					Containers: []corev1.Container{{
-						Resources:       gateway.Spec.Resources,
-						Image:           gateway.Spec.Image,
 						Name:            cons.GatewayContainerName,
+						Image:           gateway.Spec.Image,
 						ImagePullPolicy: gateway.Spec.ImagePullPolicy,
+						Resources:       gateway.Spec.Resources,
 						Env:             getEnvForGateway(gateway),
 						Ports:           getPortsForGateway(gateway),
 						VolumeMounts:    getVolumeMountsForGateway(gateway),
@@ -150,6 +219,41 @@ func (r *GatewayReconciler) getDeploymentForGateway(gateway *vanusv1alpha1.Gatew
 	return dep
 }
 
+func (r *GatewayReconciler) generateSvcForGateway(gateway *vanusv1alpha1.Gateway) *corev1.Service {
+	labels := labelsForController(gateway.Name)
+	gatewaySvc := &corev1.Service{
+		ObjectMeta: metav1.ObjectMeta{
+			Namespace:  gateway.Namespace,
+			Name:       gateway.Name,
+			Labels:     labels,
+			Finalizers: []string{metav1.FinalizerOrphanDependents},
+		},
+		Spec: corev1.ServiceSpec{
+			Selector: labels,
+			Ports: []corev1.ServicePort{
+				{
+					Name:       "proxy",
+					NodePort:   cons.GatewayNodePortProxy,
+					Port:       cons.GatewayPortProxy,
+					Protocol:   corev1.ProtocolTCP,
+					TargetPort: intstr.FromInt(cons.GatewayPortProxy),
+				},
+				{
+					Name:       "cloudevents",
+					NodePort:   cons.GatewayNodePortCloudevents,
+					Port:       cons.GatewayPortCloudevents,
+					Protocol:   corev1.ProtocolTCP,
+					TargetPort: intstr.FromInt(cons.GatewayPortCloudevents),
+				},
+			},
+			Type: corev1.ServiceTypeNodePort,
+		},
+	}
+
+	controllerutil.SetControllerReference(gateway, gatewaySvc, r.Scheme)
+	return gatewaySvc
+}
+
 func getEnvForGateway(gateway *vanusv1alpha1.Gateway) []corev1.EnvVar {
 	defaultEnvs := []corev1.EnvVar{{
 		Name:      cons.EnvPodIP,
@@ -159,7 +263,7 @@ func getEnvForGateway(gateway *vanusv1alpha1.Gateway) []corev1.EnvVar {
 		ValueFrom: &corev1.EnvVarSource{FieldRef: &corev1.ObjectFieldSelector{FieldPath: "metadata.name"}},
 	}, {
 		Name:  cons.EnvLogLevel,
-		Value: "DEBUG",
+		Value: "INFO",
 	}}
 	return defaultEnvs
 }
@@ -171,6 +275,9 @@ func getPortsForGateway(gateway *vanusv1alpha1.Gateway) []corev1.ContainerPort {
 	}, {
 		Name:          cons.ContainerPortNameCloudevents,
 		ContainerPort: cons.GatewayPortCloudevents,
+	}, {
+		Name:          cons.ContainerPortNameSinkProxy,
+		ContainerPort: cons.GatewayPortSinkProxy,
 	}}
 	return defaultPorts
 }
@@ -201,5 +308,5 @@ func labelsForGateway(name string) map[string]string {
 }
 
 func annotationsForGateway() map[string]string {
-	return map[string]string{"vanus.dev/metrics.port": "2112"}
+	return map[string]string{"vanus.dev/metrics.port": fmt.Sprintf("%d", cons.ControllerPortMetrics)}
 }

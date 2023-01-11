@@ -20,7 +20,7 @@ metadata:
 subjects:
 - kind: ServiceAccount
   name: vanus-operator
-  namespace: default
+  namespace: vanus
 roleRef:
   kind: ClusterRole
   name: vanus-operator

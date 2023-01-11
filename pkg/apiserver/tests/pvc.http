@@ -1,0 +1,14 @@
+###
+
+# 获取存储卷列表
+
+GET http://localhost:8888/api/ecns/security/volume/?namespace=f61179aec36e4eb3bd4e3983d8c3b70b
+
+###
+
+GET http://localhost:8888/api/ecns/security/volume/
+
+###
+
+# 删除 PVC
+DELETE http://localhost:8888/api/ecns/security/volume/uuuuuu-volume-fopiwaxy/?namespace=f61179aec36e4eb3bd4e3983d8c3b70b
