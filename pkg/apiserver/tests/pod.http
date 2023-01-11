@@ -1,0 +1,25 @@
+# 获取 Pod 列表
+GET http://localhost:8888/api/ecns/security/pod/?namespace=f61179aec36e4eb3bd4e3983d8c3b70b
+
+###
+
+# 获取单个Pod
+GET http://localhost:8888/api/ecns/security/pod/ghhjjk-864948f56c-bhkjc/?namespace=f61179aec36e4eb3bd4e3983d8c3b70b
+
+###
+
+# Pod Info
+GET http://localhost:8888/api/ecns/security/pod/ghhjjk-864948f56c-bhkjc/info/?namespace=f61179aec36e4eb3bd4e3983d8c3b70b
+
+###
+
+# Pod Network storage
+GET http://localhost:8888/api/ecns/security/pod/uuuuuu-6d8db8d69f-wxhwh/net_stor/?namespace=f61179aec36e4eb3bd4e3983d8c3b70b
+
+###
+
+# Pod 高级配置
+
+GET http://localhost:8888/api/ecns/security/pod/uuuuuu-6d8db8d69f-wxhwh/advanced/?namespace=f61179aec36e4eb3bd4e3983d8c3b70b
+
+###

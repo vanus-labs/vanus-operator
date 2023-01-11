@@ -31,11 +31,11 @@ spec:
       serviceAccountName: vanus-operator
       terminationGracePeriodSeconds: 10
       containers:
-      - name: manager
+      - name: operator
         # Replace this with the built image name
         image: vanus-operator:v1
         command:
-        - /manager
+        - /operator/manager
         args:
         - --leader-elect
         imagePullPolicy: IfNotPresent
@@ -64,3 +64,11 @@ spec:
               fieldPath: metadata.name
         - name: OPERATOR_NAME
           value: "vanus-operator"
+      - name: apiserver
+        # Replace this with the built image name
+        image: vanus-operator:v1
+        command:
+        - /operator/apiserver
+        imagePullPolicy: IfNotPresent
+        securityContext:
+          allowPrivilegeEscalation: false

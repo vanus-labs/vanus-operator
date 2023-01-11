@@ -1,0 +1,32 @@
+# Deployment 列表
+
+GET http://localhost:8888/api/ecns/security/deployment/?namespace=f61179aec36e4eb3bd4e3983d8c3b70b
+
+###
+
+GET http://localhost:8888/api/ecns/security/deployment/
+
+
+###
+
+#Info
+GET http://localhost:8888/api/ecns/security/deployment/uuuuuu/info/?namespace=f61179aec36e4eb3bd4e3983d8c3b70b
+
+###
+
+#LB Stor
+GET http://localhost:8888/api/ecns/security/deployment/uuuuuu/lb_stor/?namespace=f61179aec36e4eb3bd4e3983d8c3b70b
+
+###
+
+#advanced
+GET http://localhost:8888/api/ecns/security/deployment/uuuuuu/advanced/?namespace=f61179aec36e4eb3bd4e3983d8c3b70b
+
+###
+
+#pods
+GET http://localhost:8888/api/ecns/security/deployment/uuuuuu/pod/?namespace=f61179aec36e4eb3bd4e3983d8c3b70b
+
+###
+#revisions
+GET http://localhost:8888/api/ecns/security/deployment/uuuuuu/revision/?namespace=f61179aec36e4eb3bd4e3983d8c3b70b

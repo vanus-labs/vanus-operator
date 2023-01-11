@@ -1,0 +1,4 @@
+curl -i -N -H "Sec-Websocket-Key: aa" -H "Sec-Websocket-Version: 13" \
+-H "Connection: Upgrade" \ 
+-H "Upgrade: websocket"  \
+ 'http://localhost:80/api/v2/security/secure_pod/{poname}/container/{container}/log?project_id={project_id}'

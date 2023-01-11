@@ -1,0 +1,45 @@
+GET http://localhost:8089/api/ecns/security/overview/pvc_status?project_id=feee2dc9e0d74c718d767ff352eaf0c5
+
+###
+GET http://localhost:8089/api/ecns/security/overview/feee2dc9e0d74c718d767ff352eaf0c5/quota
+
+###
+GET http://localhost:8089/api/ecns/security/overview/feee2dc9e0d74c718d767ff352eaf0c5/top5
+
+###
+GET http://localhost:8089/api/ecns/security/overview/feee2dc9e0d74c718d767ff352eaf0c5/storage
+
+###
+GET http://localhost:8089/api/ecns/security/overview/openstack/pvc
+
+###
+GET http://localhost:8089/api/ecns/security/overview/pods/memory?start=1633663565&end=1633674365&step=1m
+
+###
+GET http://localhost:8089/api/ecns/security/overview/pods/cpu?start=1633663565&end=1633674365&step=1m
+
+###
+GET localhost:8089/api/ecns/security/overview/pods
+
+###
+GET localhost:8089/api/ecns/security/overview/nodes/memory
+
+###
+GET localhost:8089/api/ecns/security/overview/nodes/cpu
+
+###
+GET localhost:8089/api/ecns/security/overview/nodes
+
+###
+GET localhost:8089/api/ecns/security/overview/cluster/service
+
+
+###
+#get overview cluster quotas
+GET localhost:8089/api/ecns/security/overview/cluster/quota
+
+
+###
+#get overview cluster info
+
+GET localhost:8089/api/ecns/security/overview/cluster/info

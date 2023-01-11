@@ -109,7 +109,26 @@ test: manifests generate fmt vet envtest ## Run tests.
 
 .PHONY: build
 build: generate fmt vet ## Build manager binary.
-	go build -o bin/manager main.go
+	go build -o bin/manager cmd/manager/main.go
+	go build -o bin/apiserver cmd/apiserver/main.go
+
+# install swagger binary file
+.PHONY: install-swagger
+install-swagger:
+	@go install github.com/go-swagger/go-swagger/cmd/swagger@v0.27.0
+
+# vaild swagger
+.PHONY: valid-swagger
+valid-swagger:
+	swagger validate ./api/swagger.yaml
+
+# gen swagger 
+.PHONY: gen-swagger
+gen-swagger:
+	swagger validate ./api/swagger.yaml
+	rm -rf ./api/restapi
+	rm -rf ./api/models
+	swagger generate server --target ./api --spec ./api/swagger.yaml --exclude-main  --name vanus
 
 .PHONY: run
 run: manifests generate fmt vet ## Run a controller from your host.

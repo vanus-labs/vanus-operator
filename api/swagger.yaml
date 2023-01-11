@@ -1,0 +1,331 @@
+# Copyright 2022 Linkall Inc.
+swagger: "2.0"
+consumes:
+  - application/json
+info:
+  description: >
+    this document describes the functions, parameters and return values of the vanus operator API
+  title: Vanus Operator Interface Document
+  version: v0.2.0
+produces:
+  - application/json
+schemes:
+  - http
+basePath: /api/v1/vanus
+
+paths:
+
+  /cluster/:
+    get:
+      tags:
+        - "cluster"
+      description: "获取一个 Cluster"
+      operationId: "getCluster"
+      parameters:
+        - name: "detail"
+          in: "query"
+          type: "string"
+          required: false
+          description: "true 显示 cluster 详细信息"
+
+      responses:
+        '200':
+          description: OK
+          schema:
+            type: object
+            required:
+              - "code"
+              - "data"
+              - "message"
+            properties:
+              code:
+                type: "integer"
+                format: "int32"
+                default: 200
+              data:
+                type: object
+                $ref: "#/definitions/Cluster_info"
+              message:
+                type: "string"
+                default: "success"
+
+    post:
+      tags:
+        - "cluster"
+      description: "创建一个 Cluster"
+      operationId: "createCluster"
+      parameters:
+        - name: "cluster"
+          in: "body"
+          required: true
+          schema:
+            type: "object"
+            $ref: "#/definitions/Cluster_info"
+          description: "需要创建的Cluster信息"
+      responses:
+        '200':
+          description: OK
+          schema:
+            type: object
+            required:
+              - "code"
+              - "data"
+              - "message"
+            properties:
+              code:
+                type: "integer"
+                format: "int32"
+                default: 200
+              data:
+                type: object
+                $ref: "#/definitions/Cluster_info"
+              message:
+                type: "string"
+                default: "success"
+
+    patch:
+      tags:
+        - "cluster"
+      description: "集群手动伸缩"
+      operationId: "patchCluster"
+      parameters:
+        - in: body
+          name: patch
+          description: "伸缩信息"
+          schema:
+            type: object
+            $ref: "#/definitions/Cluster_patch"
+          required: true
+      responses:
+        '200':
+          description: OK
+          schema:
+            type: object
+            required:
+              - "code"
+              - "data"
+              - "message"
+            properties:
+              code:
+                type: "integer"
+                format: "int32"
+                default: 200
+              data:
+                type: object
+                $ref: "#/definitions/Cluster_info"
+              message:
+                type: "string"
+                default: "success"
+
+    delete:
+      tags:
+        - "cluster"
+      description: "删除 Cluster"
+      operationId: "deleteCluster"
+      parameters:
+        - name: "force"
+          in: "query"
+          type: "string"
+          required: false
+          description: "true 表示强制删除，默认为false"
+        - name: "cluster"
+          in: "body"
+          required: true
+          schema:
+            type: object
+            $ref: "#/definitions/Cluster_info"
+          description: "需要删除的 Cluster"
+      responses:
+        '200':
+          description: OK
+          schema:
+            type: object
+            required:
+              - "code"
+              - "data"
+              - "message"
+            properties:
+              code:
+                type: "integer"
+                format: "int32"
+                default: 200
+              data:
+                type: object
+                $ref: "#/definitions/Cluster_info"
+              message:
+                type: "string"
+                default: "success"
+
+  /connectors/:
+    get:
+      tags:
+        - "connector"
+      operationId: "listConnector"
+      description: "Connector 列表"
+      responses:
+        '200':
+          description: OK
+          schema:
+            type: object
+            required:
+              - "code"
+              - "data"
+              - "message"
+            properties:
+              code:
+                type: "integer"
+                format: "int32"
+                default: 200
+              data:
+                type: "array"
+                items:
+                  type: object
+                  $ref: "#/definitions/Connector_info"
+              message:
+                type: "string"
+                default: "success"
+
+  /connector/:
+    get:
+      tags:
+        - "connector"
+      description: "获取一个 Connector"
+      operationId: "getConnector"
+      responses:
+        '200':
+          description: OK
+          schema:
+            type: object
+            required:
+              - "code"
+              - "data"
+              - "message"
+            properties:
+              code:
+                type: "integer"
+                format: "int32"
+                default: 200
+              data:
+                type: object
+                $ref: "#/definitions/Connector_info"
+              message:
+                type: "string"
+                default: "success"
+
+    post:
+      tags:
+        - "connector"
+      description: "创建一个 Connector"
+      operationId: "createConnector"
+      parameters:
+        - name: "connector"
+          in: "body"
+          required: true
+          schema:
+            type: "object"
+            $ref: "#/definitions/Connector_info"
+          description: "需要创建的Connector信息"
+      responses:
+        '200':
+          description: OK
+          schema:
+            type: object
+            required:
+              - "code"
+              - "data"
+              - "message"
+            properties:
+              code:
+                type: "integer"
+                format: "int32"
+                default: 200
+              data:
+                type: object
+                $ref: "#/definitions/Connector_info"
+              message:
+                type: "string"
+                default: "success"
+
+    delete:
+      tags:
+        - "connector"
+      description: "删除 Connector"
+      operationId: "deleteConnector"
+      parameters:
+        - name: "force"
+          in: "query"
+          type: "string"
+          required: false
+          description: "true 表示强制删除，默认为false"
+        - name: "connector"
+          in: "body"
+          required: true
+          schema:
+            type: object
+            $ref: "#/definitions/Connector_info"
+          description: "需要删除的 Connector"
+      responses:
+        '200':
+          description: OK
+          schema:
+            type: object
+            required:
+              - "code"
+              - "data"
+              - "message"
+            properties:
+              code:
+                type: "integer"
+                format: "int32"
+                default: 200
+              data:
+                type: object
+                $ref: "#/definitions/Connector_info"
+              message:
+                type: "string"
+                default: "success"
+
+definitions:
+  APIResponse:
+    type: "object"
+    properties:
+      code:
+        type: "integer"
+        format: "int32"
+      data:
+        type: "object"
+      message:
+        type: "string"
+
+  Cluster_info:
+    type: "object"
+    description: "集群信息"
+    properties:
+      gateway_endpoints:
+        type: "string"
+        description: "gateway端点"
+      cloudevents_endpoints:
+        type: "string"
+        description: "cloudevents端点"
+
+  Cluster_patch:
+    type: object
+    properties:
+      # replicas:
+      #   type: "integer"
+      #   format: "int32"
+      #   description: "gateway端点"
+      version:
+        type: "string"
+        description: "待更新的版本"
+
+  Connector_info:
+    type: "object"
+    description: "Connector 信息"
+    properties:
+      name:
+        type: "string"
+        description: "connector 名称"
+      kind:
+        type: "string"
+        description: "connector 类型"
