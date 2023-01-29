@@ -33,35 +33,6 @@ func PutIter(i *IterFactory) {
 	IterFactoryPool.Put(i)
 }
 
-// 迭代所有命名空间
-// 命名空间会使用labels 过滤
-// func IterNamespace(cli ctrlclient.Client, fn func(ns *corev1.Namespace) error) error {
-// 	wrapFn := func(r runtime.Object) error {
-// 		v, ok := r.(*corev1.Namespace)
-// 		if !ok {
-// 			return fmt.Errorf("object is not Namespace type")
-// 		}
-// 		return fn(v)
-// 	}
-// 	factory := GetIter()
-// 	defer PutIter(factory)
-// 	return factory.Fn(wrapFn).Labels(NamespaceDefaultLabel).Object(&corev1.NamespaceList{}).Do(cli, DefaultGetTimeout)
-// }
-
-// 迭代所有node
-// func IterNode(cli ctrlclient.Client, fn func(ns *corev1.Node) error) error {
-// 	wrapFn := func(r runtime.Object) error {
-// 		v, ok := r.(*corev1.Node)
-// 		if !ok {
-// 			return fmt.Errorf("object is not Namespace type")
-// 		}
-// 		return fn(v)
-// 	}
-// 	factory := GetIter()
-// 	defer PutIter(factory)
-// 	return factory.Fn(wrapFn).Labels(NodeLabel).Object(&corev1.NodeList{}).Do(cli, DefaultGetTimeout)
-// }
-
 type IterFactory struct {
 	options []ctrlclient.ListOption
 

@@ -6,17 +6,12 @@ package connector
 // Editing this file might prove futile when you re-run the swagger generate command
 
 import (
-	"context"
-	"io"
 	"net/http"
 
 	"github.com/go-openapi/errors"
 	"github.com/go-openapi/runtime"
 	"github.com/go-openapi/runtime/middleware"
 	"github.com/go-openapi/strfmt"
-	"github.com/go-openapi/validate"
-
-	"github.com/linkall-labs/vanus-operator/api/models"
 )
 
 // NewDeleteConnectorParams creates a new DeleteConnectorParams object
@@ -36,15 +31,10 @@ type DeleteConnectorParams struct {
 	// HTTP Request Object
 	HTTPRequest *http.Request `json:"-"`
 
-	/*Connector info
-	  Required: true
-	  In: body
-	*/
-	Connector *models.ConnectorInfo
-	/*true means force delete, default false
+	/*connector name
 	  In: query
 	*/
-	Force *string
+	Name *string
 }
 
 // BindRequest both binds and validates a request, it assumes that complex things implement a Validatable(strfmt.Registry) error interface
@@ -58,36 +48,8 @@ func (o *DeleteConnectorParams) BindRequest(r *http.Request, route *middleware.M
 
 	qs := runtime.Values(r.URL.Query())
 
-	if runtime.HasBody(r) {
-		defer r.Body.Close()
-		var body models.ConnectorInfo
-		if err := route.Consumer.Consume(r.Body, &body); err != nil {
-			if err == io.EOF {
-				res = append(res, errors.Required("connector", "body", ""))
-			} else {
-				res = append(res, errors.NewParseError("connector", "body", "", err))
-			}
-		} else {
-			// validate body object
-			if err := body.Validate(route.Formats); err != nil {
-				res = append(res, err)
-			}
-
-			ctx := validate.WithOperationRequest(context.Background())
-			if err := body.ContextValidate(ctx, route.Formats); err != nil {
-				res = append(res, err)
-			}
-
-			if len(res) == 0 {
-				o.Connector = &body
-			}
-		}
-	} else {
-		res = append(res, errors.Required("connector", "body", ""))
-	}
-
-	qForce, qhkForce, _ := qs.GetOK("force")
-	if err := o.bindForce(qForce, qhkForce, route.Formats); err != nil {
+	qName, qhkName, _ := qs.GetOK("name")
+	if err := o.bindName(qName, qhkName, route.Formats); err != nil {
 		res = append(res, err)
 	}
 	if len(res) > 0 {
@@ -96,8 +58,8 @@ func (o *DeleteConnectorParams) BindRequest(r *http.Request, route *middleware.M
 	return nil
 }
 
-// bindForce binds and validates parameter Force from query.
-func (o *DeleteConnectorParams) bindForce(rawData []string, hasKey bool, formats strfmt.Registry) error {
+// bindName binds and validates parameter Name from query.
+func (o *DeleteConnectorParams) bindName(rawData []string, hasKey bool, formats strfmt.Registry) error {
 	var raw string
 	if len(rawData) > 0 {
 		raw = rawData[len(rawData)-1]
@@ -109,7 +71,7 @@ func (o *DeleteConnectorParams) bindForce(rawData []string, hasKey bool, formats
 	if raw == "" { // empty values pass all other validations
 		return nil
 	}
-	o.Force = &raw
+	o.Name = &raw
 
 	return nil
 }

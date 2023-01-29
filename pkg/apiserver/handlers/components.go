@@ -1,3 +1,17 @@
+// Copyright 2022 Linkall Inc.
+//
+// Licensed under the Apache License, Version 2.0 (the "License");
+// you may not use this file except in compliance with the License.
+// You may obtain a copy of the License at
+//
+//     http://www.apache.org/licenses/LICENSE-2.0
+//
+// Unless required by applicable law or agreed to in writing, software
+// distributed under the License is distributed on an "AS IS" BASIS,
+// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+// See the License for the specific language governing permissions and
+// limitations under the License.
+
 package handlers
 
 import (
@@ -17,6 +31,7 @@ const (
 	ResourceTrigger    = "triggers"
 	ResourceTimer      = "timers"
 	ResourceGateway    = "gateways"
+	ResourceConnector  = "connectors"
 )
 
 func (a *Api) createController(controller *vanusv1alpha1.Controller, namespace string) (*vanusv1alpha1.Controller, error) {
@@ -454,13 +469,13 @@ func (a *Api) existTimer(namespace string, name string, opts *metav1.GetOptions)
 	return result, true, nil
 }
 
-func (a *Api) createGateway(store *vanusv1alpha1.Gateway, namespace string) (*vanusv1alpha1.Gateway, error) {
+func (a *Api) createGateway(gateway *vanusv1alpha1.Gateway, namespace string) (*vanusv1alpha1.Gateway, error) {
 	result := &vanusv1alpha1.Gateway{}
 	err := a.ctrl.ClientSet().
 		Post().
 		Namespace(namespace).
 		Resource(ResourceGateway).
-		Body(store).
+		Body(gateway).
 		Do(context.TODO()).
 		Into(result)
 	if err != nil {
@@ -547,6 +562,113 @@ func (a *Api) existGateway(namespace string, name string, opts *metav1.GetOption
 	err := a.ctrl.ClientSet().
 		Get().
 		Resource(ResourceGateway).
+		Namespace(namespace).
+		Name(name).
+		VersionedParams(opts, scheme.ParameterCodec).
+		Do(context.TODO()).
+		Into(result)
+	if err != nil {
+		if errors.IsNotFound(err) {
+			return result, false, nil
+		}
+		return result, false, err
+	}
+	return result, true, nil
+}
+
+func (a *Api) createConnector(connector *vanusv1alpha1.Connector, namespace string) (*vanusv1alpha1.Connector, error) {
+	result := &vanusv1alpha1.Connector{}
+	err := a.ctrl.ClientSet().
+		Post().
+		Namespace(namespace).
+		Resource(ResourceConnector).
+		Body(connector).
+		Do(context.TODO()).
+		Into(result)
+	if err != nil {
+		return nil, err
+	}
+	return result, nil
+}
+
+func (a *Api) patchConnector(connector *vanusv1alpha1.Connector) (*vanusv1alpha1.Connector, error) {
+	result := &vanusv1alpha1.Connector{}
+	body, err := json.Marshal(connector)
+	if err != nil {
+		return nil, err
+	}
+	err = a.ctrl.ClientSet().Patch(types.MergePatchType).
+		Namespace(connector.Namespace).
+		Name(connector.Name).
+		Resource(ResourceConnector).
+		VersionedParams(&metav1.PatchOptions{}, scheme.ParameterCodec).
+		Body(body).
+		Do(context.TODO()).
+		Into(result)
+	if err != nil {
+		return nil, err
+	}
+	return result, nil
+}
+
+func (a *Api) deleteConnector(namespace string, name string) error {
+	_, exist, err := a.existConnector(namespace, name, &metav1.GetOptions{})
+	if err != nil {
+		return err
+	}
+	if !exist {
+		return nil
+	}
+	result := &vanusv1alpha1.Connector{}
+	err = a.ctrl.ClientSet().
+		Delete().
+		Resource(ResourceConnector).
+		Namespace(namespace).
+		Name(name).
+		Do(context.TODO()).
+		Into(result)
+	if err != nil {
+		return err
+	}
+	return nil
+}
+
+func (a *Api) listConnector(namespace string, opts *metav1.ListOptions) (*vanusv1alpha1.ConnectorList, error) {
+	result := &vanusv1alpha1.ConnectorList{}
+	err := a.ctrl.ClientSet().
+		Get().
+		Resource(ResourceConnector).
+		Namespace(namespace).
+		VersionedParams(opts, scheme.ParameterCodec).
+		Do(context.TODO()).
+		Into(result)
+	if err != nil {
+		return nil, err
+	}
+	return result, nil
+}
+
+func (a *Api) getConnector(namespace string, name string, opts *metav1.GetOptions) (*vanusv1alpha1.Connector, error) {
+	result := &vanusv1alpha1.Connector{}
+	err := a.ctrl.ClientSet().
+		Get().
+		Resource(ResourceConnector).
+		Namespace(namespace).
+		Name(name).
+		VersionedParams(opts, scheme.ParameterCodec).
+		Do(context.TODO()).
+		Into(result)
+	if err != nil {
+		return nil, err
+	}
+	return result, nil
+}
+
+func (a *Api) existConnector(namespace string, name string, opts *metav1.GetOptions) (*vanusv1alpha1.Connector, bool, error) {
+	result := &vanusv1alpha1.Connector{}
+	err := a.ctrl.ClientSet().
+		Get().
+		Resource(ResourceConnector).
 		Namespace(namespace).
 		Name(name).
 		VersionedParams(opts, scheme.ParameterCodec).

@@ -179,6 +179,12 @@ paths:
         - "connector"
       description: "get Connector"
       operationId: "getConnector"
+      parameters:
+        - name: "name"
+          in: "query"
+          type: "string"
+          required: false
+          description: "connector name"
       responses:
         '200':
           description: OK
@@ -240,18 +246,11 @@ paths:
       description: "delete Connector"
       operationId: "deleteConnector"
       parameters:
-        - name: "force"
+        - name: "name"
           in: "query"
           type: "string"
           required: false
-          description: "true means force delete, default false"
-        - name: "connector"
-          in: "body"
-          required: true
-          schema:
-            type: object
-            $ref: "#/definitions/Connector_info"
-          description: "Connector info"
+          description: "connector name"
       responses:
         '200':
           description: OK
@@ -391,7 +390,19 @@ definitions:
         description: "connector name"
       kind:
         type: "string"
+        description: "connector kind"
+      type:
+        type: "string"
         description: "connector type"
+      version:
+        type: "string"
+        description: "connector version"
+      config:
+        type: "string"
+        description: "connector config file"
+      status:
+        type: "string"
+        description: "connector status"
 
   Controller_info:
     type: "object"

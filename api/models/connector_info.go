@@ -17,11 +17,23 @@ import (
 // swagger:model Connector_info
 type ConnectorInfo struct {
 
-	// connector type
+	// connector config file
+	Config string `json:"config,omitempty"`
+
+	// connector kind
 	Kind string `json:"kind,omitempty"`
 
 	// connector name
 	Name string `json:"name,omitempty"`
+
+	// connector status
+	Status string `json:"status,omitempty"`
+
+	// connector type
+	Type string `json:"type,omitempty"`
+
+	// connector version
+	Version string `json:"version,omitempty"`
 }
 
 // Validate validates this connector info

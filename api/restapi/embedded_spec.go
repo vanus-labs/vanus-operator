@@ -220,6 +220,14 @@ func init() {
           "connector"
         ],
         "operationId": "getConnector",
+        "parameters": [
+          {
+            "type": "string",
+            "description": "connector name",
+            "name": "name",
+            "in": "query"
+          }
+        ],
         "responses": {
           "200": {
             "description": "OK",
@@ -305,19 +313,9 @@ func init() {
         "parameters": [
           {
             "type": "string",
-            "description": "true means force delete, default false",
-            "name": "force",
+            "description": "connector name",
+            "name": "name",
             "in": "query"
-          },
-          {
-            "description": "Connector info",
-            "name": "connector",
-            "in": "body",
-            "required": true,
-            "schema": {
-              "type": "object",
-              "$ref": "#/definitions/Connector_info"
-            }
           }
         ],
         "responses": {
@@ -526,12 +524,28 @@ func init() {
       "description": "Connector info",
       "type": "object",
       "properties": {
+        "config": {
+          "description": "connector config file",
+          "type": "string"
+        },
         "kind": {
-          "description": "connector type",
+          "description": "connector kind",
           "type": "string"
         },
         "name": {
           "description": "connector name",
+          "type": "string"
+        },
+        "status": {
+          "description": "connector status",
+          "type": "string"
+        },
+        "type": {
+          "description": "connector type",
+          "type": "string"
+        },
+        "version": {
+          "description": "connector version",
           "type": "string"
         }
       }
@@ -829,6 +843,14 @@ func init() {
           "connector"
         ],
         "operationId": "getConnector",
+        "parameters": [
+          {
+            "type": "string",
+            "description": "connector name",
+            "name": "name",
+            "in": "query"
+          }
+        ],
         "responses": {
           "200": {
             "description": "OK",
@@ -914,19 +936,9 @@ func init() {
         "parameters": [
           {
             "type": "string",
-            "description": "true means force delete, default false",
-            "name": "force",
+            "description": "connector name",
+            "name": "name",
             "in": "query"
-          },
-          {
-            "description": "Connector info",
-            "name": "connector",
-            "in": "body",
-            "required": true,
-            "schema": {
-              "type": "object",
-              "$ref": "#/definitions/Connector_info"
-            }
           }
         ],
         "responses": {
@@ -1135,12 +1147,28 @@ func init() {
       "description": "Connector info",
       "type": "object",
       "properties": {
+        "config": {
+          "description": "connector config file",
+          "type": "string"
+        },
         "kind": {
-          "description": "connector type",
+          "description": "connector kind",
           "type": "string"
         },
         "name": {
           "description": "connector name",
+          "type": "string"
+        },
+        "status": {
+          "description": "connector status",
+          "type": "string"
+        },
+        "type": {
+          "description": "connector type",
+          "type": "string"
+        },
+        "version": {
+          "description": "connector version",
           "type": "string"
         }
       }
