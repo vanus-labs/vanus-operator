@@ -46,8 +46,20 @@ const (
 	// BrokerConfigName is the name of mounted configuration file
 	GatewayConfigMapName = "config-gateway"
 
+	// ConnectorContainerName is the name of Connector container
+	ConnectorContainerName = "connector"
+
+	// ConnectorConfigMapName is the name of Connector configmap
+	ConnectorConfigMapName = "config-connector"
+
 	// ConfigMountPath is the directory of Vanus configd files
 	ConfigMountPath = "/vanus/config"
+
+	// VanceConfigMountPath is the directory of Vance configd files
+	VanceConfigMountPath = "/vance/config"
+
+	// VanceConfigMountPath is the directory of Vance configd files
+	VanceConfigMapName = "config"
 
 	// VolumeMountPath is the directory of Store data files
 	VolumeMountPath = "/data"

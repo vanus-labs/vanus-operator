@@ -165,8 +165,6 @@ func addKnownTypes(scheme *runtime.Scheme) error {
 }
 
 func main() {
-	log.Print("===start===")
-
 	var config *rest.Config
 	var err error
 	kubeconfig := "/home/ubuntu/.kube/config"

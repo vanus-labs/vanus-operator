@@ -7,7 +7,7 @@
 //  Schemes:
 //    http
 //  Host: localhost
-//  BasePath: /api/v1/vanus
+//  BasePath: /api/v1
 //  Version: v0.2.0
 //
 //  Consumes:

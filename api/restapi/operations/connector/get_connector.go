@@ -36,7 +36,7 @@ func NewGetConnector(ctx *middleware.Context, handler GetConnectorHandler) *GetC
 	return &GetConnector{Context: ctx, Handler: handler}
 }
 
-/* GetConnector swagger:route GET /connector/ connector getConnector
+/* GetConnector swagger:route GET /connector/{name} connector getConnector
 
 get Connector
 

@@ -1,18 +1,16 @@
-/*
-Copyright 2022.
-
-Licensed under the Apache License, Version 2.0 (the "License");
-you may not use this file except in compliance with the License.
-You may obtain a copy of the License at
-
-    http://www.apache.org/licenses/LICENSE-2.0
-
-Unless required by applicable law or agreed to in writing, software
-distributed under the License is distributed on an "AS IS" BASIS,
-WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-See the License for the specific language governing permissions and
-limitations under the License.
-*/
+// Copyright 2022 Linkall Inc.
+//
+// Licensed under the Apache License, Version 2.0 (the "License");
+// you may not use this file except in compliance with the License.
+// You may obtain a copy of the License at
+//
+//     http://www.apache.org/licenses/LICENSE-2.0
+//
+// Unless required by applicable law or agreed to in writing, software
+// distributed under the License is distributed on an "AS IS" BASIS,
+// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+// See the License for the specific language governing permissions and
+// limitations under the License.
 
 package controllers
 
@@ -123,11 +121,6 @@ func (r *TriggerReconciler) Reconcile(ctx context.Context, req ctrl.Request) (ct
 			logger.Info("Successfully update Trigger Deployment")
 		}
 	}
-	logger.Info("===jk4=== start update Trigger Deployment")
-	trigger_str := fmt.Sprintf("%+v", trigger)
-	logger.Info("===jk5=== trigger: ", "trigger_str", trigger_str)
-	dep_str := fmt.Sprintf("%+v", dep)
-	logger.Info("===jk6=== deployment: ", "dep_str", dep_str)
 	if *trigger.Spec.Replicas != *dep.Spec.Replicas {
 		logger.Info("Updating Trigger Deployment.", "Deployment.Namespace", triggerDeployment.Namespace, "Deployment.Name", triggerDeployment.Name)
 		dep.Spec.Replicas = trigger.Spec.Replicas

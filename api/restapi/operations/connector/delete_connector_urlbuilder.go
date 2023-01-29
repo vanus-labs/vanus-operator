@@ -13,7 +13,7 @@ import (
 
 // DeleteConnectorURL generates an URL for the delete connector operation
 type DeleteConnectorURL struct {
-	Force *string
+	Name *string
 
 	_basePath string
 	// avoid unkeyed usage
@@ -39,22 +39,22 @@ func (o *DeleteConnectorURL) SetBasePath(bp string) {
 func (o *DeleteConnectorURL) Build() (*url.URL, error) {
 	var _result url.URL
 
-	var _path = "/connector/"
+	var _path = "/connectors/"
 
 	_basePath := o._basePath
 	if _basePath == "" {
-		_basePath = "/api/v1/vanus"
+		_basePath = "/api/v1"
 	}
 	_result.Path = golangswaggerpaths.Join(_basePath, _path)
 
 	qs := make(url.Values)
 
-	var forceQ string
-	if o.Force != nil {
-		forceQ = *o.Force
+	var nameQ string
+	if o.Name != nil {
+		nameQ = *o.Name
 	}
-	if forceQ != "" {
-		qs.Set("force", forceQ)
+	if nameQ != "" {
+		qs.Set("name", nameQ)
 	}
 
 	_result.RawQuery = qs.Encode()

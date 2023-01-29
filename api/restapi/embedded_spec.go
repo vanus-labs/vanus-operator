@@ -33,7 +33,7 @@ func init() {
     "title": "Vanus Operator Interface Document",
     "version": "v0.2.0"
   },
-  "basePath": "/api/v1/vanus",
+  "basePath": "/api/v1",
   "paths": {
     "/cluster/": {
       "get": {
@@ -213,13 +213,22 @@ func init() {
         }
       }
     },
-    "/connector/": {
+    "/connector/{name}": {
       "get": {
         "description": "get Connector",
         "tags": [
           "connector"
         ],
         "operationId": "getConnector",
+        "parameters": [
+          {
+            "type": "string",
+            "description": "connector name",
+            "name": "name",
+            "in": "path",
+            "required": true
+          }
+        ],
         "responses": {
           "200": {
             "description": "OK",
@@ -239,6 +248,46 @@ func init() {
                 "data": {
                   "type": "object",
                   "$ref": "#/definitions/Connector_info"
+                },
+                "message": {
+                  "type": "string",
+                  "default": "success"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/connectors/": {
+      "get": {
+        "description": "list Connector",
+        "tags": [
+          "connector"
+        ],
+        "operationId": "listConnector",
+        "responses": {
+          "200": {
+            "description": "OK",
+            "schema": {
+              "type": "object",
+              "required": [
+                "code",
+                "data",
+                "message"
+              ],
+              "properties": {
+                "code": {
+                  "type": "integer",
+                  "format": "int32",
+                  "default": 200
+                },
+                "data": {
+                  "type": "array",
+                  "items": {
+                    "type": "object",
+                    "$ref": "#/definitions/Connector_info"
+                  }
                 },
                 "message": {
                   "type": "string",
@@ -305,19 +354,9 @@ func init() {
         "parameters": [
           {
             "type": "string",
-            "description": "true means force delete, default false",
-            "name": "force",
+            "description": "connector name",
+            "name": "name",
             "in": "query"
-          },
-          {
-            "description": "Connector info",
-            "name": "connector",
-            "in": "body",
-            "required": true,
-            "schema": {
-              "type": "object",
-              "$ref": "#/definitions/Connector_info"
-            }
           }
         ],
         "responses": {
@@ -339,46 +378,6 @@ func init() {
                 "data": {
                   "type": "object",
                   "$ref": "#/definitions/Connector_info"
-                },
-                "message": {
-                  "type": "string",
-                  "default": "success"
-                }
-              }
-            }
-          }
-        }
-      }
-    },
-    "/connectors/": {
-      "get": {
-        "description": "list Connector",
-        "tags": [
-          "connector"
-        ],
-        "operationId": "listConnector",
-        "responses": {
-          "200": {
-            "description": "OK",
-            "schema": {
-              "type": "object",
-              "required": [
-                "code",
-                "data",
-                "message"
-              ],
-              "properties": {
-                "code": {
-                  "type": "integer",
-                  "format": "int32",
-                  "default": 200
-                },
-                "data": {
-                  "type": "array",
-                  "items": {
-                    "type": "object",
-                    "$ref": "#/definitions/Connector_info"
-                  }
                 },
                 "message": {
                   "type": "string",
@@ -526,12 +525,28 @@ func init() {
       "description": "Connector info",
       "type": "object",
       "properties": {
+        "config": {
+          "description": "connector config file",
+          "type": "string"
+        },
         "kind": {
-          "description": "connector type",
+          "description": "connector kind",
           "type": "string"
         },
         "name": {
           "description": "connector name",
+          "type": "string"
+        },
+        "status": {
+          "description": "connector status",
+          "type": "string"
+        },
+        "type": {
+          "description": "connector type",
+          "type": "string"
+        },
+        "version": {
+          "description": "connector version",
           "type": "string"
         }
       }
@@ -642,7 +657,7 @@ func init() {
     "title": "Vanus Operator Interface Document",
     "version": "v0.2.0"
   },
-  "basePath": "/api/v1/vanus",
+  "basePath": "/api/v1",
   "paths": {
     "/cluster/": {
       "get": {
@@ -822,13 +837,22 @@ func init() {
         }
       }
     },
-    "/connector/": {
+    "/connector/{name}": {
       "get": {
         "description": "get Connector",
         "tags": [
           "connector"
         ],
         "operationId": "getConnector",
+        "parameters": [
+          {
+            "type": "string",
+            "description": "connector name",
+            "name": "name",
+            "in": "path",
+            "required": true
+          }
+        ],
         "responses": {
           "200": {
             "description": "OK",
@@ -848,6 +872,46 @@ func init() {
                 "data": {
                   "type": "object",
                   "$ref": "#/definitions/Connector_info"
+                },
+                "message": {
+                  "type": "string",
+                  "default": "success"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/connectors/": {
+      "get": {
+        "description": "list Connector",
+        "tags": [
+          "connector"
+        ],
+        "operationId": "listConnector",
+        "responses": {
+          "200": {
+            "description": "OK",
+            "schema": {
+              "type": "object",
+              "required": [
+                "code",
+                "data",
+                "message"
+              ],
+              "properties": {
+                "code": {
+                  "type": "integer",
+                  "format": "int32",
+                  "default": 200
+                },
+                "data": {
+                  "type": "array",
+                  "items": {
+                    "type": "object",
+                    "$ref": "#/definitions/Connector_info"
+                  }
                 },
                 "message": {
                   "type": "string",
@@ -914,19 +978,9 @@ func init() {
         "parameters": [
           {
             "type": "string",
-            "description": "true means force delete, default false",
-            "name": "force",
+            "description": "connector name",
+            "name": "name",
             "in": "query"
-          },
-          {
-            "description": "Connector info",
-            "name": "connector",
-            "in": "body",
-            "required": true,
-            "schema": {
-              "type": "object",
-              "$ref": "#/definitions/Connector_info"
-            }
           }
         ],
         "responses": {
@@ -948,46 +1002,6 @@ func init() {
                 "data": {
                   "type": "object",
                   "$ref": "#/definitions/Connector_info"
-                },
-                "message": {
-                  "type": "string",
-                  "default": "success"
-                }
-              }
-            }
-          }
-        }
-      }
-    },
-    "/connectors/": {
-      "get": {
-        "description": "list Connector",
-        "tags": [
-          "connector"
-        ],
-        "operationId": "listConnector",
-        "responses": {
-          "200": {
-            "description": "OK",
-            "schema": {
-              "type": "object",
-              "required": [
-                "code",
-                "data",
-                "message"
-              ],
-              "properties": {
-                "code": {
-                  "type": "integer",
-                  "format": "int32",
-                  "default": 200
-                },
-                "data": {
-                  "type": "array",
-                  "items": {
-                    "type": "object",
-                    "$ref": "#/definitions/Connector_info"
-                  }
                 },
                 "message": {
                   "type": "string",
@@ -1135,12 +1149,28 @@ func init() {
       "description": "Connector info",
       "type": "object",
       "properties": {
+        "config": {
+          "description": "connector config file",
+          "type": "string"
+        },
         "kind": {
-          "description": "connector type",
+          "description": "connector kind",
           "type": "string"
         },
         "name": {
           "description": "connector name",
+          "type": "string"
+        },
+        "status": {
+          "description": "connector status",
+          "type": "string"
+        },
+        "type": {
+          "description": "connector type",
+          "type": "string"
+        },
+        "version": {
+          "description": "connector version",
           "type": "string"
         }
       }

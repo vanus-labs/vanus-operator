@@ -8,6 +8,32 @@ rules:
 - apiGroups:
   - vanus.linkall.com
   resources:
+  - connectors
+  verbs:
+  - create
+  - delete
+  - get
+  - list
+  - patch
+  - update
+  - watch
+- apiGroups:
+  - vanus.linkall.com
+  resources:
+  - connectors/finalizers
+  verbs:
+  - update
+- apiGroups:
+  - vanus.linkall.com
+  resources:
+  - connectors/status
+  verbs:
+  - get
+  - patch
+  - update
+- apiGroups:
+  - vanus.linkall.com
+  resources:
   - controllers
   verbs:
   - create
