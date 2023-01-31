@@ -52,4 +52,13 @@ resources:
   kind: Gateway
   path: github.com/linkall-labs/vanus-operator/api/v1alpha1
   version: v1alpha1
+- api:
+    crdVersion: v1
+    namespaced: true
+  controller: true
+  domain: linkall.com
+  group: vanus
+  kind: Connector
+  path: github.com/linkall-labs/vanus-operator/api/v1alpha1
+  version: v1alpha1
 version: "3"

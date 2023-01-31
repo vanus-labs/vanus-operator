@@ -5,4 +5,5 @@ resources:
 - vanus_v1alpha1_trigger.yaml
 - vanus_v1alpha1_timer.yaml
 - vanus_v1alpha1_gateway.yaml
+- vanus_v1alpha1_connector.yaml
 #+kubebuilder:scaffold:manifestskustomizesamples

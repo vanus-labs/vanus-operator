@@ -1,0 +1,3 @@
+GET http://localhost:8089/api/v2/security/secure_pod/monitoring-test-f4d56b568-8wb96/monitor?project_id=d988d53fd2a94686b0c56fc8576e727b&metric_name=iops&start=1634283380&end=1634283480&step=1m
+
+###

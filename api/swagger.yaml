@@ -1,0 +1,467 @@
+# Copyright 2022 Linkall Inc.
+swagger: "2.0"
+consumes:
+  - application/json
+info:
+  description: >
+    this document describes the functions, parameters and return values of the vanus operator API
+  title: Vanus Operator Interface Document
+  version: v0.2.0
+produces:
+  - application/json
+schemes:
+  - http
+basePath: /api/v1/vanus
+
+paths:
+
+  /cluster/:
+    get:
+      tags:
+        - "cluster"
+      description: "get Cluster"
+      operationId: "getCluster"
+      responses:
+        '200':
+          description: OK
+          schema:
+            type: object
+            required:
+              - "code"
+              - "data"
+              - "message"
+            properties:
+              code:
+                type: "integer"
+                format: "int32"
+                default: 200
+              data:
+                type: object
+                $ref: "#/definitions/Cluster_info"
+              message:
+                type: "string"
+                default: "success"
+
+    post:
+      tags:
+        - "cluster"
+      description: "create Cluster"
+      operationId: "createCluster"
+      parameters:
+        - name: "create"
+          in: "body"
+          required: true
+          schema:
+            type: "object"
+            $ref: "#/definitions/Cluster_create"
+          description: "需要创建的Cluster信息"
+      responses:
+        '200':
+          description: OK
+          schema:
+            type: object
+            required:
+              - "code"
+              - "data"
+              - "message"
+            properties:
+              code:
+                type: "integer"
+                format: "int32"
+                default: 200
+              data:
+                type: object
+                $ref: "#/definitions/Cluster_info"
+              message:
+                type: "string"
+                default: "success"
+
+    patch:
+      tags:
+        - "cluster"
+      description: "patch Cluster"
+      operationId: "patchCluster"
+      parameters:
+        - in: body
+          name: patch
+          description: "patch info"
+          schema:
+            type: object
+            $ref: "#/definitions/Cluster_patch"
+          required: true
+      responses:
+        '200':
+          description: OK
+          schema:
+            type: object
+            required:
+              - "code"
+              - "data"
+              - "message"
+            properties:
+              code:
+                type: "integer"
+                format: "int32"
+                default: 200
+              data:
+                type: object
+                $ref: "#/definitions/Cluster_info"
+              message:
+                type: "string"
+                default: "success"
+
+    delete:
+      tags:
+        - "cluster"
+      description: "delete Cluster"
+      operationId: "deleteCluster"
+      parameters:
+        - name: "delete"
+          in: "body"
+          required: true
+          schema:
+            type: object
+            $ref: "#/definitions/Cluster_delete"
+          description: "delete Cluster"
+      responses:
+        '200':
+          description: OK
+          schema:
+            type: object
+            required:
+              - "code"
+              - "data"
+              - "message"
+            properties:
+              code:
+                type: "integer"
+                format: "int32"
+                default: 200
+              data:
+                type: object
+                $ref: "#/definitions/Cluster_info"
+              message:
+                type: "string"
+                default: "success"
+
+  /connectors/:
+    get:
+      tags:
+        - "connector"
+      operationId: "listConnector"
+      description: "list Connector"
+      responses:
+        '200':
+          description: OK
+          schema:
+            type: object
+            required:
+              - "code"
+              - "data"
+              - "message"
+            properties:
+              code:
+                type: "integer"
+                format: "int32"
+                default: 200
+              data:
+                type: "array"
+                items:
+                  type: object
+                  $ref: "#/definitions/Connector_info"
+              message:
+                type: "string"
+                default: "success"
+
+  /connector/:
+    get:
+      tags:
+        - "connector"
+      description: "get Connector"
+      operationId: "getConnector"
+      parameters:
+        - name: "name"
+          in: "query"
+          type: "string"
+          required: false
+          description: "connector name"
+      responses:
+        '200':
+          description: OK
+          schema:
+            type: object
+            required:
+              - "code"
+              - "data"
+              - "message"
+            properties:
+              code:
+                type: "integer"
+                format: "int32"
+                default: 200
+              data:
+                type: object
+                $ref: "#/definitions/Connector_info"
+              message:
+                type: "string"
+                default: "success"
+
+    post:
+      tags:
+        - "connector"
+      description: "create Connector"
+      operationId: "createConnector"
+      parameters:
+        - name: "connector"
+          in: "body"
+          required: true
+          schema:
+            type: "object"
+            $ref: "#/definitions/Connector_info"
+          description: "Connector info"
+      responses:
+        '200':
+          description: OK
+          schema:
+            type: object
+            required:
+              - "code"
+              - "data"
+              - "message"
+            properties:
+              code:
+                type: "integer"
+                format: "int32"
+                default: 200
+              data:
+                type: object
+                $ref: "#/definitions/Connector_info"
+              message:
+                type: "string"
+                default: "success"
+
+    delete:
+      tags:
+        - "connector"
+      description: "delete Connector"
+      operationId: "deleteConnector"
+      parameters:
+        - name: "name"
+          in: "query"
+          type: "string"
+          required: false
+          description: "connector name"
+      responses:
+        '200':
+          description: OK
+          schema:
+            type: object
+            required:
+              - "code"
+              - "data"
+              - "message"
+            properties:
+              code:
+                type: "integer"
+                format: "int32"
+                default: 200
+              data:
+                type: object
+                $ref: "#/definitions/Connector_info"
+              message:
+                type: "string"
+                default: "success"
+
+  /healthz/:
+    get:
+      tags:
+        - "healthz"
+      description: "healthz"
+      operationId: "healthz"
+      responses:
+        '200':
+          description: OK
+          schema:
+            type: object
+            required:
+              - "code"
+              - "data"
+              - "message"
+            properties:
+              code:
+                type: "integer"
+                format: "int32"
+                default: 200
+              data:
+                type: object
+                $ref: "#/definitions/Health_info"
+              message:
+                type: "string"
+                default: "success"
+
+definitions:
+  APIResponse:
+    type: "object"
+    properties:
+      code:
+        type: "integer"
+        format: "int32"
+      data:
+        type: "object"
+      message:
+        type: "string"
+
+  Health_info:
+    type: "object"
+    description: "operator info"
+    properties:
+      status:
+        type: "string"
+        description: "operator status"
+
+  Cluster_info:
+    type: "object"
+    description: "cluster info"
+    properties:
+      version:
+        type: "string"
+        description: "cluster version"
+      status:
+        type: "string"
+        description: "cluster status"
+
+  Cluster_create:
+    type: "object"
+    description: "cluster create params"
+    properties:
+      version:
+        type: "string"
+        description: "cluster version"
+      controller_replicas:
+        type: "integer"
+        format: "int32"
+        description: "controller replicas"
+      controller_storage_size:
+        type: "string"
+        description: "controller storage size"
+      store_replicas:
+        type: "integer"
+        format: "int32"
+        description: "store replicas"
+      store_storage_size:
+        type: "string"
+        description: "store storage size"
+
+  Cluster_patch:
+    type: object
+    description: "cluster patch params"
+    properties:
+      version:
+        type: "string"
+        description: "cluster version"
+      controller_replicas:
+        type: "integer"
+        format: "int32"
+        description: "controller replicas"
+      store_replicas:
+        type: "integer"
+        format: "int32"
+        description: "store replicas"
+      trigger_replicas:
+        type: "integer"
+        format: "int32"
+        description: "trigger replicas"
+
+  Cluster_delete:
+    type: object
+    description: "cluster create params"
+    properties:
+      force:
+        type: "boolean"
+        default: false
+        description: "true means force delete, default false"
+
+  Connector_info:
+    type: "object"
+    description: "Connector info"
+    properties:
+      name:
+        type: "string"
+        description: "connector name"
+      kind:
+        type: "string"
+        description: "connector kind"
+      type:
+        type: "string"
+        description: "connector type"
+      version:
+        type: "string"
+        description: "connector version"
+      config:
+        type: "string"
+        description: "connector config file"
+      status:
+        type: "string"
+        description: "connector status"
+
+  Controller_info:
+    type: "object"
+    description: "controller info"
+    properties:
+      version:
+        type: "string"
+        description: "controller version"
+      replicas:
+        type: "integer"
+        format: "int32"
+        description: "controller replicas"
+      storage_size:
+        type: "string"
+        description: "controller storage size"
+
+  Store_info:
+    type: "object"
+    description: "store info"
+    properties:
+      version:
+        type: "string"
+        description: "store version"
+      replicas:
+        type: "integer"
+        format: "int32"
+        description: "store replicas"
+      storage_size:
+        type: "string"
+        description: "store storage size"
+
+  Trigger_info:
+    type: "object"
+    description: "trigger info"
+    properties:
+      version:
+        type: "string"
+        description: "trigger version"
+      replicas:
+        type: "integer"
+        format: "int32"
+        description: "trigger replicas"
+
+  Timer_info:
+    type: "object"
+    description: "timer info"
+    properties:
+      version:
+        type: "string"
+        description: "timer version"
+      replicas:
+        type: "integer"
+        format: "int32"
+        description: "timer replicas"
+
+  Gateway_info:
+    type: "object"
+    description: "gateway info"
+    properties:
+      version:
+        type: "string"
+        description: "gateway version"

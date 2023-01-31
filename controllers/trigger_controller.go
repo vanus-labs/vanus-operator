@@ -1,23 +1,23 @@
-/*
-Copyright 2022.
-
-Licensed under the Apache License, Version 2.0 (the "License");
-you may not use this file except in compliance with the License.
-You may obtain a copy of the License at
-
-    http://www.apache.org/licenses/LICENSE-2.0
-
-Unless required by applicable law or agreed to in writing, software
-distributed under the License is distributed on an "AS IS" BASIS,
-WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-See the License for the specific language governing permissions and
-limitations under the License.
-*/
+// Copyright 2022 Linkall Inc.
+//
+// Licensed under the Apache License, Version 2.0 (the "License");
+// you may not use this file except in compliance with the License.
+// You may obtain a copy of the License at
+//
+//     http://www.apache.org/licenses/LICENSE-2.0
+//
+// Unless required by applicable law or agreed to in writing, software
+// distributed under the License is distributed on an "AS IS" BASIS,
+// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+// See the License for the specific language governing permissions and
+// limitations under the License.
 
 package controllers
 
 import (
+	"bytes"
 	"context"
+	"fmt"
 	"time"
 
 	cons "github.com/linkall-labs/vanus-operator/internal/constants"
@@ -83,6 +83,16 @@ func (r *TriggerReconciler) Reconcile(ctx context.Context, req ctrl.Request) (ct
 	err = r.Get(ctx, types.NamespacedName{Name: triggerDeployment.Name, Namespace: triggerDeployment.Namespace}, dep)
 	if err != nil {
 		if errors.IsNotFound(err) {
+			// Create Trigger ConfigMap
+			triggerConfigMap := r.generateConfigMapForTrigger(trigger)
+			logger.Info("Creating a new Trigger ConfigMap.", "ConfigMap.Namespace", triggerConfigMap.Namespace, "ConfigMap.Name", triggerConfigMap.Name)
+			err = r.Create(ctx, triggerConfigMap)
+			if err != nil {
+				logger.Error(err, "Failed to create new Trigger ConfigMap", "ConfigMap.Namespace", triggerConfigMap.Namespace, "ConfigMap.Name", triggerConfigMap.Name)
+				return ctrl.Result{}, err
+			} else {
+				logger.Info("Successfully create Trigger ConfigMap")
+			}
 			logger.Info("Creating a new Trigger Deployment.", "Deployment.Namespace", triggerDeployment.Namespace, "Deployment.Name", triggerDeployment.Name)
 			err = r.Create(ctx, triggerDeployment)
 			if err != nil {
@@ -91,6 +101,7 @@ func (r *TriggerReconciler) Reconcile(ctx context.Context, req ctrl.Request) (ct
 			} else {
 				logger.Info("Successfully create Trigger Deployment")
 			}
+			return ctrl.Result{}, nil
 		} else {
 			logger.Error(err, "Failed to get Trigger Deployment.")
 			return ctrl.Result{RequeueAfter: time.Duration(cons.RequeueIntervalInSecond) * time.Second}, err
@@ -98,6 +109,29 @@ func (r *TriggerReconciler) Reconcile(ctx context.Context, req ctrl.Request) (ct
 	}
 
 	// TODO(jiangkai): Update Trigger Deployment
+	// TODO(jiangkai): Currently, only the updated mirror version is supported
+	if trigger.Spec.Image != dep.Spec.Template.Spec.Containers[0].Image {
+		logger.Info("Updating Trigger Deployment.", "Deployment.Namespace", triggerDeployment.Namespace, "Deployment.Name", triggerDeployment.Name)
+		dep.Spec.Template.Spec.Containers[0].Image = trigger.Spec.Image
+		err = r.Update(ctx, dep)
+		if err != nil {
+			logger.Error(err, "Failed to update Trigger Deployment", "Deployment.Namespace", triggerDeployment.Namespace, "Deployment.Name", triggerDeployment.Name)
+			return ctrl.Result{}, err
+		} else {
+			logger.Info("Successfully update Trigger Deployment")
+		}
+	}
+	if *trigger.Spec.Replicas != *dep.Spec.Replicas {
+		logger.Info("Updating Trigger Deployment.", "Deployment.Namespace", triggerDeployment.Namespace, "Deployment.Name", triggerDeployment.Name)
+		dep.Spec.Replicas = trigger.Spec.Replicas
+		err = r.Update(ctx, dep)
+		if err != nil {
+			logger.Error(err, "Failed to update Trigger Deployment", "Deployment.Namespace", triggerDeployment.Namespace, "Deployment.Name", triggerDeployment.Name)
+			return ctrl.Result{}, err
+		} else {
+			logger.Info("Successfully update Trigger Deployment")
+		}
+	}
 
 	return ctrl.Result{}, nil
 }
@@ -109,6 +143,30 @@ func (r *TriggerReconciler) SetupWithManager(mgr ctrl.Manager) error {
 		Complete(r)
 }
 
+func (r *TriggerReconciler) generateConfigMapForTrigger(trigger *vanusv1alpha1.Trigger) *corev1.ConfigMap {
+	data := make(map[string]string)
+	value := bytes.Buffer{}
+	value.WriteString("port: 2148\n")
+	value.WriteString("ip: ${POD_IP}\n")
+	value.WriteString("controllers:\n")
+	// TODO(jiangkai): The timer needs to know the number of replicas of the controller，current default 3 replicas. Suggestted to use the service domain name for forwarding.
+	for i := int32(0); i < 3; i++ {
+		value.WriteString(fmt.Sprintf("  - vanus-controller-%d.vanus-controller.vanus.svc:2048\n", i))
+	}
+	data["trigger.yaml"] = value.String()
+	triggerConfigMap := &corev1.ConfigMap{
+		ObjectMeta: metav1.ObjectMeta{
+			Namespace:  trigger.Namespace,
+			Name:       "config-trigger",
+			Finalizers: []string{metav1.FinalizerOrphanDependents},
+		},
+		Data: data,
+	}
+
+	controllerutil.SetControllerReference(trigger, triggerConfigMap, r.Scheme)
+	return triggerConfigMap
+}
+
 // returns a Trigger Deployment object
 func (r *TriggerReconciler) getDeploymentForTrigger(trigger *vanusv1alpha1.Trigger) *appsv1.Deployment {
 	labels := labelsForTrigger(trigger.Name)
@@ -117,6 +175,7 @@ func (r *TriggerReconciler) getDeploymentForTrigger(trigger *vanusv1alpha1.Trigg
 		ObjectMeta: metav1.ObjectMeta{
 			Name:      trigger.Name,
 			Namespace: trigger.Namespace,
+			Labels:    labels,
 		},
 		Spec: appsv1.DeploymentSpec{
 			Replicas: trigger.Spec.Replicas,
@@ -131,10 +190,10 @@ func (r *TriggerReconciler) getDeploymentForTrigger(trigger *vanusv1alpha1.Trigg
 				Spec: corev1.PodSpec{
 					ServiceAccountName: cons.ServiceAccountName,
 					Containers: []corev1.Container{{
-						Resources:       trigger.Spec.Resources,
-						Image:           trigger.Spec.Image,
 						Name:            cons.TriggerContainerName,
+						Image:           trigger.Spec.Image,
 						ImagePullPolicy: trigger.Spec.ImagePullPolicy,
+						Resources:       trigger.Spec.Resources,
 						Env:             getEnvForTrigger(trigger),
 						Ports:           getPortsForTrigger(trigger),
 						VolumeMounts:    getVolumeMountsForTrigger(trigger),
@@ -159,7 +218,7 @@ func getEnvForTrigger(trigger *vanusv1alpha1.Trigger) []corev1.EnvVar {
 		ValueFrom: &corev1.EnvVarSource{FieldRef: &corev1.ObjectFieldSelector{FieldPath: "metadata.name"}},
 	}, {
 		Name:  cons.EnvLogLevel,
-		Value: "DEBUG",
+		Value: "INFO",
 	}}
 	return defaultEnvs
 }
@@ -198,5 +257,5 @@ func labelsForTrigger(name string) map[string]string {
 }
 
 func annotationsForTrigger() map[string]string {
-	return map[string]string{"vanus.dev/metrics.port": "2112"}
+	return map[string]string{"vanus.dev/metrics.port": fmt.Sprintf("%d", cons.ControllerPortMetrics)}
 }
