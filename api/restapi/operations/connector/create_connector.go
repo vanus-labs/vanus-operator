@@ -36,7 +36,7 @@ func NewCreateConnector(ctx *middleware.Context, handler CreateConnectorHandler)
 	return &CreateConnector{Context: ctx, Handler: handler}
 }
 
-/* CreateConnector swagger:route POST /connector/ connector createConnector
+/* CreateConnector swagger:route POST /connectors/ connector createConnector
 
 create Connector
 

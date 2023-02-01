@@ -31,7 +31,7 @@ func main() {
 	addr := flag.String("addr", ":8089", "listen address")
 	// namespace := flag.String("namespace", "vanus", "listen on namespace")
 	k8scfg := flag.String("kubeconfig", "", "kubeconfig file path")
-	basepath := flag.String("baseurl", "/api/v1/vanus", "base url prefix")
+	basepath := flag.String("baseurl", "/api/v1", "base url prefix")
 	klog.InitFlags(flag.CommandLine)
 
 	flag.Parse()
