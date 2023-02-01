@@ -11,7 +11,7 @@ produces:
   - application/json
 schemes:
   - http
-basePath: /api/v1/vanus
+basePath: /api/v1
 
 paths:
 
@@ -173,39 +173,6 @@ paths:
                 type: "string"
                 default: "success"
 
-  /connector/:
-    get:
-      tags:
-        - "connector"
-      description: "get Connector"
-      operationId: "getConnector"
-      parameters:
-        - name: "name"
-          in: "query"
-          type: "string"
-          required: false
-          description: "connector name"
-      responses:
-        '200':
-          description: OK
-          schema:
-            type: object
-            required:
-              - "code"
-              - "data"
-              - "message"
-            properties:
-              code:
-                type: "integer"
-                format: "int32"
-                default: 200
-              data:
-                type: object
-                $ref: "#/definitions/Connector_info"
-              message:
-                type: "string"
-                default: "success"
-
     post:
       tags:
         - "connector"
@@ -250,6 +217,39 @@ paths:
           in: "query"
           type: "string"
           required: false
+          description: "connector name"
+      responses:
+        '200':
+          description: OK
+          schema:
+            type: object
+            required:
+              - "code"
+              - "data"
+              - "message"
+            properties:
+              code:
+                type: "integer"
+                format: "int32"
+                default: 200
+              data:
+                type: object
+                $ref: "#/definitions/Connector_info"
+              message:
+                type: "string"
+                default: "success"
+
+  /connector/{name}:
+    get:
+      tags:
+        - "connector"
+      description: "get Connector"
+      operationId: "getConnector"
+      parameters:
+        - name: name
+          in: path
+          type: string
+          required: true
           description: "connector name"
       responses:
         '200':

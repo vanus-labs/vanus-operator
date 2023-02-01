@@ -39,11 +39,11 @@ func (o *DeleteConnectorURL) SetBasePath(bp string) {
 func (o *DeleteConnectorURL) Build() (*url.URL, error) {
 	var _result url.URL
 
-	var _path = "/connector/"
+	var _path = "/connectors/"
 
 	_basePath := o._basePath
 	if _basePath == "" {
-		_basePath = "/api/v1/vanus"
+		_basePath = "/api/v1"
 	}
 	_result.Path = golangswaggerpaths.Join(_basePath, _path)
 

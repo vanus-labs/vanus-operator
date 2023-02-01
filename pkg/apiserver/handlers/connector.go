@@ -124,11 +124,9 @@ func (a *Api) listConnectorHandler(params connector.ListConnectorParams) middlew
 }
 
 func (a *Api) getConnectorHandler(params connector.GetConnectorParams) middleware.Responder {
-	log.Infof("getConnectorHandler, params: %+v\n", params)
-	log.Infof("getConnectorHandler, name: %s\n", *params.Name)
-	c, err := a.getConnector(cons.DefaultNamespace, *params.Name, &metav1.GetOptions{})
+	c, err := a.getConnector(cons.DefaultNamespace, params.Name, &metav1.GetOptions{})
 	if err != nil {
-		log.Error(err, "Failed to get Connector", "Connector.Namespace: ", cons.DefaultNamespace, "Connector.Name: ", *params.Name)
+		log.Error(err, "Failed to get Connector", "Connector.Namespace: ", cons.DefaultNamespace, "Connector.Name: ", params.Name)
 		return utils.Response(0, err)
 	}
 	retcode := int32(400)
@@ -199,7 +197,7 @@ func generateConnector(c *connectorConfig) *vanusv1alpha1.Connector {
 			Name:            c.name,
 			Kind:            c.kind,
 			Config:          c.config,
-			Image:           fmt.Sprintf("public.ecr.aws/vanus/connector/%s:%s", c.ctype, c.version),
+			Image:           fmt.Sprintf("public.ecr.aws/vanus/connector/%s-%s:%s", c.kind, c.ctype, c.version),
 			ImagePullPolicy: corev1.PullIfNotPresent,
 		},
 	}
