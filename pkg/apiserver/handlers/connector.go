@@ -27,7 +27,32 @@ import (
 	"github.com/linkall-labs/vanus-operator/pkg/apiserver/utils"
 	corev1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	"k8s.io/apimachinery/pkg/labels"
 	log "k8s.io/klog/v2"
+	ctrlclient "sigs.k8s.io/controller-runtime/pkg/client"
+)
+
+const (
+	// PodStatusStatusPending captures enum value "Pending"
+	PodStatusStatusPending string = "Pending"
+
+	// PodStatusStatusRunning captures enum value "Running"
+	PodStatusStatusRunning string = "Running"
+
+	// PodStatusStatusSucceeded captures enum value "Succeeded"
+	PodStatusStatusSucceeded string = "Succeeded"
+
+	// PodStatusStatusStarting captures enum value "Starting"
+	PodStatusStatusStarting string = "Starting"
+
+	// PodStatusStatusFailed captures enum value "Failed"
+	PodStatusStatusFailed string = "Failed"
+
+	// PodStatusStatusRemoving captures enum value "Removing"
+	PodStatusStatusRemoving string = "Removing"
+
+	// PodStatusStatusUnknown captures enum value "Unknown"
+	PodStatusStatusUnknown string = "Unknown"
 )
 
 // All registered processing functions should appear under Registxxx in order
@@ -109,11 +134,18 @@ func (a *Api) listConnectorHandler(params connector.ListConnectorParams) middlew
 	msg := "list connector success"
 	data := make([]*models.ConnectorInfo, 0)
 	for _, c := range connectors.Items {
+		status, reason, err := a.getConnectorStatus(c.Name)
+		if err != nil {
+			log.Error(err, "Get Connector status failed", "Connector.Namespace: ", cons.DefaultNamespace, "Connector.Name: ", c.Name)
+			return utils.Response(0, err)
+		}
 		data = append(data, &models.ConnectorInfo{
 			Kind:    c.Spec.Kind,
 			Name:    c.Spec.Name,
-			Version: strings.Split(c.Spec.Image, ":")[1],
-			Status:  "Running",
+			Type:    c.Spec.Type,
+			Version: getConnectorVersion(c.Spec.Image),
+			Status:  status,
+			Reason:  reason,
 		})
 	}
 	return connector.NewListConnectorOK().WithPayload(&connector.ListConnectorOKBody{
@@ -131,13 +163,22 @@ func (a *Api) getConnectorHandler(params connector.GetConnectorParams) middlewar
 	}
 	retcode := int32(400)
 	msg := "get connector success"
+
+	status, reason, err := a.getConnectorStatus(params.Name)
+	if err != nil {
+		log.Error(err, "Get Connector status failed", "Connector.Namespace: ", cons.DefaultNamespace, "Connector.Name: ", params.Name)
+		return utils.Response(0, err)
+	}
+
 	return connector.NewGetConnectorOK().WithPayload(&connector.GetConnectorOKBody{
 		Code: &retcode,
 		Data: &models.ConnectorInfo{
 			Kind:    c.Spec.Kind,
 			Name:    c.Spec.Name,
-			Version: strings.Split(c.Spec.Image, ":")[1],
-			Status:  "Running",
+			Type:    c.Spec.Type,
+			Version: getConnectorVersion(c.Spec.Image),
+			Status:  status,
+			Reason:  reason,
 		},
 		Message: &msg,
 	})
@@ -196,10 +237,70 @@ func generateConnector(c *connectorConfig) *vanusv1alpha1.Connector {
 		Spec: vanusv1alpha1.ConnectorSpec{
 			Name:            c.name,
 			Kind:            c.kind,
+			Type:            c.ctype,
 			Config:          c.config,
 			Image:           fmt.Sprintf("public.ecr.aws/vanus/connector/%s-%s:%s", c.kind, c.ctype, c.version),
 			ImagePullPolicy: corev1.PullIfNotPresent,
 		},
 	}
 	return controller
+}
+
+func getConnectorVersion(s string) string {
+	return strings.Split(s, ":")[1]
+}
+
+func (a *Api) getConnectorStatus(name string) (string, string, error) {
+	pods := &corev1.PodList{}
+	l := make(map[string]string)
+	l["app"] = name
+	opts := &ctrlclient.ListOptions{Namespace: cons.DefaultNamespace, LabelSelector: labels.SelectorFromSet(l)}
+	err := a.ctrl.List(pods, opts)
+	if err != nil {
+		log.Error(err, "Get Connector status failed", "Connector.Namespace: ", cons.DefaultNamespace, "Connector.Name: ", name)
+		return "", "", err
+	}
+	var status, reason string
+	if len(pods.Items) != 0 {
+		status, reason = statusCheck(&pods.Items[0])
+	}
+	return status, reason, nil
+}
+
+func statusCheck(a *corev1.Pod) (string, string) {
+	if a == nil {
+		return PodStatusStatusUnknown, ""
+	}
+	if a.DeletionTimestamp != nil {
+		return PodStatusStatusRemoving, ""
+	}
+	// Status: Pending/Succeeded/Failed/Unknown
+	if a.Status.Phase != corev1.PodRunning {
+		return string(a.Status.Phase), a.Status.Reason
+	}
+	// handle running
+	var (
+		containers = a.Status.ContainerStatuses
+		rnum       int
+	)
+
+	for _, v := range containers {
+		if v.Ready {
+			rnum++
+			continue
+		}
+		if v.State.Terminated != nil {
+			if v.State.Terminated.ExitCode != 0 {
+				return PodStatusStatusFailed, v.State.Terminated.Reason
+			}
+			if v.State.Waiting != nil {
+				return PodStatusStatusStarting, v.State.Waiting.Reason
+			}
+		}
+	}
+	if rnum == len(containers) {
+		return PodStatusStatusRunning, ""
+	} else {
+		return PodStatusStatusStarting, ""
+	}
 }

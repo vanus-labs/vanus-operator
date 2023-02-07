@@ -30,9 +30,11 @@ type ConnectorSpec struct {
 	// Important: Run "make" to regenerate code after modifying this file
 
 	// Kind is the kind of connector, support source/sink.
-	Kind string `json:"type,omitempty"`
+	Kind string `json:"kind,omitempty"`
 	// Name is the name of connector.
 	Name string `json:"name,omitempty"`
+	// Type is the type of connector.
+	Type string `json:"type,omitempty"`
 	// Config is the file of config.
 	Config string `json:"config,omitempty"`
 	// Image is the name of the controller docker image to use for the Pods.

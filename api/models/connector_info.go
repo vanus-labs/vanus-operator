@@ -26,6 +26,9 @@ type ConnectorInfo struct {
 	// connector name
 	Name string `json:"name,omitempty"`
 
+	// connector status reason
+	Reason string `json:"reason,omitempty"`
+
 	// connector status
 	Status string `json:"status,omitempty"`
 

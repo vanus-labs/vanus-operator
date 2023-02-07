@@ -403,6 +403,9 @@ definitions:
       status:
         type: "string"
         description: "connector status"
+      reason:
+        type: "string"
+        description: "connector status reason"
 
   Controller_info:
     type: "object"
