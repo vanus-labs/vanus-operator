@@ -46,11 +46,14 @@ spec:
               imagePullPolicy:
                 description: ImagePullPolicy defines how the image is pulled
                 type: string
+              kind:
+                description: Kind is the kind of connector, support source/sink.
+                type: string
               name:
                 description: Name is the name of connector.
                 type: string
               type:
-                description: Type is the type of connector, support source/sink.
+                description: Type is the type of connector.
                 type: string
             type: object
           status:

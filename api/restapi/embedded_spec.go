@@ -537,6 +537,10 @@ func init() {
           "description": "connector name",
           "type": "string"
         },
+        "reason": {
+          "description": "connector status reason",
+          "type": "string"
+        },
         "status": {
           "description": "connector status",
           "type": "string"
@@ -1159,6 +1163,10 @@ func init() {
         },
         "name": {
           "description": "connector name",
+          "type": "string"
+        },
+        "reason": {
+          "description": "connector status reason",
           "type": "string"
         },
         "status": {
