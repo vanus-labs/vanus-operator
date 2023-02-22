@@ -257,6 +257,50 @@ func init() {
             }
           }
         }
+      },
+      "delete": {
+        "description": "delete Connector",
+        "tags": [
+          "connector"
+        ],
+        "operationId": "deleteConnector",
+        "parameters": [
+          {
+            "type": "string",
+            "description": "connector name",
+            "name": "name",
+            "in": "path",
+            "required": true
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "schema": {
+              "type": "object",
+              "required": [
+                "code",
+                "data",
+                "message"
+              ],
+              "properties": {
+                "code": {
+                  "type": "integer",
+                  "format": "int32",
+                  "default": 200
+                },
+                "data": {
+                  "type": "object",
+                  "$ref": "#/definitions/Connector_info"
+                },
+                "message": {
+                  "type": "string",
+                  "default": "success"
+                }
+              }
+            }
+          }
+        }
       }
     },
     "/connectors/": {
@@ -314,49 +358,6 @@ func init() {
               "type": "object",
               "$ref": "#/definitions/Connector_info"
             }
-          }
-        ],
-        "responses": {
-          "200": {
-            "description": "OK",
-            "schema": {
-              "type": "object",
-              "required": [
-                "code",
-                "data",
-                "message"
-              ],
-              "properties": {
-                "code": {
-                  "type": "integer",
-                  "format": "int32",
-                  "default": 200
-                },
-                "data": {
-                  "type": "object",
-                  "$ref": "#/definitions/Connector_info"
-                },
-                "message": {
-                  "type": "string",
-                  "default": "success"
-                }
-              }
-            }
-          }
-        }
-      },
-      "delete": {
-        "description": "delete Connector",
-        "tags": [
-          "connector"
-        ],
-        "operationId": "deleteConnector",
-        "parameters": [
-          {
-            "type": "string",
-            "description": "connector name",
-            "name": "name",
-            "in": "query"
           }
         ],
         "responses": {
@@ -885,6 +886,50 @@ func init() {
             }
           }
         }
+      },
+      "delete": {
+        "description": "delete Connector",
+        "tags": [
+          "connector"
+        ],
+        "operationId": "deleteConnector",
+        "parameters": [
+          {
+            "type": "string",
+            "description": "connector name",
+            "name": "name",
+            "in": "path",
+            "required": true
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "schema": {
+              "type": "object",
+              "required": [
+                "code",
+                "data",
+                "message"
+              ],
+              "properties": {
+                "code": {
+                  "type": "integer",
+                  "format": "int32",
+                  "default": 200
+                },
+                "data": {
+                  "type": "object",
+                  "$ref": "#/definitions/Connector_info"
+                },
+                "message": {
+                  "type": "string",
+                  "default": "success"
+                }
+              }
+            }
+          }
+        }
       }
     },
     "/connectors/": {
@@ -942,49 +987,6 @@ func init() {
               "type": "object",
               "$ref": "#/definitions/Connector_info"
             }
-          }
-        ],
-        "responses": {
-          "200": {
-            "description": "OK",
-            "schema": {
-              "type": "object",
-              "required": [
-                "code",
-                "data",
-                "message"
-              ],
-              "properties": {
-                "code": {
-                  "type": "integer",
-                  "format": "int32",
-                  "default": 200
-                },
-                "data": {
-                  "type": "object",
-                  "$ref": "#/definitions/Connector_info"
-                },
-                "message": {
-                  "type": "string",
-                  "default": "success"
-                }
-              }
-            }
-          }
-        }
-      },
-      "delete": {
-        "description": "delete Connector",
-        "tags": [
-          "connector"
-        ],
-        "operationId": "deleteConnector",
-        "parameters": [
-          {
-            "type": "string",
-            "description": "connector name",
-            "name": "name",
-            "in": "query"
           }
         ],
         "responses": {
