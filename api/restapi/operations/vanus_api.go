@@ -335,7 +335,7 @@ func (o *VanusAPI) initHandlerCache() {
 	if o.handlers["DELETE"] == nil {
 		o.handlers["DELETE"] = make(map[string]http.Handler)
 	}
-	o.handlers["DELETE"]["/connectors"] = connector.NewDeleteConnector(o.context, o.ConnectorDeleteConnectorHandler)
+	o.handlers["DELETE"]["/connector/{name}"] = connector.NewDeleteConnector(o.context, o.ConnectorDeleteConnectorHandler)
 	if o.handlers["GET"] == nil {
 		o.handlers["GET"] = make(map[string]http.Handler)
 	}

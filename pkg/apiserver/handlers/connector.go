@@ -106,7 +106,7 @@ func (a *Api) createConnectorHandler(params connector.CreateConnectorParams) mid
 
 func (a *Api) deleteConnectorHandler(params connector.DeleteConnectorParams) middleware.Responder {
 	// Check if the connector already exists
-	exist, err := a.checkConnectorExist(*params.Name)
+	exist, err := a.checkConnectorExist(params.Name)
 	if err != nil {
 		log.Errorf("check connector exist failed, err: %s\n", err.Error())
 		return utils.Response(0, err)
@@ -116,7 +116,7 @@ func (a *Api) deleteConnectorHandler(params connector.DeleteConnectorParams) mid
 		return connector.NewDeleteConnectorOK().WithPayload(nil)
 	}
 
-	err = a.deleteConnector(cons.DefaultNamespace, *params.Name)
+	err = a.deleteConnector(cons.DefaultNamespace, params.Name)
 	if err != nil {
 		log.Errorf("delete connector failed, err: %s\n", err.Error())
 	}

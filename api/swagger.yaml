@@ -207,16 +207,17 @@ paths:
                 type: "string"
                 default: "success"
 
-    delete:
+  /connector/{name}:
+    get:
       tags:
         - "connector"
-      description: "delete Connector"
-      operationId: "deleteConnector"
+      description: "get Connector"
+      operationId: "getConnector"
       parameters:
-        - name: "name"
-          in: "query"
-          type: "string"
-          required: false
+        - name: name
+          in: path
+          type: string
+          required: true
           description: "connector name"
       responses:
         '200':
@@ -239,12 +240,11 @@ paths:
                 type: "string"
                 default: "success"
 
-  /connector/{name}:
-    get:
+    delete:
       tags:
         - "connector"
-      description: "get Connector"
-      operationId: "getConnector"
+      description: "delete Connector"
+      operationId: "deleteConnector"
       parameters:
         - name: name
           in: path
