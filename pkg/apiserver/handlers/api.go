@@ -1,4 +1,4 @@
-// Copyright 2022 Linkall Inc.
+// Copyright 2023 Linkall Inc.
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -19,9 +19,9 @@ import (
 	"fmt"
 	"path/filepath"
 
-	"github.com/linkall-labs/vanus-operator/api/restapi"
-	"github.com/linkall-labs/vanus-operator/api/restapi/operations"
-	"github.com/linkall-labs/vanus-operator/pkg/apiserver/controller"
+	"github.com/vanus-labs/vanus-operator/api/restapi"
+	"github.com/vanus-labs/vanus-operator/api/restapi/operations"
+	"github.com/vanus-labs/vanus-operator/pkg/apiserver/controller"
 
 	"github.com/go-kit/kit/log"
 	"github.com/go-openapi/loads"

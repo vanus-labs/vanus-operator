@@ -10,10 +10,10 @@ import (
 	"github.com/go-openapi/runtime"
 	"github.com/go-openapi/runtime/middleware"
 
-	"github.com/linkall-labs/vanus-operator/api/restapi/operations"
-	"github.com/linkall-labs/vanus-operator/api/restapi/operations/cluster"
-	"github.com/linkall-labs/vanus-operator/api/restapi/operations/connector"
-	"github.com/linkall-labs/vanus-operator/api/restapi/operations/healthz"
+	"github.com/vanus-labs/vanus-operator/api/restapi/operations"
+	"github.com/vanus-labs/vanus-operator/api/restapi/operations/cluster"
+	"github.com/vanus-labs/vanus-operator/api/restapi/operations/connector"
+	"github.com/vanus-labs/vanus-operator/api/restapi/operations/healthz"
 )
 
 //go:generate swagger generate server --target ../../api --name Vanus --spec ../swagger.yaml --principal interface{} --exclude-main

@@ -1,4 +1,4 @@
-// Copyright 2022 Linkall Inc.
+// Copyright 2023 Linkall Inc.
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -29,7 +29,7 @@ import (
 	logf "sigs.k8s.io/controller-runtime/pkg/log"
 	"sigs.k8s.io/controller-runtime/pkg/log/zap"
 
-	vanusv1alpha1 "github.com/linkall-labs/vanus-operator/api/v1alpha1"
+	vanusv1alpha1 "github.com/vanus-labs/vanus-operator/api/v1alpha1"
 	//+kubebuilder:scaffold:imports
 )
 

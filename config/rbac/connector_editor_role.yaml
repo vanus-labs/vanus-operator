@@ -5,7 +5,7 @@ metadata:
   name: connector-editor-role
 rules:
 - apiGroups:
-  - vanus.linkall.com
+  - vanus.vanus.ai
   resources:
   - connectors
   verbs:
@@ -17,7 +17,7 @@ rules:
   - update
   - watch
 - apiGroups:
-  - vanus.linkall.com
+  - vanus.vanus.ai
   resources:
   - connectors/status
   verbs:

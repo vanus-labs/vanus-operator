@@ -1,4 +1,4 @@
-// Copyright 2022 Linkall Inc.
+// Copyright 2023 Linkall Inc.
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -16,8 +16,8 @@ package handlers
 
 import (
 	"github.com/go-openapi/runtime/middleware"
-	"github.com/linkall-labs/vanus-operator/api/models"
-	"github.com/linkall-labs/vanus-operator/api/restapi/operations/healthz"
+	"github.com/vanus-labs/vanus-operator/api/models"
+	"github.com/vanus-labs/vanus-operator/api/restapi/operations/healthz"
 )
 
 func RegistHealthzHandler(a *Api) {

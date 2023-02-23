@@ -15,7 +15,7 @@ import (
 	"github.com/go-openapi/swag"
 	"github.com/go-openapi/validate"
 
-	"github.com/linkall-labs/vanus-operator/api/models"
+	"github.com/vanus-labs/vanus-operator/api/models"
 )
 
 // DeleteClusterHandlerFunc turns a function with the right signature into a delete cluster handler
@@ -36,10 +36,10 @@ func NewDeleteCluster(ctx *middleware.Context, handler DeleteClusterHandler) *De
 	return &DeleteCluster{Context: ctx, Handler: handler}
 }
 
-/* DeleteCluster swagger:route DELETE /cluster/ cluster deleteCluster
+/*
+	DeleteCluster swagger:route DELETE /cluster/ cluster deleteCluster
 
 delete Cluster
-
 */
 type DeleteCluster struct {
 	Context *middleware.Context

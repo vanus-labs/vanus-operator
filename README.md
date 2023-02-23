@@ -1,5 +1,5 @@
 # Vanus Operator
-[![License](https://img.shields.io/badge/License-Apache_2.0-green.svg)](https://github.com/linkall-labs/vanus/blob/main/LICENSE)
+[![License](https://img.shields.io/badge/License-Apache_2.0-green.svg)](https://github.com/vanus-labs/vanus/blob/main/LICENSE)
 [![Language](https://img.shields.io/badge/Language-Go-blue.svg)](https://golang.org/)
 
 ## Table of Contents
@@ -26,7 +26,7 @@ It is built using the [Operator SDK](https://github.com/operator-framework/opera
 
 1. Clone the project on your Kubernetes cluster master node:
 ```
-$ git clone https://github.com/linkall-labs/vanus-operator.git
+$ git clone https://github.com/vanus-labs/vanus-operator.git
 $ cd vanus-operator
 ```
 
@@ -227,7 +227,7 @@ spec:
   type: NodePort
 
 ---
-apiVersion: vanus.linkall.com/v1alpha1
+apiVersion: vanus.vanus.ai/v1alpha1
 kind: Controller
 metadata:
   name: vanus-controller
@@ -250,7 +250,7 @@ spec:
           storage: 1Gi
 
 ---
-apiVersion: vanus.linkall.com/v1alpha1
+apiVersion: vanus.vanus.ai/v1alpha1
 kind: Store
 metadata:
   name: vanus-store
@@ -273,7 +273,7 @@ spec:
           storage: 1Gi
 
 ---
-apiVersion: vanus.linkall.com/v1alpha1
+apiVersion: vanus.vanus.ai/v1alpha1
 kind: Trigger
 metadata:
   name: vanus-trigger
@@ -285,7 +285,7 @@ spec:
   imagePullPolicy: IfNotPresent
 
 ---
-apiVersion: vanus.linkall.com/v1alpha1
+apiVersion: vanus.vanus.ai/v1alpha1
 kind: Timer
 metadata:
   name: vanus-timer
@@ -297,7 +297,7 @@ spec:
   imagePullPolicy: IfNotPresent
 
 ---
-apiVersion: vanus.linkall.com/v1alpha1
+apiVersion: vanus.vanus.ai/v1alpha1
 kind: Gateway
 metadata:
   name: vanus-gateway
@@ -325,11 +325,11 @@ configmap/config-store created
 configmap/config-timer created
 configmap/config-trigger created
 service/vanus-gateway created
-controller.vanus.linkall.com/vanus-controller created
-gateway.vanus.linkall.com/vanus-gateway created
-store.vanus.linkall.com/vanus-store created
-timer.vanus.linkall.com/vanus-timer created
-trigger.vanus.linkall.com/vanus-trigger created
+controller.vanus.vanus.ai/vanus-controller created
+gateway.vanus.vanus.ai/vanus-gateway created
+store.vanus.vanus.ai/vanus-store created
+timer.vanus.vanus.ai/vanus-timer created
+trigger.vanus.vanus.ai/vanus-trigger created
 ```
 
 **NOTE:** Default creation is under the `default` namespace. You can also specify the namespace for creation by the `VANUS_NAMESPACE` parameter, use command like:
@@ -437,11 +437,11 @@ configmap "config-store" deleted
 configmap "config-timer" deleted
 configmap "config-trigger" deleted
 service "vanus-gateway" deleted
-controller.vanus.linkall.com "vanus-controller" deleted
-gateway.vanus.linkall.com "vanus-gateway" deleted
-store.vanus.linkall.com "vanus-store" deleted
-timer.vanus.linkall.com "vanus-timer" deleted
-trigger.vanus.linkall.com "vanus-trigger" deleted
+controller.vanus.vanus.ai "vanus-controller" deleted
+gateway.vanus.vanus.ai "vanus-gateway" deleted
+store.vanus.vanus.ai "vanus-store" deleted
+timer.vanus.vanus.ai "vanus-timer" deleted
+trigger.vanus.vanus.ai "vanus-trigger" deleted
 ```
 
 **NOTE:** You can also specify the namespace for deletion by the `VANUS_NAMESPACE` parameter, use command like:
@@ -454,11 +454,11 @@ $ make VANUS_NAMESPACE=vanus uncluster
 
 ```sh
 make undeploy
-customresourcedefinition.apiextensions.k8s.io "controllers.vanus.linkall.com" deleted
-customresourcedefinition.apiextensions.k8s.io "gateways.vanus.linkall.com" deleted
-customresourcedefinition.apiextensions.k8s.io "stores.vanus.linkall.com" deleted
-customresourcedefinition.apiextensions.k8s.io "timers.vanus.linkall.com" deleted
-customresourcedefinition.apiextensions.k8s.io "triggers.vanus.linkall.com" deleted
+customresourcedefinition.apiextensions.k8s.io "controllers.vanus.vanus.ai" deleted
+customresourcedefinition.apiextensions.k8s.io "gateways.vanus.vanus.ai" deleted
+customresourcedefinition.apiextensions.k8s.io "stores.vanus.vanus.ai" deleted
+customresourcedefinition.apiextensions.k8s.io "timers.vanus.vanus.ai" deleted
+customresourcedefinition.apiextensions.k8s.io "triggers.vanus.vanus.ai" deleted
 serviceaccount "vanus-operator" deleted
 clusterrole.rbac.authorization.k8s.io "vanus-operator" deleted
 clusterrolebinding.rbac.authorization.k8s.io "vanus-operator" deleted
@@ -482,7 +482,7 @@ which provides a reconcile function responsible for synchronizing resources unti
 
 ## License
 
-Copyright 2022 Linkall Inc.
+Copyright 2023 Linkall Inc.
 
 Licensed under the Apache License, Version 2.0 (the "License");
 you may not use this file except in compliance with the License.

@@ -33,7 +33,7 @@ spec:
       containers:
       - name: manager
         # Replace this with the built image name
-        image: vanus-operator:v1
+        image: public.ecr.aws/vanus/operator:latest
         command:
         - /operator/manager
         args:

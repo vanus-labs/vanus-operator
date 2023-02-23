@@ -1,20 +1,20 @@
-# permissions for end users to view triggers.
+# permissions for end users to view vanus.
 apiVersion: rbac.authorization.k8s.io/v1
 kind: ClusterRole
 metadata:
-  name: trigger-viewer-role
+  name: vanus-viewer-role
 rules:
 - apiGroups:
-  - vanus.linkall.com
+  - vanus.vanus.ai
   resources:
-  - triggers
+  - vanus
   verbs:
   - get
   - list
   - watch
 - apiGroups:
-  - vanus.linkall.com
+  - vanus.vanus.ai
   resources:
-  - triggers/status
+  - vanus/status
   verbs:
   - get

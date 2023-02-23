@@ -97,9 +97,9 @@ rules:
   - update
   - watch
 - apiGroups:
-  - vanus.linkall.com
+  - vanus.vanus.ai
   resources:
-  - controllers
+  - vanus
   verbs:
   - create
   - delete
@@ -109,31 +109,31 @@ rules:
   - update
   - watch
 - apiGroups:
-  - vanus.linkall.com
+  - vanus.vanus.ai
   resources:
-  - controllers/finalizers
+  - vanus/finalizers
   verbs:
   - update
 - apiGroups:
-  - vanus.linkall.com
+  - vanus.vanus.ai
   resources:
-  - controllers/spec
-  verbs:
-  - get
-  - patch
-  - update
-- apiGroups:
-  - vanus.linkall.com
-  resources:
-  - controllers/status
+  - vanus/spec
   verbs:
   - get
   - patch
   - update
 - apiGroups:
-  - vanus.linkall.com
+  - vanus.vanus.ai
   resources:
-  - stores
+  - vanus/status
+  verbs:
+  - get
+  - patch
+  - update
+- apiGroups:
+  - vanus.vanus.ai
+  resources:
+  - connectors
   verbs:
   - create
   - delete
@@ -143,125 +143,23 @@ rules:
   - update
   - watch
 - apiGroups:
-  - vanus.linkall.com
+  - vanus.vanus.ai
   resources:
-  - stores/finalizers
+  - connectors/finalizers
   verbs:
   - update
 - apiGroups:
-  - vanus.linkall.com
+  - vanus.vanus.ai
   resources:
-  - stores/spec
-  verbs:
-  - get
-  - patch
-  - update
-- apiGroups:
-  - vanus.linkall.com
-  resources:
-  - stores/status
+  - connectors/spec
   verbs:
   - get
   - patch
   - update
 - apiGroups:
-  - vanus.linkall.com
+  - vanus.vanus.ai
   resources:
-  - triggers
-  verbs:
-  - create
-  - delete
-  - get
-  - list
-  - patch
-  - update
-  - watch
-- apiGroups:
-  - vanus.linkall.com
-  resources:
-  - triggers/finalizers
-  verbs:
-  - update
-- apiGroups:
-  - vanus.linkall.com
-  resources:
-  - triggers/spec
-  verbs:
-  - get
-  - patch
-  - update
-- apiGroups:
-  - vanus.linkall.com
-  resources:
-  - triggers/status
-  verbs:
-  - get
-  - patch
-  - update
-- apiGroups:
-  - vanus.linkall.com
-  resources:
-  - timers
-  verbs:
-  - create
-  - delete
-  - get
-  - list
-  - patch
-  - update
-  - watch
-- apiGroups:
-  - vanus.linkall.com
-  resources:
-  - timers/finalizers
-  verbs:
-  - update
-- apiGroups:
-  - vanus.linkall.com
-  resources:
-  - timers/spec
-  verbs:
-  - get
-  - patch
-  - update
-- apiGroups:
-  - vanus.linkall.com
-  resources:
-  - timers/status
-  verbs:
-  - get
-  - patch
-  - update
-- apiGroups:
-  - vanus.linkall.com
-  resources:
-  - gateways
-  verbs:
-  - create
-  - delete
-  - get
-  - list
-  - patch
-  - update
-  - watch
-- apiGroups:
-  - vanus.linkall.com
-  resources:
-  - gateways/finalizers
-  verbs:
-  - update
-- apiGroups:
-  - vanus.linkall.com
-  resources:
-  - gateways/spec
-  verbs:
-  - get
-  - patch
-  - update
-- apiGroups:
-  - vanus.linkall.com
-  resources:
-  - gateways/status
+  - connectors/status
   verbs:
   - get
   - patch

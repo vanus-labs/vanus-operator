@@ -1,4 +1,4 @@
-// Copyright 2022 Linkall Inc.
+// Copyright 2023 Linkall Inc.
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -20,11 +20,11 @@ import (
 	"strings"
 
 	"github.com/go-openapi/runtime/middleware"
-	"github.com/linkall-labs/vanus-operator/api/models"
-	"github.com/linkall-labs/vanus-operator/api/restapi/operations/connector"
-	vanusv1alpha1 "github.com/linkall-labs/vanus-operator/api/v1alpha1"
-	cons "github.com/linkall-labs/vanus-operator/internal/constants"
-	"github.com/linkall-labs/vanus-operator/pkg/apiserver/utils"
+	"github.com/vanus-labs/vanus-operator/api/models"
+	"github.com/vanus-labs/vanus-operator/api/restapi/operations/connector"
+	vanusv1alpha1 "github.com/vanus-labs/vanus-operator/api/v1alpha1"
+	cons "github.com/vanus-labs/vanus-operator/internal/constants"
+	"github.com/vanus-labs/vanus-operator/pkg/apiserver/utils"
 	corev1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/labels"

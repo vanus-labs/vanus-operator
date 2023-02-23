@@ -15,7 +15,7 @@ import (
 	"github.com/go-openapi/swag"
 	"github.com/go-openapi/validate"
 
-	"github.com/linkall-labs/vanus-operator/api/models"
+	"github.com/vanus-labs/vanus-operator/api/models"
 )
 
 // PatchClusterHandlerFunc turns a function with the right signature into a patch cluster handler
@@ -36,10 +36,10 @@ func NewPatchCluster(ctx *middleware.Context, handler PatchClusterHandler) *Patc
 	return &PatchCluster{Context: ctx, Handler: handler}
 }
 
-/* PatchCluster swagger:route PATCH /cluster/ cluster patchCluster
+/*
+	PatchCluster swagger:route PATCH /cluster/ cluster patchCluster
 
 patch Cluster
-
 */
 type PatchCluster struct {
 	Context *middleware.Context

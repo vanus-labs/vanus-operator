@@ -1,4 +1,4 @@
-# Copyright 2022 Linkall Inc.
+# Copyright 2023 Linkall Inc.
 swagger: "2.0"
 consumes:
   - application/json
@@ -340,16 +340,35 @@ definitions:
       controller_replicas:
         type: "integer"
         format: "int32"
+        default: 3
         description: "controller replicas"
-      controller_storage_size:
-        type: "string"
-        description: "controller storage size"
       store_replicas:
         type: "integer"
         format: "int32"
+        default: 3
         description: "store replicas"
+      trigger_replicas:
+        type: "integer"
+        format: "int32"
+        default: 1
+        description: "trigger replicas"
+      timer_replicas:
+        type: "integer"
+        format: "int32"
+        default: 2
+        description: "timer replicas"
+      gateway_replicas:
+        type: "integer"
+        format: "int32"
+        default: 1
+        description: "gateway replicas"
+      metadata_storage_size:
+        type: "string"
+        default: "10Gi"
+        description: "metadata storage size"
       store_storage_size:
         type: "string"
+        default: "10Gi"
         description: "store storage size"
 
   Cluster_patch:
@@ -371,6 +390,14 @@ definitions:
         type: "integer"
         format: "int32"
         description: "trigger replicas"
+      timer_replicas:
+        type: "integer"
+        format: "int32"
+        description: "timer replicas"
+      gateway_replicas:
+        type: "integer"
+        format: "int32"
+        description: "gateway replicas"
 
   Cluster_delete:
     type: object
@@ -406,65 +433,3 @@ definitions:
       reason:
         type: "string"
         description: "connector status reason"
-
-  Controller_info:
-    type: "object"
-    description: "controller info"
-    properties:
-      version:
-        type: "string"
-        description: "controller version"
-      replicas:
-        type: "integer"
-        format: "int32"
-        description: "controller replicas"
-      storage_size:
-        type: "string"
-        description: "controller storage size"
-
-  Store_info:
-    type: "object"
-    description: "store info"
-    properties:
-      version:
-        type: "string"
-        description: "store version"
-      replicas:
-        type: "integer"
-        format: "int32"
-        description: "store replicas"
-      storage_size:
-        type: "string"
-        description: "store storage size"
-
-  Trigger_info:
-    type: "object"
-    description: "trigger info"
-    properties:
-      version:
-        type: "string"
-        description: "trigger version"
-      replicas:
-        type: "integer"
-        format: "int32"
-        description: "trigger replicas"
-
-  Timer_info:
-    type: "object"
-    description: "timer info"
-    properties:
-      version:
-        type: "string"
-        description: "timer version"
-      replicas:
-        type: "integer"
-        format: "int32"
-        description: "timer replicas"
-
-  Gateway_info:
-    type: "object"
-    description: "gateway info"
-    properties:
-      version:
-        type: "string"
-        description: "gateway version"

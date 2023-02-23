@@ -5,9 +5,9 @@ metadata:
   annotations:
     controller-gen.kubebuilder.io/version: v0.9.2
   creationTimestamp: null
-  name: connectors.vanus.linkall.com
+  name: connectors.vanus.vanus.ai
 spec:
-  group: vanus.linkall.com
+  group: vanus.vanus.ai
   names:
     kind: Connector
     listKind: ConnectorList

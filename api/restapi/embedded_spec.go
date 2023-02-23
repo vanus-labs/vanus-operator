@@ -451,20 +451,42 @@ func init() {
         "controller_replicas": {
           "description": "controller replicas",
           "type": "integer",
-          "format": "int32"
+          "format": "int32",
+          "default": 3
         },
-        "controller_storage_size": {
-          "description": "controller storage size",
-          "type": "string"
+        "gateway_replicas": {
+          "description": "gateway replicas",
+          "type": "integer",
+          "format": "int32",
+          "default": 1
+        },
+        "metadata_storage_size": {
+          "description": "metadata storage size",
+          "type": "string",
+          "default": "10Gi"
         },
         "store_replicas": {
           "description": "store replicas",
           "type": "integer",
-          "format": "int32"
+          "format": "int32",
+          "default": 3
         },
         "store_storage_size": {
           "description": "store storage size",
-          "type": "string"
+          "type": "string",
+          "default": "10Gi"
+        },
+        "timer_replicas": {
+          "description": "timer replicas",
+          "type": "integer",
+          "format": "int32",
+          "default": 2
+        },
+        "trigger_replicas": {
+          "description": "trigger replicas",
+          "type": "integer",
+          "format": "int32",
+          "default": 1
         },
         "version": {
           "description": "cluster version",
@@ -506,8 +528,18 @@ func init() {
           "type": "integer",
           "format": "int32"
         },
+        "gateway_replicas": {
+          "description": "gateway replicas",
+          "type": "integer",
+          "format": "int32"
+        },
         "store_replicas": {
           "description": "store replicas",
+          "type": "integer",
+          "format": "int32"
+        },
+        "timer_replicas": {
+          "description": "timer replicas",
           "type": "integer",
           "format": "int32"
         },
@@ -556,90 +588,12 @@ func init() {
         }
       }
     },
-    "Controller_info": {
-      "description": "controller info",
-      "type": "object",
-      "properties": {
-        "replicas": {
-          "description": "controller replicas",
-          "type": "integer",
-          "format": "int32"
-        },
-        "storage_size": {
-          "description": "controller storage size",
-          "type": "string"
-        },
-        "version": {
-          "description": "controller version",
-          "type": "string"
-        }
-      }
-    },
-    "Gateway_info": {
-      "description": "gateway info",
-      "type": "object",
-      "properties": {
-        "version": {
-          "description": "gateway version",
-          "type": "string"
-        }
-      }
-    },
     "Health_info": {
       "description": "operator info",
       "type": "object",
       "properties": {
         "status": {
           "description": "operator status",
-          "type": "string"
-        }
-      }
-    },
-    "Store_info": {
-      "description": "store info",
-      "type": "object",
-      "properties": {
-        "replicas": {
-          "description": "store replicas",
-          "type": "integer",
-          "format": "int32"
-        },
-        "storage_size": {
-          "description": "store storage size",
-          "type": "string"
-        },
-        "version": {
-          "description": "store version",
-          "type": "string"
-        }
-      }
-    },
-    "Timer_info": {
-      "description": "timer info",
-      "type": "object",
-      "properties": {
-        "replicas": {
-          "description": "timer replicas",
-          "type": "integer",
-          "format": "int32"
-        },
-        "version": {
-          "description": "timer version",
-          "type": "string"
-        }
-      }
-    },
-    "Trigger_info": {
-      "description": "trigger info",
-      "type": "object",
-      "properties": {
-        "replicas": {
-          "description": "trigger replicas",
-          "type": "integer",
-          "format": "int32"
-        },
-        "version": {
-          "description": "trigger version",
           "type": "string"
         }
       }
@@ -1080,20 +1034,42 @@ func init() {
         "controller_replicas": {
           "description": "controller replicas",
           "type": "integer",
-          "format": "int32"
+          "format": "int32",
+          "default": 3
         },
-        "controller_storage_size": {
-          "description": "controller storage size",
-          "type": "string"
+        "gateway_replicas": {
+          "description": "gateway replicas",
+          "type": "integer",
+          "format": "int32",
+          "default": 1
+        },
+        "metadata_storage_size": {
+          "description": "metadata storage size",
+          "type": "string",
+          "default": "10Gi"
         },
         "store_replicas": {
           "description": "store replicas",
           "type": "integer",
-          "format": "int32"
+          "format": "int32",
+          "default": 3
         },
         "store_storage_size": {
           "description": "store storage size",
-          "type": "string"
+          "type": "string",
+          "default": "10Gi"
+        },
+        "timer_replicas": {
+          "description": "timer replicas",
+          "type": "integer",
+          "format": "int32",
+          "default": 2
+        },
+        "trigger_replicas": {
+          "description": "trigger replicas",
+          "type": "integer",
+          "format": "int32",
+          "default": 1
         },
         "version": {
           "description": "cluster version",
@@ -1135,8 +1111,18 @@ func init() {
           "type": "integer",
           "format": "int32"
         },
+        "gateway_replicas": {
+          "description": "gateway replicas",
+          "type": "integer",
+          "format": "int32"
+        },
         "store_replicas": {
           "description": "store replicas",
+          "type": "integer",
+          "format": "int32"
+        },
+        "timer_replicas": {
+          "description": "timer replicas",
           "type": "integer",
           "format": "int32"
         },
@@ -1185,90 +1171,12 @@ func init() {
         }
       }
     },
-    "Controller_info": {
-      "description": "controller info",
-      "type": "object",
-      "properties": {
-        "replicas": {
-          "description": "controller replicas",
-          "type": "integer",
-          "format": "int32"
-        },
-        "storage_size": {
-          "description": "controller storage size",
-          "type": "string"
-        },
-        "version": {
-          "description": "controller version",
-          "type": "string"
-        }
-      }
-    },
-    "Gateway_info": {
-      "description": "gateway info",
-      "type": "object",
-      "properties": {
-        "version": {
-          "description": "gateway version",
-          "type": "string"
-        }
-      }
-    },
     "Health_info": {
       "description": "operator info",
       "type": "object",
       "properties": {
         "status": {
           "description": "operator status",
-          "type": "string"
-        }
-      }
-    },
-    "Store_info": {
-      "description": "store info",
-      "type": "object",
-      "properties": {
-        "replicas": {
-          "description": "store replicas",
-          "type": "integer",
-          "format": "int32"
-        },
-        "storage_size": {
-          "description": "store storage size",
-          "type": "string"
-        },
-        "version": {
-          "description": "store version",
-          "type": "string"
-        }
-      }
-    },
-    "Timer_info": {
-      "description": "timer info",
-      "type": "object",
-      "properties": {
-        "replicas": {
-          "description": "timer replicas",
-          "type": "integer",
-          "format": "int32"
-        },
-        "version": {
-          "description": "timer version",
-          "type": "string"
-        }
-      }
-    },
-    "Trigger_info": {
-      "description": "trigger info",
-      "type": "object",
-      "properties": {
-        "replicas": {
-          "description": "trigger replicas",
-          "type": "integer",
-          "format": "int32"
-        },
-        "version": {
-          "description": "trigger version",
           "type": "string"
         }
       }
