@@ -14,7 +14,8 @@ import (
 // HealthzOKCode is the HTTP code returned for type HealthzOK
 const HealthzOKCode int = 200
 
-/*HealthzOK OK
+/*
+HealthzOK OK
 
 swagger:response healthzOK
 */

@@ -1,6 +1,6 @@
 apiVersion: vanus.vanus.ai/v1alpha1
-kind: Connector
+kind: Vanus
 metadata:
-  name: connector-sample
+  name: vanus-sample
 spec:
   # TODO(user): Add fields here

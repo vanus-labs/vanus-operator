@@ -15,7 +15,7 @@ import (
 	"github.com/go-openapi/swag"
 	"github.com/go-openapi/validate"
 
-	"github.com/linkall-labs/vanus-operator/api/models"
+	"github.com/vanus-labs/vanus-operator/api/models"
 )
 
 // GetConnectorHandlerFunc turns a function with the right signature into a get connector handler
@@ -36,10 +36,10 @@ func NewGetConnector(ctx *middleware.Context, handler GetConnectorHandler) *GetC
 	return &GetConnector{Context: ctx, Handler: handler}
 }
 
-/* GetConnector swagger:route GET /connector/{name} connector getConnector
+/*
+	GetConnector swagger:route GET /connector/{name} connector getConnector
 
 get Connector
-
 */
 type GetConnector struct {
 	Context *middleware.Context

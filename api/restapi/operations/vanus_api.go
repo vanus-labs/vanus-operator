@@ -19,9 +19,9 @@ import (
 	"github.com/go-openapi/strfmt"
 	"github.com/go-openapi/swag"
 
-	"github.com/linkall-labs/vanus-operator/api/restapi/operations/cluster"
-	"github.com/linkall-labs/vanus-operator/api/restapi/operations/connector"
-	"github.com/linkall-labs/vanus-operator/api/restapi/operations/healthz"
+	"github.com/vanus-labs/vanus-operator/api/restapi/operations/cluster"
+	"github.com/vanus-labs/vanus-operator/api/restapi/operations/connector"
+	"github.com/vanus-labs/vanus-operator/api/restapi/operations/healthz"
 )
 
 // NewVanusAPI creates a new Vanus instance

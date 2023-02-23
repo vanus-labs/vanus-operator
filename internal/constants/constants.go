@@ -1,4 +1,4 @@
-// Copyright 2022 Linkall Inc.
+// Copyright 2023 Linkall Inc.
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -16,34 +16,82 @@
 package constants
 
 const (
+	DefaultNamespace        = "vanus"
+	DefaultVanusClusterName = "vanus-cluster"
+
+	DefaultControllerName = "vanus-controller"
+	DefaultEtcdName       = "vanus-etcd"
+	DefaultStoreName      = "vanus-store"
+	DefaultTriggerName    = "vanus-trigger"
+	DefaultTimerName      = "vanus-timer"
+	DefaultGatewayName    = "vanus-gateway"
+)
+
+const (
 	// ControllerContainerName is the name of Controller container
 	ControllerContainerName = "controller"
+
+	// ControllerImageName is the name of Controller container image
+	ControllerImageName = "public.ecr.aws/vanus/controller"
 
 	// ControllerConfigMapName is the name of Controller configmap
 	ControllerConfigMapName = "config-controller"
 
+	// EtcdInitContainerName is the name of init Controller container
+	EtcdInitContainerName = "init"
+
+	// EtcdContainerName is the name of Controller container
+	EtcdContainerName = "etcd"
+
+	// EtcdInitContainerImageName is the name of init Controller container image, from 'docker.io/bitnami/etcd:3.5.7-debian-11-r9'
+	EtcdInitContainerImageName = "public.ecr.aws/vanus/metadata-migration:latest"
+
+	// EtcdImageName is the name of Controller container image, from 'docker.io/bitnami/etcd:3.5.7-debian-11-r9'
+	EtcdImageName = "public.ecr.aws/vanus/etcd:v3.5.7"
+
+	// EtcdInitContainerVolumeMountName is the name of Store volume mount
+	EtcdInitContainerVolumeMountName = "init-snapshot"
+
+	// EtcdInitContainerVolumeMountPath is the directory of Store data files
+	EtcdInitContainerVolumeMountPath = "/init-snapshot"
+
+	// EtcdVolumeMountPath is the directory of Store data files
+	EtcdVolumeMountPath = "/bitnami/etcd"
+
 	// StoreContainerName is the name of store container
 	StoreContainerName = "store"
 
-	// BrokerConfigName is the name of mounted configuration file
+	// StoreImageName is the name of Store container image
+	StoreImageName = "public.ecr.aws/vanus/store"
+
+	// StoreConfigMapName is the name of mounted configuration file
 	StoreConfigMapName = "config-store"
 
-	// TriggerContainerName is the name of tigger container
-	TriggerContainerName = "tigger"
+	// TriggerContainerName is the name of trigger container
+	TriggerContainerName = "trigger"
 
-	// BrokerConfigName is the name of mounted configuration file
+	// TriggerImageName is the name of Trigger container image
+	TriggerImageName = "public.ecr.aws/vanus/trigger"
+
+	// TriggerConfigMapName is the name of mounted configuration file
 	TriggerConfigMapName = "config-trigger"
 
 	// TimerContainerName is the name of timer container
 	TimerContainerName = "timer"
 
-	// BrokerConfigName is the name of mounted configuration file
+	// TimerImageName is the name of Timer container image
+	TimerImageName = "public.ecr.aws/vanus/timer"
+
+	// TimerConfigMapName is the name of mounted configuration file
 	TimerConfigMapName = "config-timer"
 
 	// GatewayContainerName is the name of gateway container
 	GatewayContainerName = "gateway"
 
-	// BrokerConfigName is the name of mounted configuration file
+	// GatewayImageName is the name of Gateway container image
+	GatewayImageName = "public.ecr.aws/vanus/gateway"
+
+	// GatewayConfigMapName is the name of mounted configuration file
 	GatewayConfigMapName = "config-gateway"
 
 	// ConnectorContainerName is the name of Connector container
@@ -56,9 +104,9 @@ const (
 	ConfigMountPath = "/vanus/config"
 
 	// VanceConfigMountPath is the directory of Vance configd files
-	VanceConfigMountPath = "/vance/config"
+	VanceConfigMountPath = "/vanus-connect/config"
 
-	// VanceConfigMountPath is the directory of Vance configd files
+	// VanceConfigMapName is the directory of Vance configd files
 	VanceConfigMapName = "config"
 
 	// VolumeMountPath is the directory of Store data files
@@ -67,7 +115,7 @@ const (
 	// VolumeName is the directory of Store data files
 	VolumeName = "data"
 
-	// VolumeName is the directory of Store data files
+	// VolumeStorage is the directory of Store data files
 	VolumeStorage = "1Gi"
 
 	// StorageModeStorageClass is the name of StorageClass storage mode
@@ -79,13 +127,13 @@ const (
 	// StorageModeHostPath is the name pf HostPath storage mode
 	StorageModeHostPath = "HostPath"
 
-	// the container environment variable name of controller pod ip
+	// EnvPodIP the container environment variable name of controller pod ip
 	EnvPodIP = "POD_IP"
 
-	// the container environment variable name of controller pod name
+	// EnvPodName the container environment variable name of controller pod name
 	EnvPodName = "POD_NAME"
 
-	// the container environment variable name of controller log level
+	// EnvLogLevel the container environment variable name of controller log level
 	EnvLogLevel = "VANUS_LOG_LEVEL"
 )
 
@@ -120,16 +168,6 @@ const (
 	RequeueIntervalInSecond = 6
 )
 
-const (
-	DefaultNamespace = "vanus"
-
-	DefaultControllerName = "vanus-controller"
-	DefaultStoreName      = "vanus-store"
-	DefaultTriggerName    = "vanus-trigger"
-	DefaultTimerName      = "vanus-timer"
-	DefaultGatewayName    = "vanus-gateway"
-)
-
 var (
 	// GroupNum is the number of broker group
 	GroupNum = 0
@@ -152,5 +190,6 @@ var (
 
 var (
 	DefaultControllerReplicas int32 = 3
+	DefaultEtcdReplicas       int32 = 3
 	DefaultStoreReplicas      int32 = 3
 )

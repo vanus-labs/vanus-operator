@@ -25,7 +25,7 @@ import (
 	flags "github.com/jessevdk/go-flags"
 	"golang.org/x/net/netutil"
 
-	"github.com/linkall-labs/vanus-operator/api/restapi/operations"
+	"github.com/vanus-labs/vanus-operator/api/restapi/operations"
 )
 
 const (

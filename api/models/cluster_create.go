@@ -18,16 +18,25 @@ import (
 type ClusterCreate struct {
 
 	// controller replicas
-	ControllerReplicas int32 `json:"controller_replicas,omitempty"`
+	ControllerReplicas *int32 `json:"controller_replicas,omitempty"`
 
-	// controller storage size
-	ControllerStorageSize string `json:"controller_storage_size,omitempty"`
+	// gateway replicas
+	GatewayReplicas *int32 `json:"gateway_replicas,omitempty"`
+
+	// metadata storage size
+	MetadataStorageSize *string `json:"metadata_storage_size,omitempty"`
 
 	// store replicas
-	StoreReplicas int32 `json:"store_replicas,omitempty"`
+	StoreReplicas *int32 `json:"store_replicas,omitempty"`
 
 	// store storage size
-	StoreStorageSize string `json:"store_storage_size,omitempty"`
+	StoreStorageSize *string `json:"store_storage_size,omitempty"`
+
+	// timer replicas
+	TimerReplicas *int32 `json:"timer_replicas,omitempty"`
+
+	// trigger replicas
+	TriggerReplicas *int32 `json:"trigger_replicas,omitempty"`
 
 	// cluster version
 	Version string `json:"version,omitempty"`

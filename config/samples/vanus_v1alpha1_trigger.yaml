@@ -1,6 +1,0 @@
-apiVersion: vanus.linkall.com/v1alpha1
-kind: Trigger
-metadata:
-  name: trigger-sample
-spec:
-  # TODO(user): Add fields here

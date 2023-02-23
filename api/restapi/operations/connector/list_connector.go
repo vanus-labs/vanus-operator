@@ -16,7 +16,7 @@ import (
 	"github.com/go-openapi/swag"
 	"github.com/go-openapi/validate"
 
-	"github.com/linkall-labs/vanus-operator/api/models"
+	"github.com/vanus-labs/vanus-operator/api/models"
 )
 
 // ListConnectorHandlerFunc turns a function with the right signature into a list connector handler
@@ -37,10 +37,10 @@ func NewListConnector(ctx *middleware.Context, handler ListConnectorHandler) *Li
 	return &ListConnector{Context: ctx, Handler: handler}
 }
 
-/* ListConnector swagger:route GET /connectors/ connector listConnector
+/*
+	ListConnector swagger:route GET /connectors/ connector listConnector
 
 list Connector
-
 */
 type ListConnector struct {
 	Context *middleware.Context

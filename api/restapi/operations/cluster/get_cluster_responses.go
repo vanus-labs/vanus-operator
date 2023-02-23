@@ -14,7 +14,8 @@ import (
 // GetClusterOKCode is the HTTP code returned for type GetClusterOK
 const GetClusterOKCode int = 200
 
-/*GetClusterOK OK
+/*
+GetClusterOK OK
 
 swagger:response getClusterOK
 */

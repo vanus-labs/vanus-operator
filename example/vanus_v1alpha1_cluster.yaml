@@ -13,16 +13,20 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-apiVersion: vanus.linkall.com/v1alpha1
-kind: Controller
+apiVersion: vanus.vanus.ai/v1alpha1
+kind: Vanus
 metadata:
-  name: vanus-controller
+  name: vanus-cluster
   namespace: vanus
 spec:
   # replicas is the number of controllers.
-  replicas: 3
-  # controllerImage is the customized docker image repo of the RocketMQ Controller
-  image: public.ecr.aws/vanus/controller:v0.5.0
+  replicas:
+    controller: 3
+    store: 3
+    trigger: 3
+    timer: 3
+    gateway: 3
+  version: v0.6.0
   # imagePullPolicy is the image pull policy
   imagePullPolicy: IfNotPresent
   volumeClaimTemplates:
@@ -34,62 +38,3 @@ spec:
       resources:
         requests:
           storage: 1Gi
-
----
-apiVersion: vanus.linkall.com/v1alpha1
-kind: Store
-metadata:
-  name: vanus-store
-  namespace: vanus
-spec:
-  # replicas is the number of stores.
-  replicas: 3
-  # storeImage is the customized docker image repo of the RocketMQ Controller
-  image: public.ecr.aws/vanus/store:v0.5.0
-  # imagePullPolicy is the image pull policy
-  imagePullPolicy: IfNotPresent
-  volumeClaimTemplates:
-  - metadata:
-      name: data
-    spec:
-      accessModes:
-      - ReadWriteOnce
-      resources:
-        requests:
-          storage: 1Gi
-
----
-apiVersion: vanus.linkall.com/v1alpha1
-kind: Trigger
-metadata:
-  name: vanus-trigger
-  namespace: vanus
-spec:
-  # triggerImage is the customized docker image repo of the RocketMQ Controller
-  image: public.ecr.aws/vanus/trigger:v0.5.0
-  # imagePullPolicy is the image pull policy
-  imagePullPolicy: IfNotPresent
-
----
-apiVersion: vanus.linkall.com/v1alpha1
-kind: Timer
-metadata:
-  name: vanus-timer
-  namespace: vanus
-spec:
-  # timerImage is the customized docker image repo of the RocketMQ Controller
-  image: public.ecr.aws/vanus/timer:v0.5.0
-  # imagePullPolicy is the image pull policy
-  imagePullPolicy: IfNotPresent
-
----
-apiVersion: vanus.linkall.com/v1alpha1
-kind: Gateway
-metadata:
-  name: vanus-gateway
-  namespace: vanus
-spec:
-  # gatewayImage is the customized docker image repo of the Vanus Controller
-  image: public.ecr.aws/vanus/gateway:v0.5.0
-  # imagePullPolicy is the image pull policy
-  imagePullPolicy: IfNotPresent

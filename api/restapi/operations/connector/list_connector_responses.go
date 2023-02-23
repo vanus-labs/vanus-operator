@@ -14,7 +14,8 @@ import (
 // ListConnectorOKCode is the HTTP code returned for type ListConnectorOK
 const ListConnectorOKCode int = 200
 
-/*ListConnectorOK OK
+/*
+ListConnectorOK OK
 
 swagger:response listConnectorOK
 */

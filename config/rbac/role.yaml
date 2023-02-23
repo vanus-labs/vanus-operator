@@ -6,7 +6,7 @@ metadata:
   name: manager-role
 rules:
 - apiGroups:
-  - vanus.linkall.com
+  - vanus.vanus.ai
   resources:
   - connectors
   verbs:
@@ -18,13 +18,13 @@ rules:
   - update
   - watch
 - apiGroups:
-  - vanus.linkall.com
+  - vanus.vanus.ai
   resources:
   - connectors/finalizers
   verbs:
   - update
 - apiGroups:
-  - vanus.linkall.com
+  - vanus.vanus.ai
   resources:
   - connectors/status
   verbs:
@@ -32,9 +32,9 @@ rules:
   - patch
   - update
 - apiGroups:
-  - vanus.linkall.com
+  - vanus.vanus.ai
   resources:
-  - controllers
+  - vanus
   verbs:
   - create
   - delete
@@ -44,119 +44,15 @@ rules:
   - update
   - watch
 - apiGroups:
-  - vanus.linkall.com
+  - vanus.vanus.ai
   resources:
-  - controllers/finalizers
+  - vanus/finalizers
   verbs:
   - update
 - apiGroups:
-  - vanus.linkall.com
+  - vanus.vanus.ai
   resources:
-  - controllers/status
-  verbs:
-  - get
-  - patch
-  - update
-- apiGroups:
-  - vanus.linkall.com
-  resources:
-  - gateways
-  verbs:
-  - create
-  - delete
-  - get
-  - list
-  - patch
-  - update
-  - watch
-- apiGroups:
-  - vanus.linkall.com
-  resources:
-  - gateways/finalizers
-  verbs:
-  - update
-- apiGroups:
-  - vanus.linkall.com
-  resources:
-  - gateways/status
-  verbs:
-  - get
-  - patch
-  - update
-- apiGroups:
-  - vanus.linkall.com
-  resources:
-  - stores
-  verbs:
-  - create
-  - delete
-  - get
-  - list
-  - patch
-  - update
-  - watch
-- apiGroups:
-  - vanus.linkall.com
-  resources:
-  - stores/finalizers
-  verbs:
-  - update
-- apiGroups:
-  - vanus.linkall.com
-  resources:
-  - stores/status
-  verbs:
-  - get
-  - patch
-  - update
-- apiGroups:
-  - vanus.linkall.com
-  resources:
-  - timers
-  verbs:
-  - create
-  - delete
-  - get
-  - list
-  - patch
-  - update
-  - watch
-- apiGroups:
-  - vanus.linkall.com
-  resources:
-  - timers/finalizers
-  verbs:
-  - update
-- apiGroups:
-  - vanus.linkall.com
-  resources:
-  - timers/status
-  verbs:
-  - get
-  - patch
-  - update
-- apiGroups:
-  - vanus.linkall.com
-  resources:
-  - triggers
-  verbs:
-  - create
-  - delete
-  - get
-  - list
-  - patch
-  - update
-  - watch
-- apiGroups:
-  - vanus.linkall.com
-  resources:
-  - triggers/finalizers
-  verbs:
-  - update
-- apiGroups:
-  - vanus.linkall.com
-  resources:
-  - triggers/status
+  - vanus/status
   verbs:
   - get
   - patch

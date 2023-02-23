@@ -15,7 +15,7 @@ import (
 	"github.com/go-openapi/swag"
 	"github.com/go-openapi/validate"
 
-	"github.com/linkall-labs/vanus-operator/api/models"
+	"github.com/vanus-labs/vanus-operator/api/models"
 )
 
 // DeleteConnectorHandlerFunc turns a function with the right signature into a delete connector handler
@@ -36,10 +36,10 @@ func NewDeleteConnector(ctx *middleware.Context, handler DeleteConnectorHandler)
 	return &DeleteConnector{Context: ctx, Handler: handler}
 }
 
-/* DeleteConnector swagger:route DELETE /connector/{name} connector deleteConnector
+/*
+	DeleteConnector swagger:route DELETE /connector/{name} connector deleteConnector
 
 delete Connector
-
 */
 type DeleteConnector struct {
 	Context *middleware.Context

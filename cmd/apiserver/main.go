@@ -1,4 +1,4 @@
-// Copyright 2022 Linkall Inc.
+// Copyright 2023 Linkall Inc.
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -21,8 +21,8 @@ import (
 
 	"github.com/gin-gonic/gin"
 	"github.com/go-kit/log"
-	"github.com/linkall-labs/vanus-operator/pkg/apiserver/controller"
-	"github.com/linkall-labs/vanus-operator/pkg/apiserver/handlers"
+	"github.com/vanus-labs/vanus-operator/pkg/apiserver/controller"
+	"github.com/vanus-labs/vanus-operator/pkg/apiserver/handlers"
 	"k8s.io/klog/v2"
 )
 

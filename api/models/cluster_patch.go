@@ -20,8 +20,14 @@ type ClusterPatch struct {
 	// controller replicas
 	ControllerReplicas int32 `json:"controller_replicas,omitempty"`
 
+	// gateway replicas
+	GatewayReplicas int32 `json:"gateway_replicas,omitempty"`
+
 	// store replicas
 	StoreReplicas int32 `json:"store_replicas,omitempty"`
+
+	// timer replicas
+	TimerReplicas int32 `json:"timer_replicas,omitempty"`
 
 	// trigger replicas
 	TriggerReplicas int32 `json:"trigger_replicas,omitempty"`

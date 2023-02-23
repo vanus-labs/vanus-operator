@@ -1,4 +1,4 @@
-// Copyright 2022 Linkall Inc.
+// Copyright 2023 Linkall Inc.
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -18,9 +18,9 @@ import (
 	"context"
 	"time"
 
-	vanusv1alpha1 "github.com/linkall-labs/vanus-operator/api/v1alpha1"
-	"github.com/linkall-labs/vanus-operator/pkg/apiserver/lower/cache"
-	"github.com/linkall-labs/vanus-operator/pkg/apiserver/lower/k8s"
+	vanusv1alpha1 "github.com/vanus-labs/vanus-operator/api/v1alpha1"
+	"github.com/vanus-labs/vanus-operator/pkg/apiserver/lower/cache"
+	"github.com/vanus-labs/vanus-operator/pkg/apiserver/lower/k8s"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/runtime"
 	"k8s.io/apimachinery/pkg/runtime/schema"
@@ -40,16 +40,8 @@ var (
 
 func addKnownTypes(scheme *runtime.Scheme) error {
 	scheme.AddKnownTypes(SchemeGroupVersion,
-		&vanusv1alpha1.Controller{},
-		&vanusv1alpha1.ControllerList{},
-		&vanusv1alpha1.Store{},
-		&vanusv1alpha1.StoreList{},
-		&vanusv1alpha1.Trigger{},
-		&vanusv1alpha1.TriggerList{},
-		&vanusv1alpha1.Timer{},
-		&vanusv1alpha1.TimerList{},
-		&vanusv1alpha1.Gateway{},
-		&vanusv1alpha1.GatewayList{},
+		&vanusv1alpha1.Vanus{},
+		&vanusv1alpha1.VanusList{},
 		&vanusv1alpha1.Connector{},
 		&vanusv1alpha1.ConnectorList{},
 	)

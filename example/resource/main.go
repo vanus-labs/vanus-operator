@@ -1,3 +1,17 @@
+// Copyright 2023 Linkall Inc.
+//
+// Licensed under the Apache License, Version 2.0 (the "License");
+// you may not use this file except in compliance with the License.
+// You may obtain a copy of the License at
+//
+//     http://www.apache.org/licenses/LICENSE-2.0
+//
+// Unless required by applicable law or agreed to in writing, software
+// distributed under the License is distributed on an "AS IS" BASIS,
+// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+// See the License for the specific language governing permissions and
+// limitations under the License.
+
 package main
 
 import (
@@ -5,7 +19,7 @@ import (
 	"fmt"
 	"log"
 
-	vanusv1alpha1 "github.com/linkall-labs/vanus-operator/api/v1alpha1"
+	vanusv1alpha1 "github.com/vanus-labs/vanus-operator/api/v1alpha1"
 	corev1 "k8s.io/api/core/v1"
 	"k8s.io/apimachinery/pkg/api/errors"
 	"k8s.io/apimachinery/pkg/api/resource"
@@ -17,18 +31,22 @@ import (
 	"k8s.io/client-go/tools/clientcmd"
 )
 
-func generateController() *vanusv1alpha1.Controller {
-	replicas := int32(3)
+func generateVanus() *vanusv1alpha1.Vanus {
 	requests := make(map[corev1.ResourceName]resource.Quantity)
 	requests[corev1.ResourceStorage] = resource.MustParse("1Gi")
-	controller := &vanusv1alpha1.Controller{
+	vanus := &vanusv1alpha1.Vanus{
 		ObjectMeta: metav1.ObjectMeta{
 			Namespace: "default",
 			Name:      "vanus-controller-jk",
 		},
-		Spec: vanusv1alpha1.ControllerSpec{
-			Replicas:        &replicas,
-			Image:           "public.ecr.aws/vanus/controller:v0.5.7",
+		Spec: vanusv1alpha1.VanusSpec{
+			Replicas: vanusv1alpha1.Replicas{
+				Controller: 3,
+				Store:      3,
+				Trigger:    1,
+				Timer:      2,
+				Gateway:    1,
+			},
 			ImagePullPolicy: corev1.PullIfNotPresent,
 			Resources:       corev1.ResourceRequirements{},
 			VolumeClaimTemplates: []corev1.PersistentVolumeClaim{{
@@ -44,12 +62,12 @@ func generateController() *vanusv1alpha1.Controller {
 			}},
 		},
 	}
-	return controller
+	return vanus
 }
 
 func NewForConfig(c *rest.Config) (rest.Interface, error) {
 	config := *c
-	config.ContentConfig.GroupVersion = &schema.GroupVersion{Group: "vanus.linkall.com", Version: "v1alpha1"}
+	config.ContentConfig.GroupVersion = &schema.GroupVersion{Group: "vanus.vanus.ai", Version: "v1alpha1"}
 	config.APIPath = "/apis"
 	config.NegotiatedSerializer = scheme.Codecs.WithoutConversion()
 	config.UserAgent = rest.DefaultKubernetesUserAgent()
@@ -62,8 +80,8 @@ func NewForConfig(c *rest.Config) (rest.Interface, error) {
 	return client, nil
 }
 
-func Create(client rest.Interface, controller *vanusv1alpha1.Controller) (*vanusv1alpha1.Controller, error) {
-	result := vanusv1alpha1.Controller{}
+func Create(client rest.Interface, controller *vanusv1alpha1.Vanus) (*vanusv1alpha1.Vanus, error) {
+	result := vanusv1alpha1.Vanus{}
 	err := client.
 		Post().
 		Namespace("default").
@@ -75,8 +93,8 @@ func Create(client rest.Interface, controller *vanusv1alpha1.Controller) (*vanus
 	return &result, err
 }
 
-func List(client rest.Interface, opts metav1.ListOptions) (*vanusv1alpha1.ControllerList, error) {
-	result := vanusv1alpha1.ControllerList{}
+func List(client rest.Interface, opts metav1.ListOptions) (*vanusv1alpha1.VanusList, error) {
+	result := vanusv1alpha1.VanusList{}
 	err := client.
 		Get().
 		Namespace("default").
@@ -88,8 +106,8 @@ func List(client rest.Interface, opts metav1.ListOptions) (*vanusv1alpha1.Contro
 	return &result, err
 }
 
-func Get(client rest.Interface, opts metav1.GetOptions) (*vanusv1alpha1.Controller, error) {
-	result := vanusv1alpha1.Controller{}
+func Get(client rest.Interface, opts metav1.GetOptions) (*vanusv1alpha1.Vanus, error) {
+	result := vanusv1alpha1.Vanus{}
 	err := client.
 		Get().
 		Resource("controllers").
@@ -102,8 +120,8 @@ func Get(client rest.Interface, opts metav1.GetOptions) (*vanusv1alpha1.Controll
 	return &result, err
 }
 
-func GetNotExist(client rest.Interface, opts metav1.GetOptions) (*vanusv1alpha1.Controller, error) {
-	result := vanusv1alpha1.Controller{}
+func GetNotExist(client rest.Interface, opts metav1.GetOptions) (*vanusv1alpha1.Vanus, error) {
+	result := vanusv1alpha1.Vanus{}
 	err := client.
 		Get().
 		Resource("controllers").
@@ -116,8 +134,8 @@ func GetNotExist(client rest.Interface, opts metav1.GetOptions) (*vanusv1alpha1.
 	return &result, err
 }
 
-func Delete(client rest.Interface, opts metav1.DeleteOptions) (*vanusv1alpha1.Controller, error) {
-	result := vanusv1alpha1.Controller{}
+func Delete(client rest.Interface, opts metav1.DeleteOptions) (*vanusv1alpha1.Vanus, error) {
+	result := vanusv1alpha1.Vanus{}
 	err := client.
 		Delete().
 		Resource("controllers").
@@ -130,8 +148,8 @@ func Delete(client rest.Interface, opts metav1.DeleteOptions) (*vanusv1alpha1.Co
 	return &result, err
 }
 
-func DeleteNotExist(client rest.Interface, opts metav1.DeleteOptions) (*vanusv1alpha1.Controller, error) {
-	result := vanusv1alpha1.Controller{}
+func DeleteNotExist(client rest.Interface, opts metav1.DeleteOptions) (*vanusv1alpha1.Vanus, error) {
+	result := vanusv1alpha1.Vanus{}
 	err := client.
 		Delete().
 		Resource("controllers").
@@ -144,7 +162,7 @@ func DeleteNotExist(client rest.Interface, opts metav1.DeleteOptions) (*vanusv1a
 	return &result, err
 }
 
-const GroupName = "vanus.linkall.com"
+const GroupName = "vanus.vanus.ai"
 const GroupVersion = "v1alpha1"
 
 var SchemeGroupVersion = schema.GroupVersion{Group: GroupName, Version: GroupVersion}
@@ -156,8 +174,8 @@ var (
 
 func addKnownTypes(scheme *runtime.Scheme) error {
 	scheme.AddKnownTypes(SchemeGroupVersion,
-		&vanusv1alpha1.Controller{},
-		&vanusv1alpha1.ControllerList{},
+		&vanusv1alpha1.Vanus{},
+		&vanusv1alpha1.VanusList{},
 	)
 
 	metav1.AddToGroupVersion(scheme, SchemeGroupVersion)
@@ -183,7 +201,7 @@ func main() {
 
 	// 1. create
 	fmt.Println("==================create=====================")
-	newcontroller := generateController()
+	newcontroller := generateVanus()
 	result1, err := Create(clientSet, newcontroller)
 	if err != nil {
 		fmt.Printf("create cr failed, err: %s\n", err.Error())

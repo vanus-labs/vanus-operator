@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-# Copyright 2022 Linkall Inc.
+# Copyright 2023 Linkall Inc.
 
 ff=$(find ./handlers -type f -name "*.go" -print)
 
@@ -9,6 +9,6 @@ for f in ${ff}; do
 		echo 'had add copyright :' $f
         else
 		echo 'add copyright: ' $f
-        sed -i '1i \// Copyright 2022 Linkall Inc.' $f
+        sed -i '1i \// Copyright 2023 Linkall Inc.' $f
 	fi
 done

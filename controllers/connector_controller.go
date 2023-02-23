@@ -1,4 +1,4 @@
-// Copyright 2022 Linkall Inc.
+// Copyright 2023 Linkall Inc.
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -18,7 +18,7 @@ import (
 	"context"
 	"time"
 
-	cons "github.com/linkall-labs/vanus-operator/internal/constants"
+	cons "github.com/vanus-labs/vanus-operator/internal/constants"
 	appsv1 "k8s.io/api/apps/v1"
 	corev1 "k8s.io/api/core/v1"
 	"k8s.io/apimachinery/pkg/api/errors"
@@ -31,7 +31,7 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/controller/controllerutil"
 	"sigs.k8s.io/controller-runtime/pkg/log"
 
-	vanusv1alpha1 "github.com/linkall-labs/vanus-operator/api/v1alpha1"
+	vanusv1alpha1 "github.com/vanus-labs/vanus-operator/api/v1alpha1"
 )
 
 // ConnectorReconciler reconciles a Connector object
@@ -40,9 +40,9 @@ type ConnectorReconciler struct {
 	Scheme *runtime.Scheme
 }
 
-//+kubebuilder:rbac:groups=vanus.linkall.com,resources=connectors,verbs=get;list;watch;create;update;patch;delete
-//+kubebuilder:rbac:groups=vanus.linkall.com,resources=connectors/status,verbs=get;update;patch
-//+kubebuilder:rbac:groups=vanus.linkall.com,resources=connectors/finalizers,verbs=update
+//+kubebuilder:rbac:groups=vanus.vanus.ai,resources=connectors,verbs=get;list;watch;create;update;patch;delete
+//+kubebuilder:rbac:groups=vanus.vanus.ai,resources=connectors/status,verbs=get;update;patch
+//+kubebuilder:rbac:groups=vanus.vanus.ai,resources=connectors/finalizers,verbs=update
 
 // Reconcile is part of the main kubernetes reconciliation loop which aims to
 // move the current state of the cluster closer to the desired state.

@@ -1,13 +1,13 @@
-# permissions for end users to edit gateways.
+# permissions for end users to edit vanus.
 apiVersion: rbac.authorization.k8s.io/v1
 kind: ClusterRole
 metadata:
-  name: gateway-editor-role
+  name: vanus-editor-role
 rules:
 - apiGroups:
-  - vanus.linkall.com
+  - vanus.vanus.ai
   resources:
-  - gateways
+  - vanus
   verbs:
   - create
   - delete
@@ -17,8 +17,8 @@ rules:
   - update
   - watch
 - apiGroups:
-  - vanus.linkall.com
+  - vanus.vanus.ai
   resources:
-  - gateways/status
+  - vanus/status
   verbs:
   - get
