@@ -201,15 +201,15 @@ func getEnvForConnector(connector *vanusv1alpha1.Connector) []corev1.EnvVar {
 
 func getVolumeMountsForConnector(connector *vanusv1alpha1.Connector) []corev1.VolumeMount {
 	defaultVolumeMounts := []corev1.VolumeMount{{
-		Name:      cons.VanceConfigMapName,
-		MountPath: cons.VanceConfigMountPath,
+		Name:      cons.VanusConnectConfigMapName,
+		MountPath: cons.VanusConnectConfigMountPath,
 	}}
 	return defaultVolumeMounts
 }
 
 func getVolumesForConnector(connector *vanusv1alpha1.Connector) []corev1.Volume {
 	defaultVolumes := []corev1.Volume{{
-		Name: cons.VanceConfigMapName,
+		Name: cons.VanusConnectConfigMapName,
 		VolumeSource: corev1.VolumeSource{
 			ConfigMap: &corev1.ConfigMapVolumeSource{
 				LocalObjectReference: corev1.LocalObjectReference{

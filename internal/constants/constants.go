@@ -52,14 +52,14 @@ const (
 	// ConnectorConfigMapName is the name of Connector configmap
 	ConnectorConfigMapName = "config-connector"
 
-	// ConfigMountPath is the directory of Vanus configd files
+	// ConfigMountPath is the directory of Vanus config files
 	ConfigMountPath = "/vanus/config"
 
-	// VanceConfigMountPath is the directory of Vance configd files
-	VanceConfigMountPath = "/vance/config"
+	// VanusConnectConfigMountPath is the directory of vanus-connect config files
+	VanusConnectConfigMountPath = "/vanus-connect/config"
 
-	// VanceConfigMountPath is the directory of Vance configd files
-	VanceConfigMapName = "config"
+	// VanusConnectConfigMapName is the directory of vanus-connect config files
+	VanusConnectConfigMapName = "config"
 
 	// VolumeMountPath is the directory of Store data files
 	VolumeMountPath = "/data"
