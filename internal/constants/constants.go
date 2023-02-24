@@ -25,25 +25,25 @@ const (
 	// StoreContainerName is the name of store container
 	StoreContainerName = "store"
 
-	// BrokerConfigName is the name of mounted configuration file
+	// StoreConfigMapName is the name of mounted configuration file
 	StoreConfigMapName = "config-store"
 
 	// TriggerContainerName is the name of tigger container
 	TriggerContainerName = "tigger"
 
-	// BrokerConfigName is the name of mounted configuration file
+	// TriggerConfigMapName is the name of mounted configuration file
 	TriggerConfigMapName = "config-trigger"
 
 	// TimerContainerName is the name of timer container
 	TimerContainerName = "timer"
 
-	// BrokerConfigName is the name of mounted configuration file
+	// TimerConfigMapName is the name of mounted configuration file
 	TimerConfigMapName = "config-timer"
 
 	// GatewayContainerName is the name of gateway container
 	GatewayContainerName = "gateway"
 
-	// BrokerConfigName is the name of mounted configuration file
+	// GatewayConfigMapName is the name of mounted configuration file
 	GatewayConfigMapName = "config-gateway"
 
 	// ConnectorContainerName is the name of Connector container
@@ -52,14 +52,14 @@ const (
 	// ConnectorConfigMapName is the name of Connector configmap
 	ConnectorConfigMapName = "config-connector"
 
-	// ConfigMountPath is the directory of Vanus configd files
+	// ConfigMountPath is the directory of Vanus config files
 	ConfigMountPath = "/vanus/config"
 
-	// VanceConfigMountPath is the directory of Vance configd files
-	VanceConfigMountPath = "/vance/config"
+	// VanusConnectConfigMountPath is the directory of vanus-connect config files
+	VanusConnectConfigMountPath = "/vanus-connect/config"
 
-	// VanceConfigMountPath is the directory of Vance configd files
-	VanceConfigMapName = "config"
+	// VanusConnectConfigMapName is the directory of vanus-connect config files
+	VanusConnectConfigMapName = "config"
 
 	// VolumeMountPath is the directory of Store data files
 	VolumeMountPath = "/data"
@@ -67,8 +67,8 @@ const (
 	// VolumeName is the directory of Store data files
 	VolumeName = "data"
 
-	// VolumeName is the directory of Store data files
-	VolumeStorage = "1Gi"
+	// VolumeStorage is the directory of Store data files
+	VolumeStorage = "10Gi"
 
 	// StorageModeStorageClass is the name of StorageClass storage mode
 	StorageModeStorageClass = "StorageClass"
@@ -79,13 +79,13 @@ const (
 	// StorageModeHostPath is the name pf HostPath storage mode
 	StorageModeHostPath = "HostPath"
 
-	// the container environment variable name of controller pod ip
+	// EnvPodIP the container environment variable name of controller pod ip
 	EnvPodIP = "POD_IP"
 
-	// the container environment variable name of controller pod name
+	// EnvPodName the container environment variable name of controller pod name
 	EnvPodName = "POD_NAME"
 
-	// the container environment variable name of controller log level
+	// EnvLogLevel the container environment variable name of controller log level
 	EnvLogLevel = "VANUS_LOG_LEVEL"
 )
 
@@ -146,7 +146,7 @@ var (
 	// BrokerClusterName is the broker cluster name
 	BrokerClusterName = ""
 
-	// svc of controller for brokers
+	// ControllerAccessPoint svc of controller for brokers
 	ControllerAccessPoint = ""
 )
 

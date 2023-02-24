@@ -18,9 +18,9 @@ import (
 	"context"
 	"time"
 
-	vanusv1alpha1 "github.com/linkall-labs/vanus-operator/api/v1alpha1"
-	"github.com/linkall-labs/vanus-operator/pkg/apiserver/lower/cache"
-	"github.com/linkall-labs/vanus-operator/pkg/apiserver/lower/k8s"
+	vanusv1alpha1 "github.com/vanus-labs/vanus-operator/api/v1alpha1"
+	"github.com/vanus-labs/vanus-operator/pkg/apiserver/lower/cache"
+	"github.com/vanus-labs/vanus-operator/pkg/apiserver/lower/k8s"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/runtime"
 	"k8s.io/apimachinery/pkg/runtime/schema"

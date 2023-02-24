@@ -14,7 +14,8 @@ import (
 // CreateConnectorOKCode is the HTTP code returned for type CreateConnectorOK
 const CreateConnectorOKCode int = 200
 
-/*CreateConnectorOK OK
+/*
+CreateConnectorOK OK
 
 swagger:response createConnectorOK
 */

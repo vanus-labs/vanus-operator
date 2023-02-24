@@ -15,7 +15,7 @@ import (
 	"github.com/go-openapi/swag"
 	"github.com/go-openapi/validate"
 
-	"github.com/linkall-labs/vanus-operator/api/models"
+	"github.com/vanus-labs/vanus-operator/api/models"
 )
 
 // HealthzHandlerFunc turns a function with the right signature into a healthz handler
@@ -36,10 +36,10 @@ func NewHealthz(ctx *middleware.Context, handler HealthzHandler) *Healthz {
 	return &Healthz{Context: ctx, Handler: handler}
 }
 
-/* Healthz swagger:route GET /healthz/ healthz healthz
+/*
+	Healthz swagger:route GET /healthz/ healthz healthz
 
 healthz
-
 */
 type Healthz struct {
 	Context *middleware.Context

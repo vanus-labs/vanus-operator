@@ -21,8 +21,8 @@ import (
 
 	"github.com/gin-gonic/gin"
 	"github.com/go-kit/log"
-	"github.com/linkall-labs/vanus-operator/pkg/apiserver/controller"
-	"github.com/linkall-labs/vanus-operator/pkg/apiserver/handlers"
+	"github.com/vanus-labs/vanus-operator/pkg/apiserver/controller"
+	"github.com/vanus-labs/vanus-operator/pkg/apiserver/handlers"
 	"k8s.io/klog/v2"
 )
 

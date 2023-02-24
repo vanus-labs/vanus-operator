@@ -14,7 +14,8 @@ import (
 // DeleteClusterOKCode is the HTTP code returned for type DeleteClusterOK
 const DeleteClusterOKCode int = 200
 
-/*DeleteClusterOK OK
+/*
+DeleteClusterOK OK
 
 swagger:response deleteClusterOK
 */

@@ -16,8 +16,8 @@ package handlers
 
 import (
 	"github.com/go-openapi/runtime/middleware"
-	"github.com/linkall-labs/vanus-operator/api/models"
-	"github.com/linkall-labs/vanus-operator/api/restapi/operations/healthz"
+	"github.com/vanus-labs/vanus-operator/api/models"
+	"github.com/vanus-labs/vanus-operator/api/restapi/operations/healthz"
 )
 
 func RegistHealthzHandler(a *Api) {

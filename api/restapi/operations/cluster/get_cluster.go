@@ -15,7 +15,7 @@ import (
 	"github.com/go-openapi/swag"
 	"github.com/go-openapi/validate"
 
-	"github.com/linkall-labs/vanus-operator/api/models"
+	"github.com/vanus-labs/vanus-operator/api/models"
 )
 
 // GetClusterHandlerFunc turns a function with the right signature into a get cluster handler
@@ -36,10 +36,10 @@ func NewGetCluster(ctx *middleware.Context, handler GetClusterHandler) *GetClust
 	return &GetCluster{Context: ctx, Handler: handler}
 }
 
-/* GetCluster swagger:route GET /cluster/ cluster getCluster
+/*
+	GetCluster swagger:route GET /cluster/ cluster getCluster
 
 get Cluster
-
 */
 type GetCluster struct {
 	Context *middleware.Context

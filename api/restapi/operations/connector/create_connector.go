@@ -15,7 +15,7 @@ import (
 	"github.com/go-openapi/swag"
 	"github.com/go-openapi/validate"
 
-	"github.com/linkall-labs/vanus-operator/api/models"
+	"github.com/vanus-labs/vanus-operator/api/models"
 )
 
 // CreateConnectorHandlerFunc turns a function with the right signature into a create connector handler
@@ -36,10 +36,10 @@ func NewCreateConnector(ctx *middleware.Context, handler CreateConnectorHandler)
 	return &CreateConnector{Context: ctx, Handler: handler}
 }
 
-/* CreateConnector swagger:route POST /connectors/ connector createConnector
+/*
+	CreateConnector swagger:route POST /connectors/ connector createConnector
 
 create Connector
-
 */
 type CreateConnector struct {
 	Context *middleware.Context

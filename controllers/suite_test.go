@@ -29,7 +29,7 @@ import (
 	logf "sigs.k8s.io/controller-runtime/pkg/log"
 	"sigs.k8s.io/controller-runtime/pkg/log/zap"
 
-	vanusv1alpha1 "github.com/linkall-labs/vanus-operator/api/v1alpha1"
+	vanusv1alpha1 "github.com/vanus-labs/vanus-operator/api/v1alpha1"
 	//+kubebuilder:scaffold:imports
 )
 

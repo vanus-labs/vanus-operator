@@ -15,7 +15,7 @@ import (
 	"github.com/go-openapi/swag"
 	"github.com/go-openapi/validate"
 
-	"github.com/linkall-labs/vanus-operator/api/models"
+	"github.com/vanus-labs/vanus-operator/api/models"
 )
 
 // CreateClusterHandlerFunc turns a function with the right signature into a create cluster handler
@@ -36,10 +36,10 @@ func NewCreateCluster(ctx *middleware.Context, handler CreateClusterHandler) *Cr
 	return &CreateCluster{Context: ctx, Handler: handler}
 }
 
-/* CreateCluster swagger:route POST /cluster/ cluster createCluster
+/*
+	CreateCluster swagger:route POST /cluster/ cluster createCluster
 
 create Cluster
-
 */
 type CreateCluster struct {
 	Context *middleware.Context

@@ -2,19 +2,19 @@
 
 // Package restapi Vanus Operator Interface Document
 //
-//  this document describes the functions, parameters and return values of the vanus operator API
+//	this document describes the functions, parameters and return values of the vanus operator API
 //
-//  Schemes:
-//    http
-//  Host: localhost
-//  BasePath: /api/v1
-//  Version: v0.2.0
+//	Schemes:
+//	  http
+//	Host: localhost
+//	BasePath: /api/v1
+//	Version: v0.2.0
 //
-//  Consumes:
-//    - application/json
+//	Consumes:
+//	  - application/json
 //
-//  Produces:
-//    - application/json
+//	Produces:
+//	  - application/json
 //
 // swagger:meta
 package restapi

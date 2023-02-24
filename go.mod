@@ -1,4 +1,4 @@
-module github.com/linkall-labs/vanus-operator
+module github.com/vanus-labs/vanus-operator
 
 go 1.18
 

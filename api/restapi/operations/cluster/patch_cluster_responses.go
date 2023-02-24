@@ -14,7 +14,8 @@ import (
 // PatchClusterOKCode is the HTTP code returned for type PatchClusterOK
 const PatchClusterOKCode int = 200
 
-/*PatchClusterOK OK
+/*
+PatchClusterOK OK
 
 swagger:response patchClusterOK
 */

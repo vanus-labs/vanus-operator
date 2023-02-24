@@ -26,7 +26,7 @@ It is built using the [Operator SDK](https://github.com/operator-framework/opera
 
 1. Clone the project on your Kubernetes cluster master node:
 ```
-$ git clone https://github.com/linkall-labs/vanus-operator.git
+$ git clone https://github.com/vanus-labs/vanus-operator.git
 $ cd vanus-operator
 ```
 
