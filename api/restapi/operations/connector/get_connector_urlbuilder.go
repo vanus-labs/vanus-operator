@@ -40,7 +40,7 @@ func (o *GetConnectorURL) SetBasePath(bp string) {
 func (o *GetConnectorURL) Build() (*url.URL, error) {
 	var _result url.URL
 
-	var _path = "/connector/{name}"
+	var _path = "/connectors/{name}"
 
 	name := o.Name
 	if name != "" {

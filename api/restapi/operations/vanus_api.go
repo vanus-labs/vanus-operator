@@ -335,7 +335,7 @@ func (o *VanusAPI) initHandlerCache() {
 	if o.handlers["DELETE"] == nil {
 		o.handlers["DELETE"] = make(map[string]http.Handler)
 	}
-	o.handlers["DELETE"]["/connector/{name}"] = connector.NewDeleteConnector(o.context, o.ConnectorDeleteConnectorHandler)
+	o.handlers["DELETE"]["/connectors/{name}"] = connector.NewDeleteConnector(o.context, o.ConnectorDeleteConnectorHandler)
 	if o.handlers["GET"] == nil {
 		o.handlers["GET"] = make(map[string]http.Handler)
 	}
@@ -343,7 +343,7 @@ func (o *VanusAPI) initHandlerCache() {
 	if o.handlers["GET"] == nil {
 		o.handlers["GET"] = make(map[string]http.Handler)
 	}
-	o.handlers["GET"]["/connector/{name}"] = connector.NewGetConnector(o.context, o.ConnectorGetConnectorHandler)
+	o.handlers["GET"]["/connectors/{name}"] = connector.NewGetConnector(o.context, o.ConnectorGetConnectorHandler)
 	if o.handlers["GET"] == nil {
 		o.handlers["GET"] = make(map[string]http.Handler)
 	}

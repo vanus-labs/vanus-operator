@@ -213,7 +213,94 @@ func init() {
         }
       }
     },
-    "/connector/{name}": {
+    "/connectors/": {
+      "get": {
+        "description": "list Connector",
+        "tags": [
+          "connector"
+        ],
+        "operationId": "listConnector",
+        "responses": {
+          "200": {
+            "description": "OK",
+            "schema": {
+              "type": "object",
+              "required": [
+                "code",
+                "data",
+                "message"
+              ],
+              "properties": {
+                "code": {
+                  "type": "integer",
+                  "format": "int32",
+                  "default": 200
+                },
+                "data": {
+                  "type": "array",
+                  "items": {
+                    "type": "object",
+                    "$ref": "#/definitions/Connector_info"
+                  }
+                },
+                "message": {
+                  "type": "string",
+                  "default": "success"
+                }
+              }
+            }
+          }
+        }
+      },
+      "post": {
+        "description": "create Connector",
+        "tags": [
+          "connector"
+        ],
+        "operationId": "createConnector",
+        "parameters": [
+          {
+            "description": "Connector info",
+            "name": "connector",
+            "in": "body",
+            "required": true,
+            "schema": {
+              "type": "object",
+              "$ref": "#/definitions/Connector_info"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "schema": {
+              "type": "object",
+              "required": [
+                "code",
+                "data",
+                "message"
+              ],
+              "properties": {
+                "code": {
+                  "type": "integer",
+                  "format": "int32",
+                  "default": 200
+                },
+                "data": {
+                  "type": "object",
+                  "$ref": "#/definitions/Connector_info"
+                },
+                "message": {
+                  "type": "string",
+                  "default": "success"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/connectors/{name}": {
       "get": {
         "description": "get Connector",
         "tags": [
@@ -271,93 +358,6 @@ func init() {
             "name": "name",
             "in": "path",
             "required": true
-          }
-        ],
-        "responses": {
-          "200": {
-            "description": "OK",
-            "schema": {
-              "type": "object",
-              "required": [
-                "code",
-                "data",
-                "message"
-              ],
-              "properties": {
-                "code": {
-                  "type": "integer",
-                  "format": "int32",
-                  "default": 200
-                },
-                "data": {
-                  "type": "object",
-                  "$ref": "#/definitions/Connector_info"
-                },
-                "message": {
-                  "type": "string",
-                  "default": "success"
-                }
-              }
-            }
-          }
-        }
-      }
-    },
-    "/connectors/": {
-      "get": {
-        "description": "list Connector",
-        "tags": [
-          "connector"
-        ],
-        "operationId": "listConnector",
-        "responses": {
-          "200": {
-            "description": "OK",
-            "schema": {
-              "type": "object",
-              "required": [
-                "code",
-                "data",
-                "message"
-              ],
-              "properties": {
-                "code": {
-                  "type": "integer",
-                  "format": "int32",
-                  "default": 200
-                },
-                "data": {
-                  "type": "array",
-                  "items": {
-                    "type": "object",
-                    "$ref": "#/definitions/Connector_info"
-                  }
-                },
-                "message": {
-                  "type": "string",
-                  "default": "success"
-                }
-              }
-            }
-          }
-        }
-      },
-      "post": {
-        "description": "create Connector",
-        "tags": [
-          "connector"
-        ],
-        "operationId": "createConnector",
-        "parameters": [
-          {
-            "description": "Connector info",
-            "name": "connector",
-            "in": "body",
-            "required": true,
-            "schema": {
-              "type": "object",
-              "$ref": "#/definitions/Connector_info"
-            }
           }
         ],
         "responses": {
@@ -796,7 +796,94 @@ func init() {
         }
       }
     },
-    "/connector/{name}": {
+    "/connectors/": {
+      "get": {
+        "description": "list Connector",
+        "tags": [
+          "connector"
+        ],
+        "operationId": "listConnector",
+        "responses": {
+          "200": {
+            "description": "OK",
+            "schema": {
+              "type": "object",
+              "required": [
+                "code",
+                "data",
+                "message"
+              ],
+              "properties": {
+                "code": {
+                  "type": "integer",
+                  "format": "int32",
+                  "default": 200
+                },
+                "data": {
+                  "type": "array",
+                  "items": {
+                    "type": "object",
+                    "$ref": "#/definitions/Connector_info"
+                  }
+                },
+                "message": {
+                  "type": "string",
+                  "default": "success"
+                }
+              }
+            }
+          }
+        }
+      },
+      "post": {
+        "description": "create Connector",
+        "tags": [
+          "connector"
+        ],
+        "operationId": "createConnector",
+        "parameters": [
+          {
+            "description": "Connector info",
+            "name": "connector",
+            "in": "body",
+            "required": true,
+            "schema": {
+              "type": "object",
+              "$ref": "#/definitions/Connector_info"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "schema": {
+              "type": "object",
+              "required": [
+                "code",
+                "data",
+                "message"
+              ],
+              "properties": {
+                "code": {
+                  "type": "integer",
+                  "format": "int32",
+                  "default": 200
+                },
+                "data": {
+                  "type": "object",
+                  "$ref": "#/definitions/Connector_info"
+                },
+                "message": {
+                  "type": "string",
+                  "default": "success"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/connectors/{name}": {
       "get": {
         "description": "get Connector",
         "tags": [
@@ -854,93 +941,6 @@ func init() {
             "name": "name",
             "in": "path",
             "required": true
-          }
-        ],
-        "responses": {
-          "200": {
-            "description": "OK",
-            "schema": {
-              "type": "object",
-              "required": [
-                "code",
-                "data",
-                "message"
-              ],
-              "properties": {
-                "code": {
-                  "type": "integer",
-                  "format": "int32",
-                  "default": 200
-                },
-                "data": {
-                  "type": "object",
-                  "$ref": "#/definitions/Connector_info"
-                },
-                "message": {
-                  "type": "string",
-                  "default": "success"
-                }
-              }
-            }
-          }
-        }
-      }
-    },
-    "/connectors/": {
-      "get": {
-        "description": "list Connector",
-        "tags": [
-          "connector"
-        ],
-        "operationId": "listConnector",
-        "responses": {
-          "200": {
-            "description": "OK",
-            "schema": {
-              "type": "object",
-              "required": [
-                "code",
-                "data",
-                "message"
-              ],
-              "properties": {
-                "code": {
-                  "type": "integer",
-                  "format": "int32",
-                  "default": 200
-                },
-                "data": {
-                  "type": "array",
-                  "items": {
-                    "type": "object",
-                    "$ref": "#/definitions/Connector_info"
-                  }
-                },
-                "message": {
-                  "type": "string",
-                  "default": "success"
-                }
-              }
-            }
-          }
-        }
-      },
-      "post": {
-        "description": "create Connector",
-        "tags": [
-          "connector"
-        ],
-        "operationId": "createConnector",
-        "parameters": [
-          {
-            "description": "Connector info",
-            "name": "connector",
-            "in": "body",
-            "required": true,
-            "schema": {
-              "type": "object",
-              "$ref": "#/definitions/Connector_info"
-            }
           }
         ],
         "responses": {
