@@ -425,8 +425,17 @@ definitions:
         type: "string"
         description: "connector version"
       config:
-        type: "string"
-        description: "connector config file"
+        type: object
+        required:
+          - default
+        additionalProperties:
+          type: object
+      annotations:
+        type: object
+        required:
+          - default
+        additionalProperties:
+          type: string
       status:
         type: "string"
         description: "connector status"

@@ -25,6 +25,7 @@ import (
 	vanusv1alpha1 "github.com/vanus-labs/vanus-operator/api/v1alpha1"
 	cons "github.com/vanus-labs/vanus-operator/internal/constants"
 	"github.com/vanus-labs/vanus-operator/pkg/apiserver/utils"
+	"gopkg.in/yaml.v2"
 	corev1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/labels"
@@ -64,14 +65,14 @@ func RegistConnectorHandler(a *Api) {
 }
 
 func (a *Api) createConnectorHandler(params connector.CreateConnectorParams) middleware.Responder {
-	// Parse cluster params
+	// Parse connector params
 	c, err := genConnectorConfig(params.Connector)
 	if err != nil {
 		log.Error(err, "parse connector params failed")
 		return utils.Response(0, err)
 	}
 
-	log.Infof("parse cluster params finish, name: %s, kind: %s, namespace: %s\n", c.name, c.kind, c.namespace)
+	log.Infof("parse connector params finish, name: %s, kind: %s, namespace: %s\n", c.name, c.kind, c.namespace)
 
 	// Check if the connector already exists, if exist, return error
 	exist, err := a.checkConnectorExist(c.name)
@@ -198,12 +199,13 @@ func (a *Api) checkConnectorExist(name string) (bool, error) {
 }
 
 type connectorConfig struct {
-	name      string
-	namespace string
-	kind      string
-	ctype     string
-	version   string
-	config    string
+	name       string
+	namespace  string
+	kind       string
+	ctype      string
+	version    string
+	config     map[string]interface{}
+	annotaions map[string]string
 }
 
 func genConnectorConfig(connector *models.ConnectorInfo) (*connectorConfig, error) {
@@ -219,6 +221,13 @@ func genConnectorConfig(connector *models.ConnectorInfo) (*connectorConfig, erro
 	if connector.Version == "" {
 		c.version = "latest"
 	}
+	if len(connector.Annotations) != 0 {
+		annotations := make(map[string]string, len(connector.Annotations))
+		for key, value := range connector.Annotations {
+			annotations[key] = value
+		}
+		c.annotaions = annotations
+	}
 	return c, nil
 }
 
@@ -228,17 +237,20 @@ func labelsForConnector(name string) map[string]string {
 
 func generateConnector(c *connectorConfig) *vanusv1alpha1.Connector {
 	labels := labelsForConnector(c.name)
+	config, _ := yaml.Marshal(c.config)
 	controller := &vanusv1alpha1.Connector{
 		ObjectMeta: metav1.ObjectMeta{
-			Name:      c.name,
-			Namespace: c.namespace,
-			Labels:    labels,
+			Name:        c.name,
+			Namespace:   c.namespace,
+			Labels:      labels,
+			Annotations: c.annotaions,
 		},
 		Spec: vanusv1alpha1.ConnectorSpec{
 			Name:            c.name,
 			Kind:            c.kind,
 			Type:            c.ctype,
-			Config:          c.config,
+			Config:          string(config),
+			Annotations:     c.annotaions,
 			Image:           fmt.Sprintf("public.ecr.aws/vanus/connector/%s-%s:%s", c.kind, c.ctype, c.version),
 			ImagePullPolicy: corev1.PullIfNotPresent,
 		},

@@ -558,9 +558,23 @@ func init() {
       "description": "Connector info",
       "type": "object",
       "properties": {
+        "annotations": {
+          "type": "object",
+          "required": [
+            "default"
+          ],
+          "additionalProperties": {
+            "type": "string"
+          }
+        },
         "config": {
-          "description": "connector config file",
-          "type": "string"
+          "type": "object",
+          "required": [
+            "default"
+          ],
+          "additionalProperties": {
+            "type": "object"
+          }
         },
         "kind": {
           "description": "connector kind",
@@ -1141,9 +1155,23 @@ func init() {
       "description": "Connector info",
       "type": "object",
       "properties": {
+        "annotations": {
+          "type": "object",
+          "required": [
+            "default"
+          ],
+          "additionalProperties": {
+            "type": "string"
+          }
+        },
         "config": {
-          "description": "connector config file",
-          "type": "string"
+          "type": "object",
+          "required": [
+            "default"
+          ],
+          "additionalProperties": {
+            "type": "object"
+          }
         },
         "kind": {
           "description": "connector kind",

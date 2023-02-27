@@ -37,6 +37,8 @@ type ConnectorSpec struct {
 	Type string `json:"type,omitempty"`
 	// Config is the file of config.
 	Config string `json:"config,omitempty"`
+	// annotations is the annotation of connector.
+	Annotations map[string]string `json:"annotations,omitempty"`
 	// Image is the name of the controller docker image to use for the Pods.
 	// Must be provided together with ImagePullSecrets in order to use an image in a private registry.
 	Image string `json:"image,omitempty"`

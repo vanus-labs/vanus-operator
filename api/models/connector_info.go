@@ -17,8 +17,11 @@ import (
 // swagger:model Connector_info
 type ConnectorInfo struct {
 
-	// connector config file
-	Config string `json:"config,omitempty"`
+	// annotations
+	Annotations map[string]string `json:"annotations,omitempty"`
+
+	// config
+	Config map[string]interface{} `json:"config,omitempty"`
 
 	// connector kind
 	Kind string `json:"kind,omitempty"`
