@@ -166,7 +166,8 @@ func (r *ConnectorReconciler) getDeploymentForConnector(connector *vanusv1alpha1
 			},
 			Template: corev1.PodTemplateSpec{
 				ObjectMeta: metav1.ObjectMeta{
-					Labels: labels,
+					Labels:      labels,
+					Annotations: connector.Annotations,
 				},
 				Spec: corev1.PodSpec{
 					Containers: []corev1.Container{{

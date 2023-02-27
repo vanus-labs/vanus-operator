@@ -35,6 +35,11 @@ spec:
           spec:
             description: ConnectorSpec defines the desired state of Connector
             properties:
+              annotations:
+                additionalProperties:
+                  type: string
+                description: annotations is the annotation of connector.
+                type: object
               config:
                 description: Config is the file of config.
                 type: string
