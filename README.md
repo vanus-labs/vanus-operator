@@ -227,7 +227,7 @@ spec:
   type: NodePort
 
 ---
-apiVersion: vanus.vanus.ai/v1alpha1
+apiVersion: core.vanus.ai/v1alpha1
 kind: Controller
 metadata:
   name: vanus-controller
@@ -250,7 +250,7 @@ spec:
           storage: 1Gi
 
 ---
-apiVersion: vanus.vanus.ai/v1alpha1
+apiVersion: core.vanus.ai/v1alpha1
 kind: Store
 metadata:
   name: vanus-store
@@ -273,7 +273,7 @@ spec:
           storage: 1Gi
 
 ---
-apiVersion: vanus.vanus.ai/v1alpha1
+apiVersion: core.vanus.ai/v1alpha1
 kind: Trigger
 metadata:
   name: vanus-trigger
@@ -285,7 +285,7 @@ spec:
   imagePullPolicy: IfNotPresent
 
 ---
-apiVersion: vanus.vanus.ai/v1alpha1
+apiVersion: core.vanus.ai/v1alpha1
 kind: Timer
 metadata:
   name: vanus-timer
@@ -297,7 +297,7 @@ spec:
   imagePullPolicy: IfNotPresent
 
 ---
-apiVersion: vanus.vanus.ai/v1alpha1
+apiVersion: core.vanus.ai/v1alpha1
 kind: Gateway
 metadata:
   name: vanus-gateway
@@ -325,11 +325,11 @@ configmap/config-store created
 configmap/config-timer created
 configmap/config-trigger created
 service/vanus-gateway created
-controller.vanus.vanus.ai/vanus-controller created
-gateway.vanus.vanus.ai/vanus-gateway created
-store.vanus.vanus.ai/vanus-store created
-timer.vanus.vanus.ai/vanus-timer created
-trigger.vanus.vanus.ai/vanus-trigger created
+controller.core.vanus.ai/vanus-controller created
+gateway.core.vanus.ai/vanus-gateway created
+store.core.vanus.ai/vanus-store created
+timer.core.vanus.ai/vanus-timer created
+trigger.core.vanus.ai/vanus-trigger created
 ```
 
 **NOTE:** Default creation is under the `default` namespace. You can also specify the namespace for creation by the `VANUS_NAMESPACE` parameter, use command like:
@@ -437,11 +437,11 @@ configmap "config-store" deleted
 configmap "config-timer" deleted
 configmap "config-trigger" deleted
 service "vanus-gateway" deleted
-controller.vanus.vanus.ai "vanus-controller" deleted
-gateway.vanus.vanus.ai "vanus-gateway" deleted
-store.vanus.vanus.ai "vanus-store" deleted
-timer.vanus.vanus.ai "vanus-timer" deleted
-trigger.vanus.vanus.ai "vanus-trigger" deleted
+controller.core.vanus.ai "vanus-controller" deleted
+gateway.core.vanus.ai "vanus-gateway" deleted
+store.core.vanus.ai "vanus-store" deleted
+timer.core.vanus.ai "vanus-timer" deleted
+trigger.core.vanus.ai "vanus-trigger" deleted
 ```
 
 **NOTE:** You can also specify the namespace for deletion by the `VANUS_NAMESPACE` parameter, use command like:
@@ -454,11 +454,11 @@ $ make VANUS_NAMESPACE=vanus uncluster
 
 ```sh
 make undeploy
-customresourcedefinition.apiextensions.k8s.io "controllers.vanus.vanus.ai" deleted
-customresourcedefinition.apiextensions.k8s.io "gateways.vanus.vanus.ai" deleted
-customresourcedefinition.apiextensions.k8s.io "stores.vanus.vanus.ai" deleted
-customresourcedefinition.apiextensions.k8s.io "timers.vanus.vanus.ai" deleted
-customresourcedefinition.apiextensions.k8s.io "triggers.vanus.vanus.ai" deleted
+customresourcedefinition.apiextensions.k8s.io "controllers.core.vanus.ai" deleted
+customresourcedefinition.apiextensions.k8s.io "gateways.core.vanus.ai" deleted
+customresourcedefinition.apiextensions.k8s.io "stores.core.vanus.ai" deleted
+customresourcedefinition.apiextensions.k8s.io "timers.core.vanus.ai" deleted
+customresourcedefinition.apiextensions.k8s.io "triggers.core.vanus.ai" deleted
 serviceaccount "vanus-operator" deleted
 clusterrole.rbac.authorization.k8s.io "vanus-operator" deleted
 clusterrolebinding.rbac.authorization.k8s.io "vanus-operator" deleted

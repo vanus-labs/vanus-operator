@@ -6,7 +6,7 @@ metadata:
   name: manager-role
 rules:
 - apiGroups:
-  - vanus.vanus.ai
+  - core.vanus.ai
   resources:
   - connectors
   verbs:
@@ -18,13 +18,13 @@ rules:
   - update
   - watch
 - apiGroups:
-  - vanus.vanus.ai
+  - core.vanus.ai
   resources:
   - connectors/finalizers
   verbs:
   - update
 - apiGroups:
-  - vanus.vanus.ai
+  - core.vanus.ai
   resources:
   - connectors/status
   verbs:
@@ -32,7 +32,7 @@ rules:
   - patch
   - update
 - apiGroups:
-  - vanus.vanus.ai
+  - core.vanus.ai
   resources:
   - vanus
   verbs:
@@ -44,13 +44,13 @@ rules:
   - update
   - watch
 - apiGroups:
-  - vanus.vanus.ai
+  - core.vanus.ai
   resources:
   - vanus/finalizers
   verbs:
   - update
 - apiGroups:
-  - vanus.vanus.ai
+  - core.vanus.ai
   resources:
   - vanus/status
   verbs:
