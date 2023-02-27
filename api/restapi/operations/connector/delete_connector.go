@@ -37,7 +37,7 @@ func NewDeleteConnector(ctx *middleware.Context, handler DeleteConnectorHandler)
 }
 
 /*
-	DeleteConnector swagger:route DELETE /connector/{name} connector deleteConnector
+	DeleteConnector swagger:route DELETE /connectors/{name} connector deleteConnector
 
 delete Connector
 */
