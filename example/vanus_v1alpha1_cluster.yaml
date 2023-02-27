@@ -13,7 +13,7 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-apiVersion: vanus.vanus.ai/v1alpha1
+apiVersion: core.vanus.ai/v1alpha1
 kind: Vanus
 metadata:
   name: vanus-cluster

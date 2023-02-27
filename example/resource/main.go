@@ -67,7 +67,7 @@ func generateVanus() *vanusv1alpha1.Vanus {
 
 func NewForConfig(c *rest.Config) (rest.Interface, error) {
 	config := *c
-	config.ContentConfig.GroupVersion = &schema.GroupVersion{Group: "vanus.vanus.ai", Version: "v1alpha1"}
+	config.ContentConfig.GroupVersion = &schema.GroupVersion{Group: "core.vanus.ai", Version: "v1alpha1"}
 	config.APIPath = "/apis"
 	config.NegotiatedSerializer = scheme.Codecs.WithoutConversion()
 	config.UserAgent = rest.DefaultKubernetesUserAgent()
@@ -162,7 +162,7 @@ func DeleteNotExist(client rest.Interface, opts metav1.DeleteOptions) (*vanusv1a
 	return &result, err
 }
 
-const GroupName = "vanus.vanus.ai"
+const GroupName = "core.vanus.ai"
 const GroupVersion = "v1alpha1"
 
 var SchemeGroupVersion = schema.GroupVersion{Group: GroupName, Version: GroupVersion}

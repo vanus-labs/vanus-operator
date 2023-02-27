@@ -5,9 +5,9 @@ metadata:
   annotations:
     controller-gen.kubebuilder.io/version: v0.9.2
   creationTimestamp: null
-  name: vanus.vanus.vanus.ai
+  name: vanus.core.vanus.ai
 spec:
-  group: vanus.vanus.ai
+  group: core.vanus.ai
   names:
     kind: Vanus
     listKind: VanusList
@@ -431,9 +431,9 @@ metadata:
   annotations:
     controller-gen.kubebuilder.io/version: v0.9.2
   creationTimestamp: null
-  name: connectors.vanus.vanus.ai
+  name: connectors.core.vanus.ai
 spec:
-  group: vanus.vanus.ai
+  group: core.vanus.ai
   names:
     kind: Connector
     listKind: ConnectorList
@@ -594,7 +594,7 @@ rules:
   - update
   - watch
 - apiGroups:
-  - vanus.vanus.ai
+  - core.vanus.ai
   resources:
   - vanus
   verbs:
@@ -606,13 +606,13 @@ rules:
   - update
   - watch
 - apiGroups:
-  - vanus.vanus.ai
+  - core.vanus.ai
   resources:
   - vanus/finalizers
   verbs:
   - update
 - apiGroups:
-  - vanus.vanus.ai
+  - core.vanus.ai
   resources:
   - vanus/spec
   verbs:
@@ -620,7 +620,7 @@ rules:
   - patch
   - update
 - apiGroups:
-  - vanus.vanus.ai
+  - core.vanus.ai
   resources:
   - vanus/status
   verbs:
@@ -628,7 +628,7 @@ rules:
   - patch
   - update
 - apiGroups:
-  - vanus.vanus.ai
+  - core.vanus.ai
   resources:
   - connectors
   verbs:
@@ -640,13 +640,13 @@ rules:
   - update
   - watch
 - apiGroups:
-  - vanus.vanus.ai
+  - core.vanus.ai
   resources:
   - connectors/finalizers
   verbs:
   - update
 - apiGroups:
-  - vanus.vanus.ai
+  - core.vanus.ai
   resources:
   - connectors/spec
   verbs:
@@ -654,7 +654,7 @@ rules:
   - patch
   - update
 - apiGroups:
-  - vanus.vanus.ai
+  - core.vanus.ai
   resources:
   - connectors/status
   verbs:

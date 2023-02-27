@@ -1,4 +1,4 @@
-apiVersion: vanus.vanus.ai/v1alpha1
+apiVersion: core.vanus.ai/v1alpha1
 kind: Vanus
 metadata:
   name: vanus-sample

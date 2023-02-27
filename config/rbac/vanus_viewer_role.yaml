@@ -5,7 +5,7 @@ metadata:
   name: vanus-viewer-role
 rules:
 - apiGroups:
-  - vanus.vanus.ai
+  - core.vanus.ai
   resources:
   - vanus
   verbs:
@@ -13,7 +13,7 @@ rules:
   - list
   - watch
 - apiGroups:
-  - vanus.vanus.ai
+  - core.vanus.ai
   resources:
   - vanus/status
   verbs:
