@@ -15,6 +15,7 @@
 package handlers
 
 import (
+	"errors"
 	stderr "errors"
 	"fmt"
 
@@ -52,7 +53,7 @@ func (a *Api) createClusterHandler(params cluster.CreateClusterParams) middlewar
 	c, err := genClusterConfig(params.Create)
 	if err != nil {
 		log.Error(err, "parse cluster params failed")
-		return utils.Response(0, err)
+		return utils.Response(400, err)
 	}
 
 	log.Infof("parse cluster params finish, config: %s\n", c.String())
@@ -61,11 +62,11 @@ func (a *Api) createClusterHandler(params cluster.CreateClusterParams) middlewar
 	exist, err := a.checkClusterExist()
 	if err != nil {
 		log.Errorf("check cluster exist failed, err: %s\n", err.Error())
-		return utils.Response(0, err)
+		return utils.Response(500, err)
 	}
 	if exist {
 		log.Warning("Cluster already exist")
-		return utils.Response(0, stderr.New("cluster already exist"))
+		return utils.Response(400, stderr.New("cluster already exist"))
 	}
 
 	defer func() {
@@ -85,13 +86,17 @@ func (a *Api) createClusterHandler(params cluster.CreateClusterParams) middlewar
 	if err != nil {
 		log.Errorf("Failed to create new Vanus cluster, Vanus.Namespace: %s, Vanus.Name: %s, err: %s\n", cons.DefaultNamespace, cons.DefaultVanusClusterName, err.Error())
 		failedToExit = true
-		return utils.Response(0, err)
-	} else {
-		vanusDeployed = true
-		log.Infof("Successfully create Vanus cluster: %+v\n", resultVanus)
+		return utils.Response(500, err)
 	}
+	vanusDeployed = true
+	log.Infof("Successfully create Vanus cluster: %+v\n", resultVanus)
 
-	return cluster.NewCreateClusterOK().WithPayload(nil)
+	retcode := int32(200)
+	msg := "create cluster success"
+	return cluster.NewCreateClusterOK().WithPayload(&cluster.CreateClusterOKBody{
+		Code:    &retcode,
+		Message: &msg,
+	})
 }
 
 func (a *Api) deleteClusterHandler(params cluster.DeleteClusterParams) middleware.Responder {
@@ -99,20 +104,25 @@ func (a *Api) deleteClusterHandler(params cluster.DeleteClusterParams) middlewar
 	exist, err := a.checkClusterExist()
 	if err != nil {
 		log.Errorf("check cluster exist failed, err: %s\n", err.Error())
-		return utils.Response(0, err)
+		return utils.Response(500, err)
 	}
 	if !exist {
 		log.Warning("Cluster not exist")
-		return cluster.NewDeleteClusterOK().WithPayload(nil)
+		return utils.Response(400, errors.New("cluster not exist"))
 	}
 
 	err = a.deleteVanus(cons.DefaultNamespace, cons.DefaultVanusClusterName)
 	if err != nil {
 		log.Errorf("delete vanus cluster failed, err: %s\n", err.Error())
-		return utils.Response(0, err)
+		return utils.Response(500, err)
 	}
 
-	return cluster.NewDeleteClusterOK().WithPayload(nil)
+	retcode := int32(200)
+	msg := "delete cluster success"
+	return cluster.NewDeleteClusterOK().WithPayload(&cluster.DeleteClusterOKBody{
+		Code:    &retcode,
+		Message: &msg,
+	})
 }
 
 func (a *Api) patchClusterHandler(params cluster.PatchClusterParams) middleware.Responder {
@@ -135,19 +145,24 @@ func (a *Api) patchClusterHandler(params cluster.PatchClusterParams) middleware.
 	resultVanus, err := a.patchVanus(vanus)
 	if err != nil {
 		log.Errorf("Failed to patch Vanus cluster, Vanus.Namespace: %s, Vanus.Name: %s, err: %s\n", cons.DefaultNamespace, cons.DefaultVanusClusterName, err.Error())
-		return utils.Response(0, err)
+		return utils.Response(500, err)
 	}
 	log.Infof("Successfully patch Vanus cluster: %+v\n", resultVanus)
-	return cluster.NewPatchClusterOK().WithPayload(nil)
+	retcode := int32(200)
+	msg := "patch vanus cluster success"
+	return cluster.NewPatchClusterOK().WithPayload(&cluster.PatchClusterOKBody{
+		Code:    &retcode,
+		Message: &msg,
+	})
 }
 
 func (a *Api) getClusterHandler(params cluster.GetClusterParams) middleware.Responder {
 	vanus, err := a.getVanus(cons.DefaultNamespace, cons.DefaultVanusClusterName, &metav1.GetOptions{})
 	if err != nil {
 		log.Error(err, "Failed to get Vanus cluster", "Vanus.Namespace: ", cons.DefaultNamespace, "Vanus.Name: ", cons.DefaultVanusClusterName)
-		return utils.Response(0, err)
+		return utils.Response(500, err)
 	}
-	retcode := int32(400)
+	retcode := int32(200)
 	msg := "get cluster success"
 	return cluster.NewGetClusterOK().WithPayload(&cluster.GetClusterOKBody{
 		Code: &retcode,
