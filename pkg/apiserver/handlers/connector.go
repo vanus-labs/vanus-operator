@@ -15,6 +15,7 @@
 package handlers
 
 import (
+	"errors"
 	stderr "errors"
 	"fmt"
 	"strings"
@@ -69,7 +70,7 @@ func (a *Api) createConnectorHandler(params connector.CreateConnectorParams) mid
 	c, err := genConnectorConfig(params.Connector)
 	if err != nil {
 		log.Error(err, "parse connector params failed")
-		return utils.Response(0, err)
+		return utils.Response(400, err)
 	}
 
 	log.Infof("parse connector params finish, name: %s, kind: %s, namespace: %s\n", c.name, c.kind, c.namespace)
@@ -78,11 +79,11 @@ func (a *Api) createConnectorHandler(params connector.CreateConnectorParams) mid
 	exist, err := a.checkConnectorExist(c.name)
 	if err != nil {
 		log.Errorf("check connector exist failed, name: %s, err: %s\n", c.name, err.Error())
-		return utils.Response(0, err)
+		return utils.Response(500, err)
 	}
 	if exist {
 		log.Warningf("Connector already exist, name: %s\n", c.name)
-		return utils.Response(0, stderr.New("connector already exist"))
+		return utils.Response(500, stderr.New("connector already exist"))
 	}
 
 	defer func() {
@@ -97,12 +98,16 @@ func (a *Api) createConnectorHandler(params connector.CreateConnectorParams) mid
 	resultConnector, err := a.createConnector(newConnector, c.namespace)
 	if err != nil {
 		log.Errorf("Failed to create new Connector, Connector.Namespace: %s, Connector.Name: %s, err: %s\n", cons.DefaultNamespace, c.name, err.Error())
-		return utils.Response(0, err)
-	} else {
-		log.Infof("Successfully create Connector: %+v\n", resultConnector)
+		return utils.Response(500, err)
 	}
+	log.Infof("Successfully create Connector: %+v\n", resultConnector)
 
-	return connector.NewCreateConnectorOK().WithPayload(nil)
+	retcode := int32(200)
+	msg := "create connector success"
+	return connector.NewCreateConnectorOK().WithPayload(&connector.CreateConnectorOKBody{
+		Code:    &retcode,
+		Message: &msg,
+	})
 }
 
 func (a *Api) deleteConnectorHandler(params connector.DeleteConnectorParams) middleware.Responder {
@@ -110,35 +115,41 @@ func (a *Api) deleteConnectorHandler(params connector.DeleteConnectorParams) mid
 	exist, err := a.checkConnectorExist(params.Name)
 	if err != nil {
 		log.Errorf("check connector exist failed, err: %s\n", err.Error())
-		return utils.Response(0, err)
+		return utils.Response(500, err)
 	}
 	if !exist {
 		log.Warning("Connector not exist")
-		return connector.NewDeleteConnectorOK().WithPayload(nil)
+		return utils.Response(400, errors.New("connector not exist"))
 	}
 
 	err = a.deleteConnector(cons.DefaultNamespace, params.Name)
 	if err != nil {
 		log.Errorf("delete connector failed, err: %s\n", err.Error())
+		return utils.Response(500, err)
 	}
 
-	return connector.NewDeleteConnectorOK().WithPayload(nil)
+	retcode := int32(200)
+	msg := "delete connector success"
+	return connector.NewDeleteConnectorOK().WithPayload(&connector.DeleteConnectorOKBody{
+		Code:    &retcode,
+		Message: &msg,
+	})
 }
 
 func (a *Api) listConnectorHandler(params connector.ListConnectorParams) middleware.Responder {
 	connectors, err := a.listConnector(cons.DefaultNamespace, &metav1.ListOptions{})
 	if err != nil {
 		log.Error(err, "Failed to list Connectors", "Connector.Namespace: ", cons.DefaultNamespace)
-		return utils.Response(0, err)
+		return utils.Response(500, err)
 	}
-	retcode := int32(400)
-	msg := "list connector success"
+	retcode := int32(200)
+	msg := "list connectors success"
 	data := make([]*models.ConnectorInfo, 0)
 	for _, c := range connectors.Items {
 		status, reason, err := a.getConnectorStatus(c.Name)
 		if err != nil {
 			log.Error(err, "Get Connector status failed", "Connector.Namespace: ", cons.DefaultNamespace, "Connector.Name: ", c.Name)
-			return utils.Response(0, err)
+			return utils.Response(500, err)
 		}
 		data = append(data, &models.ConnectorInfo{
 			Kind:    c.Spec.Kind,
@@ -160,15 +171,15 @@ func (a *Api) getConnectorHandler(params connector.GetConnectorParams) middlewar
 	c, err := a.getConnector(cons.DefaultNamespace, params.Name, &metav1.GetOptions{})
 	if err != nil {
 		log.Error(err, "Failed to get Connector", "Connector.Namespace: ", cons.DefaultNamespace, "Connector.Name: ", params.Name)
-		return utils.Response(0, err)
+		return utils.Response(500, err)
 	}
-	retcode := int32(400)
+	retcode := int32(200)
 	msg := "get connector success"
 
 	status, reason, err := a.getConnectorStatus(params.Name)
 	if err != nil {
 		log.Error(err, "Get Connector status failed", "Connector.Namespace: ", cons.DefaultNamespace, "Connector.Name: ", params.Name)
-		return utils.Response(0, err)
+		return utils.Response(500, err)
 	}
 
 	return connector.NewGetConnectorOK().WithPayload(&connector.GetConnectorOKBody{
