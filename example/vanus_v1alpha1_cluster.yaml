@@ -23,9 +23,9 @@ spec:
   replicas:
     controller: 3
     store: 3
-    trigger: 3
-    timer: 3
-    gateway: 3
+    trigger: 1
+    timer: 2
+    gateway: 1
   version: v0.6.0
   # imagePullPolicy is the image pull policy
   imagePullPolicy: IfNotPresent
@@ -37,4 +37,4 @@ spec:
       - ReadWriteOnce
       resources:
         requests:
-          storage: 1Gi
+          storage: 10Gi
