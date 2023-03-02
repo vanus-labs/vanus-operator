@@ -108,8 +108,9 @@ func (r *VanusReconciler) handleController(ctx context.Context, logger logr.Logg
 	}
 	logger.Info("Successfully update Controller ConfigMap")
 
-	logger.Info("Updating Controller StatefulSet.", "Namespace", controller.Namespace, "Name", controller.Name)
+	logger.Info("Updating Controller StatefulSet.", "Namespace", sts.Namespace, "Name", sts.Name)
 	if strings.Compare(version(sts.Spec.Template.Spec.Containers[0].Image), EtcdSeparateVersion) < 0 && strings.Compare(vanus.Spec.Version, EtcdSeparateVersion) >= 0 {
+		logger.Info("Updating will span the etcd separation version, so need to redeploy the controller component")
 		err = r.Delete(ctx, sts)
 		if err != nil {
 			logger.Error(err, "Failed to Delete Controller StatefulSet", "Namespace", sts.Namespace, "Name", sts.Name)
@@ -121,9 +122,10 @@ func (r *VanusReconciler) handleController(ctx context.Context, logger logr.Logg
 			return ctrl.Result{}, err
 		}
 	} else {
-		err = r.Update(ctx, controller)
+		updateController(sts, vanus)
+		err = r.Update(ctx, sts)
 		if err != nil {
-			logger.Error(err, "Failed to update Controller StatefulSet", "Namespace", controller.Namespace, "Name", controller.Name)
+			logger.Error(err, "Failed to update Controller StatefulSet", "Namespace", sts.Namespace, "Name", sts.Name)
 			return ctrl.Result{}, err
 		}
 	}
@@ -132,8 +134,8 @@ func (r *VanusReconciler) handleController(ctx context.Context, logger logr.Logg
 	// Wait for Controller is ready
 	start := time.Now()
 	logger.Info("Wait for Controller is ready")
-	t := time.NewTicker(defaultWaitForReadyTimeout)
-	defer t.Stop()
+	ticker := time.NewTicker(defaultWaitForReadyTimeout)
+	defer ticker.Stop()
 	for {
 		ready, err := r.waitControllerIsReady(ctx, vanus)
 		if err != nil {
@@ -144,7 +146,7 @@ func (r *VanusReconciler) handleController(ctx context.Context, logger logr.Logg
 			break
 		}
 		select {
-		case <-t.C:
+		case <-ticker.C:
 			return ctrl.Result{RequeueAfter: time.Duration(cons.RequeueIntervalInSecond) * time.Second}, stderr.New("controller isn't ready")
 		default:
 			time.Sleep(time.Second)
@@ -246,6 +248,11 @@ func (r *VanusReconciler) generateNewController(vanus *vanusv1alpha1.Vanus) *app
 	controllerutil.SetControllerReference(vanus, sts, r.Scheme)
 
 	return sts
+}
+
+func updateController(sts *appsv1.StatefulSet, vanus *vanusv1alpha1.Vanus) {
+	sts.Spec.Replicas = &vanus.Spec.Replicas.Controller
+	sts.Spec.Template.Spec.Containers[0].Image = fmt.Sprintf("%s:%s", cons.ControllerImageName, vanus.Spec.Version)
 }
 
 func (r *VanusReconciler) waitControllerIsReady(ctx context.Context, vanus *vanusv1alpha1.Vanus) (bool, error) {

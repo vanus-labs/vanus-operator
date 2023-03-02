@@ -142,12 +142,27 @@ func (a *Api) patchClusterHandler(params cluster.PatchClusterParams) middleware.
 			Version: params.Patch.Version,
 		},
 	}
-	resultVanus, err := a.patchVanus(vanus)
+	_, exist, err := a.existVanus(cons.DefaultNamespace, cons.DefaultVanusClusterName, &metav1.GetOptions{})
 	if err != nil {
-		log.Errorf("Failed to patch Vanus cluster, Vanus.Namespace: %s, Vanus.Name: %s, err: %s\n", cons.DefaultNamespace, cons.DefaultVanusClusterName, err.Error())
+		log.Errorf("Failed to exist Vanus cluster, Vanus.Namespace: %s, Vanus.Name: %s, err: %s\n", cons.DefaultNamespace, cons.DefaultVanusClusterName, err.Error())
 		return utils.Response(500, err)
 	}
-	log.Infof("Successfully patch Vanus cluster: %+v\n", resultVanus)
+	if !exist {
+		log.Info("The Vanus cluster does not exist, create a new vanus cr to update the cluster.")
+		resultVanus, err := a.createVanus(vanus, cons.DefaultNamespace)
+		if err != nil {
+			log.Errorf("Failed to create Vanus cluster, Vanus.Namespace: %s, Vanus.Name: %s, err: %s\n", cons.DefaultNamespace, cons.DefaultVanusClusterName, err.Error())
+			return utils.Response(500, err)
+		}
+		log.Infof("Successfully create Vanus cluster: %+v\n", resultVanus)
+	} else {
+		resultVanus, err := a.patchVanus(vanus)
+		if err != nil {
+			log.Errorf("Failed to patch Vanus cluster, Vanus.Namespace: %s, Vanus.Name: %s, err: %s\n", cons.DefaultNamespace, cons.DefaultVanusClusterName, err.Error())
+			return utils.Response(500, err)
+		}
+		log.Infof("Successfully patch Vanus cluster: %+v\n", resultVanus)
+	}
 	retcode := int32(200)
 	msg := "patch vanus cluster success"
 	return cluster.NewPatchClusterOK().WithPayload(&cluster.PatchClusterOKBody{

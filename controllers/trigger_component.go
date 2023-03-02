@@ -34,11 +34,10 @@ import (
 )
 
 func (r *VanusReconciler) handleTrigger(ctx context.Context, logger logr.Logger, vanus *vanusv1alpha1.Vanus) (ctrl.Result, error) {
-	trigger := r.generateTrigger(vanus)
 	// Create Trigger Deployment
 	// Check if the statefulSet already exists, if not create a new one
 	dep := &appsv1.Deployment{}
-	err := r.Get(ctx, types.NamespacedName{Name: trigger.Name, Namespace: trigger.Namespace}, dep)
+	err := r.Get(ctx, types.NamespacedName{Name: cons.DefaultTriggerName, Namespace: cons.DefaultNamespace}, dep)
 	if err != nil {
 		if errors.IsNotFound(err) {
 			// Create Trigger ConfigMap
@@ -51,7 +50,8 @@ func (r *VanusReconciler) handleTrigger(ctx context.Context, logger logr.Logger,
 			} else {
 				logger.Info("Successfully create Trigger ConfigMap")
 			}
-			logger.Info("Creating a new Trigger Deployment.", "Namespace", trigger.Namespace, "Name", trigger.Name)
+			logger.Info("Creating a new Trigger Deployment.", "Namespace", cons.DefaultNamespace, "Name", cons.DefaultTriggerName)
+			trigger := r.generateTrigger(vanus)
 			err = r.Create(ctx, trigger)
 			if err != nil {
 				logger.Error(err, "Failed to create new Trigger Deployment", "Namespace", trigger.Namespace, "Name", trigger.Name)
@@ -66,10 +66,11 @@ func (r *VanusReconciler) handleTrigger(ctx context.Context, logger logr.Logger,
 		}
 	}
 
-	// Update Trigger StatefulSet
-	err = r.Update(ctx, trigger)
+	// Update Trigger Deployment
+	updateTrigger(dep, vanus)
+	err = r.Update(ctx, dep)
 	if err != nil {
-		logger.Error(err, "Failed to update Trigger Deployment", "Namespace", trigger.Namespace, "Name", trigger.Name)
+		logger.Error(err, "Failed to update Trigger Deployment", "Namespace", dep.Namespace, "Name", dep.Name)
 		return ctrl.Result{}, err
 	}
 	logger.Info("Successfully update Trigger Deployment")
@@ -116,6 +117,11 @@ func (r *VanusReconciler) generateTrigger(vanus *vanusv1alpha1.Vanus) *appsv1.De
 	controllerutil.SetControllerReference(vanus, dep, r.Scheme)
 
 	return dep
+}
+
+func updateTrigger(dep *appsv1.Deployment, vanus *vanusv1alpha1.Vanus) {
+	dep.Spec.Replicas = &vanus.Spec.Replicas.Trigger
+	dep.Spec.Template.Spec.Containers[0].Image = fmt.Sprintf("%s:%s", cons.TriggerImageName, vanus.Spec.Version)
 }
 
 func getEnvForTrigger(vanus *vanusv1alpha1.Vanus) []corev1.EnvVar {

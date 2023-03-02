@@ -36,10 +36,8 @@ import (
 
 func (r *VanusReconciler) handleTimer(ctx context.Context, logger logr.Logger, vanus *vanusv1alpha1.Vanus) (ctrl.Result, error) {
 	var (
-		timer          *appsv1.Deployment
 		timerConfigMap *corev1.ConfigMap
 	)
-	timer = r.generateTimer(vanus)
 	if strings.Compare(vanus.Spec.Version, EtcdSeparateVersion) < 0 {
 		timerConfigMap = r.generateConfigMapForTimer(vanus)
 	} else {
@@ -48,7 +46,7 @@ func (r *VanusReconciler) handleTimer(ctx context.Context, logger logr.Logger, v
 	// Create Timer Deployment
 	// Check if the statefulSet already exists, if not create a new one
 	dep := &appsv1.Deployment{}
-	err := r.Get(ctx, types.NamespacedName{Name: timer.Name, Namespace: timer.Namespace}, dep)
+	err := r.Get(ctx, types.NamespacedName{Name: cons.DefaultTimerName, Namespace: cons.DefaultNamespace}, dep)
 	if err != nil {
 		if errors.IsNotFound(err) {
 			// Create Timer ConfigMap
@@ -60,7 +58,8 @@ func (r *VanusReconciler) handleTimer(ctx context.Context, logger logr.Logger, v
 			} else {
 				logger.Info("Successfully create Timer ConfigMap")
 			}
-			logger.Info("Creating a new Timer Deployment.", "Namespace", timer.Namespace, "Name", timer.Name)
+			logger.Info("Creating a new Timer Deployment.", "Namespace", cons.DefaultNamespace, "Name", cons.DefaultTimerName)
+			timer := r.generateTimer(vanus)
 			err = r.Create(ctx, timer)
 			if err != nil {
 				logger.Error(err, "Failed to create new Timer Deployment", "Namespace", timer.Namespace, "Name", timer.Name)
@@ -83,10 +82,11 @@ func (r *VanusReconciler) handleTimer(ctx context.Context, logger logr.Logger, v
 	}
 	logger.Info("Successfully update Timer ConfigMap")
 
-	// Update Timer StatefulSet
-	err = r.Update(ctx, timer)
+	// Update Timer Deployment
+	updateTimer(dep, vanus)
+	err = r.Update(ctx, dep)
 	if err != nil {
-		logger.Error(err, "Failed to update Timer Deployment", "Namespace", timer.Namespace, "Name", timer.Name)
+		logger.Error(err, "Failed to update Timer Deployment", "Namespace", dep.Namespace, "Name", dep.Name)
 		return ctrl.Result{}, err
 	}
 	logger.Info("Successfully update Timer Deployment")
@@ -132,6 +132,11 @@ func (r *VanusReconciler) generateTimer(vanus *vanusv1alpha1.Vanus) *appsv1.Depl
 	controllerutil.SetControllerReference(vanus, dep, r.Scheme)
 
 	return dep
+}
+
+func updateTimer(dep *appsv1.Deployment, vanus *vanusv1alpha1.Vanus) {
+	dep.Spec.Replicas = &vanus.Spec.Replicas.Timer
+	dep.Spec.Template.Spec.Containers[0].Image = fmt.Sprintf("%s:%s", cons.TimerImageName, vanus.Spec.Version)
 }
 
 func getEnvForTimer(vanus *vanusv1alpha1.Vanus) []corev1.EnvVar {
@@ -223,7 +228,7 @@ func (r *VanusReconciler) generateConfigMapForNewTimer(vanus *vanusv1alpha1.Vanu
 	}
 	value.WriteString("metadata:\n")
 	value.WriteString("  key_prefix: /vanus\n")
-	value.WriteString("leaderelection:\n")
+	value.WriteString("leader_election:\n")
 	value.WriteString("  lease_duration: 15\n")
 	value.WriteString("timingwheel:\n")
 	value.WriteString("  tick: 1\n")

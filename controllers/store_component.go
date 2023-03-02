@@ -35,11 +35,10 @@ import (
 )
 
 func (r *VanusReconciler) handleStore(ctx context.Context, logger logr.Logger, vanus *vanusv1alpha1.Vanus) (ctrl.Result, error) {
-	store := r.generateStore(vanus)
 	// Create Store StatefulSet
 	// Check if the statefulSet already exists, if not create a new one
 	sts := &appsv1.StatefulSet{}
-	err := r.Get(ctx, types.NamespacedName{Name: store.Name, Namespace: store.Namespace}, sts)
+	err := r.Get(ctx, types.NamespacedName{Name: cons.DefaultStoreName, Namespace: cons.DefaultNamespace}, sts)
 	if err != nil {
 		if errors.IsNotFound(err) {
 			// Create Store ConfigMap
@@ -52,6 +51,7 @@ func (r *VanusReconciler) handleStore(ctx context.Context, logger logr.Logger, v
 			} else {
 				logger.Info("Successfully create Store ConfigMap")
 			}
+			store := r.generateStore(vanus)
 			logger.Info("Creating a new Store StatefulSet.", "Namespace", store.Namespace, "Name", store.Name)
 			err = r.Create(ctx, store)
 			if err != nil {
@@ -68,9 +68,10 @@ func (r *VanusReconciler) handleStore(ctx context.Context, logger logr.Logger, v
 	}
 
 	// Update Store StatefulSet
-	err = r.Update(ctx, store)
+	updateStore(sts, vanus)
+	err = r.Update(ctx, sts)
 	if err != nil {
-		logger.Error(err, "Failed to update Store StatefulSet", "Namespace", store.Namespace, "Name", store.Name)
+		logger.Error(err, "Failed to update Store StatefulSet", "Namespace", sts.Namespace, "Name", sts.Name)
 		return ctrl.Result{}, err
 	}
 	logger.Info("Successfully update Store StatefulSet")
@@ -123,6 +124,11 @@ func (r *VanusReconciler) generateStore(vanus *vanusv1alpha1.Vanus) *appsv1.Stat
 	controllerutil.SetControllerReference(vanus, sts, r.Scheme)
 
 	return sts
+}
+
+func updateStore(sts *appsv1.StatefulSet, vanus *vanusv1alpha1.Vanus) {
+	sts.Spec.Replicas = &vanus.Spec.Replicas.Store
+	sts.Spec.Template.Spec.Containers[0].Image = fmt.Sprintf("%s:%s", cons.StoreImageName, vanus.Spec.Version)
 }
 
 func getEnvForStore(vanus *vanusv1alpha1.Vanus) []corev1.EnvVar {
