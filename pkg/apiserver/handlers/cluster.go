@@ -229,17 +229,17 @@ func genClusterConfig(cluster *models.ClusterCreate) (*config, error) {
 		c.storeReplicas = 3
 	}
 	if cluster.TriggerReplicas != nil {
-		c.controllerReplicas = *cluster.TriggerReplicas
+		c.triggerReplicas = *cluster.TriggerReplicas
 	} else {
 		c.triggerReplicas = 1
 	}
 	if cluster.TimerReplicas != nil {
-		c.controllerReplicas = *cluster.TimerReplicas
+		c.timerReplicas = *cluster.TimerReplicas
 	} else {
 		c.timerReplicas = 2
 	}
 	if cluster.GatewayReplicas != nil {
-		c.controllerReplicas = *cluster.GatewayReplicas
+		c.gatewayReplicas = *cluster.GatewayReplicas
 	} else {
 		c.gatewayReplicas = 1
 	}
