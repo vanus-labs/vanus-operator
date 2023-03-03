@@ -34,16 +34,16 @@ import (
 	vanusv1alpha1 "github.com/vanus-labs/vanus-operator/api/v1alpha1"
 )
 
-func (r *VanusReconciler) handleTimer(ctx context.Context, logger logr.Logger, vanus *vanusv1alpha1.Vanus) (ctrl.Result, error) {
+func (r *CoreReconciler) handleTimer(ctx context.Context, logger logr.Logger, core *vanusv1alpha1.Core) (ctrl.Result, error) {
 	var (
 		timer          *appsv1.Deployment
 		timerConfigMap *corev1.ConfigMap
 	)
-	timer = r.generateTimer(vanus)
-	if strings.Compare(vanus.Spec.Version, EtcdSeparateVersion) < 0 {
-		timerConfigMap = r.generateConfigMapForTimer(vanus)
+	timer = r.generateTimer(core)
+	if strings.Compare(core.Spec.Version, EtcdSeparateVersion) < 0 {
+		timerConfigMap = r.generateConfigMapForTimer(core)
 	} else {
-		timerConfigMap = r.generateConfigMapForNewTimer(vanus)
+		timerConfigMap = r.generateConfigMapForNewTimer(core)
 	}
 	// Create Timer Deployment
 	// Check if the statefulSet already exists, if not create a new one
@@ -94,7 +94,7 @@ func (r *VanusReconciler) handleTimer(ctx context.Context, logger logr.Logger, v
 }
 
 // returns a Timer Deployment object
-func (r *VanusReconciler) generateTimer(vanus *vanusv1alpha1.Vanus) *appsv1.Deployment {
+func (r *CoreReconciler) generateTimer(core *vanusv1alpha1.Core) *appsv1.Deployment {
 	labels := genLabels(cons.DefaultTimerName)
 	annotations := annotationsForTimer()
 	dep := &appsv1.Deployment{
@@ -104,7 +104,7 @@ func (r *VanusReconciler) generateTimer(vanus *vanusv1alpha1.Vanus) *appsv1.Depl
 			Labels:    labels,
 		},
 		Spec: appsv1.DeploymentSpec{
-			Replicas: &vanus.Spec.Replicas.Timer,
+			Replicas: &core.Spec.Replicas.Timer,
 			Selector: &metav1.LabelSelector{
 				MatchLabels: labels,
 			},
@@ -117,24 +117,24 @@ func (r *VanusReconciler) generateTimer(vanus *vanusv1alpha1.Vanus) *appsv1.Depl
 					ServiceAccountName: cons.ServiceAccountName,
 					Containers: []corev1.Container{{
 						Name:            cons.TimerContainerName,
-						Image:           fmt.Sprintf("%s:%s", cons.TimerImageName, vanus.Spec.Version),
-						ImagePullPolicy: vanus.Spec.ImagePullPolicy,
-						Resources:       vanus.Spec.Resources,
-						Env:             getEnvForTimer(vanus),
-						VolumeMounts:    getVolumeMountsForTimer(vanus),
+						Image:           fmt.Sprintf("%s:%s", cons.TimerImageName, core.Spec.Version),
+						ImagePullPolicy: core.Spec.ImagePullPolicy,
+						Resources:       core.Spec.Resources,
+						Env:             getEnvForTimer(core),
+						VolumeMounts:    getVolumeMountsForTimer(core),
 					}},
-					Volumes: getVolumesForTimer(vanus),
+					Volumes: getVolumesForTimer(core),
 				},
 			},
 		},
 	}
 	// Set trigger instance as the owner and controller
-	controllerutil.SetControllerReference(vanus, dep, r.Scheme)
+	controllerutil.SetControllerReference(core, dep, r.Scheme)
 
 	return dep
 }
 
-func getEnvForTimer(vanus *vanusv1alpha1.Vanus) []corev1.EnvVar {
+func getEnvForTimer(core *vanusv1alpha1.Core) []corev1.EnvVar {
 	defaultEnvs := []corev1.EnvVar{{
 		Name:      cons.EnvPodIP,
 		ValueFrom: &corev1.EnvVarSource{FieldRef: &corev1.ObjectFieldSelector{FieldPath: "status.podIP"}},
@@ -148,7 +148,7 @@ func getEnvForTimer(vanus *vanusv1alpha1.Vanus) []corev1.EnvVar {
 	return defaultEnvs
 }
 
-func getVolumeMountsForTimer(vanus *vanusv1alpha1.Vanus) []corev1.VolumeMount {
+func getVolumeMountsForTimer(core *vanusv1alpha1.Core) []corev1.VolumeMount {
 	defaultVolumeMounts := []corev1.VolumeMount{{
 		MountPath: cons.ConfigMountPath,
 		Name:      cons.TimerConfigMapName,
@@ -156,7 +156,7 @@ func getVolumeMountsForTimer(vanus *vanusv1alpha1.Vanus) []corev1.VolumeMount {
 	return defaultVolumeMounts
 }
 
-func getVolumesForTimer(vanus *vanusv1alpha1.Vanus) []corev1.Volume {
+func getVolumesForTimer(core *vanusv1alpha1.Core) []corev1.Volume {
 	defaultVolumes := []corev1.Volume{{
 		Name: cons.TimerConfigMapName,
 		VolumeSource: corev1.VolumeSource{
@@ -173,17 +173,17 @@ func annotationsForTimer() map[string]string {
 	return map[string]string{"vanus.dev/metrics.port": fmt.Sprintf("%d", cons.ControllerPortMetrics)}
 }
 
-func (r *VanusReconciler) generateConfigMapForTimer(vanus *vanusv1alpha1.Vanus) *corev1.ConfigMap {
+func (r *CoreReconciler) generateConfigMapForTimer(core *vanusv1alpha1.Core) *corev1.ConfigMap {
 	data := make(map[string]string)
 	value := bytes.Buffer{}
 	value.WriteString("name: timer\n")
 	value.WriteString("ip: ${POD_IP}\n")
 	value.WriteString("etcd:\n")
-	for i := int32(0); i < vanus.Spec.Replicas.Controller; i++ {
+	for i := int32(0); i < core.Spec.Replicas.Controller; i++ {
 		value.WriteString(fmt.Sprintf("  - vanus-controller-%d.vanus-controller:2379\n", i))
 	}
 	value.WriteString("controllers:\n")
-	for i := int32(0); i < vanus.Spec.Replicas.Controller; i++ {
+	for i := int32(0); i < core.Spec.Replicas.Controller; i++ {
 		value.WriteString(fmt.Sprintf("  - vanus-controller-%d.vanus-controller.vanus.svc:2048\n", i))
 	}
 	value.WriteString("metadata:\n")
@@ -204,21 +204,21 @@ func (r *VanusReconciler) generateConfigMapForTimer(vanus *vanusv1alpha1.Vanus) 
 		Data: data,
 	}
 
-	controllerutil.SetControllerReference(vanus, cm, r.Scheme)
+	controllerutil.SetControllerReference(core, cm, r.Scheme)
 	return cm
 }
 
-func (r *VanusReconciler) generateConfigMapForNewTimer(vanus *vanusv1alpha1.Vanus) *corev1.ConfigMap {
+func (r *CoreReconciler) generateConfigMapForNewTimer(core *vanusv1alpha1.Core) *corev1.ConfigMap {
 	data := make(map[string]string)
 	value := bytes.Buffer{}
 	value.WriteString("name: timer\n")
 	value.WriteString("ip: ${POD_IP}\n")
 	value.WriteString("etcd:\n")
-	for i := int32(0); i < vanus.Spec.Replicas.Controller; i++ {
+	for i := int32(0); i < core.Spec.Replicas.Controller; i++ {
 		value.WriteString(fmt.Sprintf("  - vanus-etcd-%d.vanus-etcd:2379\n", i))
 	}
 	value.WriteString("controllers:\n")
-	for i := int32(0); i < vanus.Spec.Replicas.Controller; i++ {
+	for i := int32(0); i < core.Spec.Replicas.Controller; i++ {
 		value.WriteString(fmt.Sprintf("  - vanus-controller-%d.vanus-controller.vanus.svc:2048\n", i))
 	}
 	value.WriteString("metadata:\n")
@@ -239,6 +239,6 @@ func (r *VanusReconciler) generateConfigMapForNewTimer(vanus *vanusv1alpha1.Vanu
 		Data: data,
 	}
 
-	controllerutil.SetControllerReference(vanus, cm, r.Scheme)
+	controllerutil.SetControllerReference(core, cm, r.Scheme)
 	return cm
 }

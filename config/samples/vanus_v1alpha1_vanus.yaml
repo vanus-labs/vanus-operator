@@ -1,6 +1,0 @@
-apiVersion: core.vanus.ai/v1alpha1
-kind: Vanus
-metadata:
-  name: vanus-sample
-spec:
-  # TODO(user): Add fields here

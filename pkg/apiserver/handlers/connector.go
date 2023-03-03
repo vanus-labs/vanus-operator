@@ -16,7 +16,6 @@ package handlers
 
 import (
 	"errors"
-	stderr "errors"
 	"fmt"
 	"strings"
 
@@ -83,7 +82,7 @@ func (a *Api) createConnectorHandler(params connector.CreateConnectorParams) mid
 	}
 	if exist {
 		log.Warningf("Connector already exist, name: %s\n", c.name)
-		return utils.Response(500, stderr.New("connector already exist"))
+		return utils.Response(500, errors.New("connector already exist"))
 	}
 
 	defer func() {

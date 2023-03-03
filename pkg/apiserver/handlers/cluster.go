@@ -16,7 +16,6 @@ package handlers
 
 import (
 	"errors"
-	stderr "errors"
 	"fmt"
 
 	"github.com/go-openapi/runtime/middleware"
@@ -66,13 +65,13 @@ func (a *Api) createClusterHandler(params cluster.CreateClusterParams) middlewar
 	}
 	if exist {
 		log.Warning("Cluster already exist")
-		return utils.Response(400, stderr.New("cluster already exist"))
+		return utils.Response(400, errors.New("cluster already exist"))
 	}
 
 	defer func() {
 		if failedToExit {
 			if vanusDeployed {
-				err = a.deleteVanus(cons.DefaultVanusClusterName, c.namespace)
+				err = a.deleteCore(cons.DefaultVanusClusterName, c.namespace)
 				if err != nil {
 					log.Warningf("clear controller failed when failed to exit, err: %s\n", err.Error())
 				}
@@ -80,16 +79,16 @@ func (a *Api) createClusterHandler(params cluster.CreateClusterParams) middlewar
 		}
 	}()
 
-	log.Infof("Creating a new Vanus cluster, Vanus.Namespace: %s, Vanus.Name: %s\n", c.namespace, cons.DefaultVanusClusterName)
-	vanus := generateVanus(c)
-	resultVanus, err := a.createVanus(vanus, c.namespace)
+	log.Infof("Creating a new Core cluster, Core.Namespace: %s, Core.Name: %s\n", c.namespace, cons.DefaultVanusClusterName)
+	vanus := generateCore(c)
+	resultCore, err := a.createCore(vanus, c.namespace)
 	if err != nil {
-		log.Errorf("Failed to create new Vanus cluster, Vanus.Namespace: %s, Vanus.Name: %s, err: %s\n", cons.DefaultNamespace, cons.DefaultVanusClusterName, err.Error())
+		log.Errorf("Failed to create new Core cluster, Core.Namespace: %s, Core.Name: %s, err: %s\n", cons.DefaultNamespace, cons.DefaultVanusClusterName, err.Error())
 		failedToExit = true
 		return utils.Response(500, err)
 	}
 	vanusDeployed = true
-	log.Infof("Successfully create Vanus cluster: %+v\n", resultVanus)
+	log.Infof("Successfully create Core cluster: %+v\n", resultCore)
 
 	retcode := int32(200)
 	msg := "create cluster success"
@@ -111,7 +110,7 @@ func (a *Api) deleteClusterHandler(params cluster.DeleteClusterParams) middlewar
 		return utils.Response(400, errors.New("cluster not exist"))
 	}
 
-	err = a.deleteVanus(cons.DefaultNamespace, cons.DefaultVanusClusterName)
+	err = a.deleteCore(cons.DefaultNamespace, cons.DefaultVanusClusterName)
 	if err != nil {
 		log.Errorf("delete vanus cluster failed, err: %s\n", err.Error())
 		return utils.Response(500, err)
@@ -126,12 +125,12 @@ func (a *Api) deleteClusterHandler(params cluster.DeleteClusterParams) middlewar
 }
 
 func (a *Api) patchClusterHandler(params cluster.PatchClusterParams) middleware.Responder {
-	vanus := &vanusv1alpha1.Vanus{
+	vanus := &vanusv1alpha1.Core{
 		ObjectMeta: metav1.ObjectMeta{
 			Namespace: cons.DefaultNamespace,
 			Name:      cons.DefaultVanusClusterName,
 		},
-		Spec: vanusv1alpha1.VanusSpec{
+		Spec: vanusv1alpha1.CoreSpec{
 			Replicas: vanusv1alpha1.Replicas{
 				Controller: params.Patch.ControllerReplicas,
 				Store:      params.Patch.StoreReplicas,
@@ -142,12 +141,12 @@ func (a *Api) patchClusterHandler(params cluster.PatchClusterParams) middleware.
 			Version: params.Patch.Version,
 		},
 	}
-	resultVanus, err := a.patchVanus(vanus)
+	resultCore, err := a.patchCore(vanus)
 	if err != nil {
-		log.Errorf("Failed to patch Vanus cluster, Vanus.Namespace: %s, Vanus.Name: %s, err: %s\n", cons.DefaultNamespace, cons.DefaultVanusClusterName, err.Error())
+		log.Errorf("Failed to patch Core cluster, Core.Namespace: %s, Core.Name: %s, err: %s\n", cons.DefaultNamespace, cons.DefaultVanusClusterName, err.Error())
 		return utils.Response(500, err)
 	}
-	log.Infof("Successfully patch Vanus cluster: %+v\n", resultVanus)
+	log.Infof("Successfully patch Core cluster: %+v\n", resultCore)
 	retcode := int32(200)
 	msg := "patch vanus cluster success"
 	return cluster.NewPatchClusterOK().WithPayload(&cluster.PatchClusterOKBody{
@@ -157,9 +156,9 @@ func (a *Api) patchClusterHandler(params cluster.PatchClusterParams) middleware.
 }
 
 func (a *Api) getClusterHandler(params cluster.GetClusterParams) middleware.Responder {
-	vanus, err := a.getVanus(cons.DefaultNamespace, cons.DefaultVanusClusterName, &metav1.GetOptions{})
+	vanus, err := a.getCore(cons.DefaultNamespace, cons.DefaultVanusClusterName, &metav1.GetOptions{})
 	if err != nil {
-		log.Error(err, "Failed to get Vanus cluster", "Vanus.Namespace: ", cons.DefaultNamespace, "Vanus.Name: ", cons.DefaultVanusClusterName)
+		log.Error(err, "Failed to get Core cluster", "Core.Namespace: ", cons.DefaultNamespace, "Core.Name: ", cons.DefaultVanusClusterName)
 		return utils.Response(500, err)
 	}
 	retcode := int32(200)
@@ -176,9 +175,9 @@ func (a *Api) getClusterHandler(params cluster.GetClusterParams) middleware.Resp
 
 func (a *Api) checkClusterExist() (bool, error) {
 	// TODO(jiangkai): need to check other components
-	_, exist, err := a.existVanus(cons.DefaultNamespace, cons.DefaultVanusClusterName, &metav1.GetOptions{})
+	_, exist, err := a.existCore(cons.DefaultNamespace, cons.DefaultVanusClusterName, &metav1.GetOptions{})
 	if err != nil {
-		log.Errorf("Failed to get Vanus cluster, err: %s\n", err.Error())
+		log.Errorf("Failed to get Core cluster, err: %s\n", err.Error())
 		return false, err
 	}
 	return exist, err
@@ -212,7 +211,7 @@ func (c *config) String() string {
 func genClusterConfig(cluster *models.ClusterCreate) (*config, error) {
 	// check required parameters
 	if cluster.Version == "" {
-		return nil, stderr.New("cluster version is required parameters")
+		return nil, errors.New("cluster version is required parameters")
 	}
 
 	c := &config{
@@ -261,16 +260,16 @@ func genLabels(name string) map[string]string {
 	return map[string]string{"app": name}
 }
 
-func generateVanus(c *config) *vanusv1alpha1.Vanus {
+func generateCore(c *config) *vanusv1alpha1.Core {
 	labels := genLabels(cons.DefaultVanusClusterName)
 	requests := make(map[corev1.ResourceName]resource.Quantity)
 	requests[corev1.ResourceStorage] = resource.MustParse(c.storeStorageSize)
-	controller := &vanusv1alpha1.Vanus{
+	controller := &vanusv1alpha1.Core{
 		ObjectMeta: metav1.ObjectMeta{
 			Namespace: c.namespace,
 			Name:      cons.DefaultVanusClusterName,
 		},
-		Spec: vanusv1alpha1.VanusSpec{
+		Spec: vanusv1alpha1.CoreSpec{
 			Replicas: vanusv1alpha1.Replicas{
 				Controller: c.controllerReplicas,
 				Store:      c.storeReplicas,

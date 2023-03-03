@@ -13,7 +13,7 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-apiVersion: core.vanus.ai/v1alpha1
+apiVersion: vanus.ai/v1alpha1
 kind: Vanus
 metadata:
   name: vanus-cluster
@@ -23,9 +23,9 @@ spec:
   replicas:
     controller: 3
     store: 3
-    trigger: 3
-    timer: 3
-    gateway: 3
+    trigger: 1
+    timer: 2
+    gateway: 1
   version: v0.6.0
   # imagePullPolicy is the image pull policy
   imagePullPolicy: IfNotPresent

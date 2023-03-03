@@ -40,8 +40,8 @@ var (
 
 func addKnownTypes(scheme *runtime.Scheme) error {
 	scheme.AddKnownTypes(SchemeGroupVersion,
-		&vanusv1alpha1.Vanus{},
-		&vanusv1alpha1.VanusList{},
+		&vanusv1alpha1.Core{},
+		&vanusv1alpha1.CoreList{},
 		&vanusv1alpha1.Connector{},
 		&vanusv1alpha1.ConnectorList{},
 	)

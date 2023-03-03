@@ -12,8 +12,8 @@ resources:
     namespaced: true
   controller: true
   domain: vanus.ai
-  group: vanus
-  kind: Vanus
+  group: vanus.ai
+  kind: Core
   path: github.com/vanus-labs/vanus-operator/api/v1alpha1
   version: v1alpha1
 - api:
@@ -21,7 +21,7 @@ resources:
     namespaced: true
   controller: true
   domain: vanus.ai
-  group: vanus
+  group: vanus.ai
   kind: Connector
   path: github.com/vanus-labs/vanus-operator/api/v1alpha1
   version: v1alpha1

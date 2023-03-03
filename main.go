@@ -89,11 +89,11 @@ func main() {
 		os.Exit(1)
 	}
 
-	if err = (&controllers.VanusReconciler{
+	if err = (&controllers.CoreReconciler{
 		Client: mgr.GetClient(),
 		Scheme: mgr.GetScheme(),
 	}).SetupWithManager(mgr); err != nil {
-		setupLog.Error(err, "unable to create controller", "controller", "Vanus")
+		setupLog.Error(err, "unable to create controller", "controller", "Core")
 		os.Exit(1)
 	}
 	if err = (&controllers.ConnectorReconciler{

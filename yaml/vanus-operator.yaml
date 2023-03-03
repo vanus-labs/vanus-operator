@@ -5,20 +5,20 @@ metadata:
   annotations:
     controller-gen.kubebuilder.io/version: v0.9.2
   creationTimestamp: null
-  name: vanus.core.vanus.ai
+  name: cores.vanus.ai
 spec:
-  group: core.vanus.ai
+  group: vanus.ai
   names:
-    kind: Vanus
-    listKind: VanusList
-    plural: vanus
-    singular: vanus
+    kind: Core
+    listKind: CoreList
+    plural: cores
+    singular: core
   scope: Namespaced
   versions:
   - name: v1alpha1
     schema:
       openAPIV3Schema:
-        description: Vanus is the Schema for the vanus API
+        description: Core is the Schema for the cores API
         properties:
           apiVersion:
             description: 'APIVersion defines the versioned schema of this representation
@@ -33,7 +33,7 @@ spec:
           metadata:
             type: object
           spec:
-            description: VanusSpec defines the desired state of Vanus
+            description: CoreSpec defines the desired state of Core
             properties:
               imagePullPolicy:
                 description: ImagePullPolicy defines how the image is pulled
@@ -417,7 +417,7 @@ spec:
                 type: array
             type: object
           status:
-            description: VanusStatus defines the observed state of Vanus
+            description: CoreStatus defines the observed state of Core
             type: object
         type: object
     served: true
@@ -431,9 +431,9 @@ metadata:
   annotations:
     controller-gen.kubebuilder.io/version: v0.9.2
   creationTimestamp: null
-  name: connectors.core.vanus.ai
+  name: connectors.vanus.ai
 spec:
-  group: core.vanus.ai
+  group: vanus.ai
   names:
     kind: Connector
     listKind: ConnectorList
@@ -461,6 +461,11 @@ spec:
           spec:
             description: ConnectorSpec defines the desired state of Connector
             properties:
+              annotations:
+                additionalProperties:
+                  type: string
+                description: annotations is the annotation of connector.
+                type: object
               config:
                 description: Config is the file of config.
                 type: string
@@ -594,9 +599,9 @@ rules:
   - update
   - watch
 - apiGroups:
-  - core.vanus.ai
+  - vanus.ai
   resources:
-  - vanus
+  - cores
   verbs:
   - create
   - delete
@@ -606,29 +611,29 @@ rules:
   - update
   - watch
 - apiGroups:
-  - core.vanus.ai
+  - vanus.ai
   resources:
-  - vanus/finalizers
+  - cores/finalizers
   verbs:
   - update
 - apiGroups:
-  - core.vanus.ai
+  - vanus.ai
   resources:
-  - vanus/spec
-  verbs:
-  - get
-  - patch
-  - update
-- apiGroups:
-  - core.vanus.ai
-  resources:
-  - vanus/status
+  - cores/spec
   verbs:
   - get
   - patch
   - update
 - apiGroups:
-  - core.vanus.ai
+  - vanus.ai
+  resources:
+  - cores/status
+  verbs:
+  - get
+  - patch
+  - update
+- apiGroups:
+  - vanus.ai
   resources:
   - connectors
   verbs:
@@ -640,13 +645,13 @@ rules:
   - update
   - watch
 - apiGroups:
-  - core.vanus.ai
+  - vanus.ai
   resources:
   - connectors/finalizers
   verbs:
   - update
 - apiGroups:
-  - core.vanus.ai
+  - vanus.ai
   resources:
   - connectors/spec
   verbs:
@@ -654,7 +659,7 @@ rules:
   - patch
   - update
 - apiGroups:
-  - core.vanus.ai
+  - vanus.ai
   resources:
   - connectors/status
   verbs:
