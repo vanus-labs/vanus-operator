@@ -37,68 +37,68 @@ var (
 	defaultWaitForReadyTimeout = 3 * time.Minute
 )
 
-// VanusReconciler reconciles a Vanus object
-type VanusReconciler struct {
+// CoreReconciler reconciles a Core object
+type CoreReconciler struct {
 	client.Client
 	Scheme *runtime.Scheme
 }
 
-//+kubebuilder:rbac:groups=core.vanus.ai,resources=vanus,verbs=get;list;watch;create;update;patch;delete
-//+kubebuilder:rbac:groups=core.vanus.ai,resources=vanus/status,verbs=get;update;patch
-//+kubebuilder:rbac:groups=core.vanus.ai,resources=vanus/finalizers,verbs=update
+//+kubebuilder:rbac:groups=vanus.ai,resources=cores,verbs=get;list;watch;create;update;patch;delete
+//+kubebuilder:rbac:groups=vanus.ai,resources=cores/status,verbs=get;update;patch
+//+kubebuilder:rbac:groups=vanus.ai,resources=cores/finalizers,verbs=update
 
 // Reconcile is part of the main kubernetes reconciliation loop which aims to
 // move the current state of the cluster closer to the desired state.
 // TODO(user): Modify the Reconcile function to compare the state specified by
-// the Vanus object against the actual cluster state, and then
+// the Core object against the actual cluster state, and then
 // perform operations to make the cluster state reflect the state specified by
 // the user.
 //
 // For more details, check Reconcile and its Result here:
 // - https://pkg.go.dev/sigs.k8s.io/controller-runtime@v0.12.2/pkg/reconcile
-func (r *VanusReconciler) Reconcile(ctx context.Context, req ctrl.Request) (ctrl.Result, error) {
+func (r *CoreReconciler) Reconcile(ctx context.Context, req ctrl.Request) (ctrl.Result, error) {
 	_ = log.FromContext(ctx)
 
 	logger := log.Log.WithName("Vanus")
 	logger.Info("Reconciling Vanus.")
 
-	// Fetch the Vanus instance
-	vanus := &vanusv1alpha1.Vanus{}
-	err := r.Get(ctx, req.NamespacedName, vanus)
+	// Fetch the Core instance
+	core := &vanusv1alpha1.Core{}
+	err := r.Get(ctx, req.NamespacedName, core)
 	if err != nil {
 		if errors.IsNotFound(err) {
 			// Request object not found, could have been deleted after reconcile req.
 			// Owned objects are automatically garbage collected. For additional cleanup logic use finalizers.
 			// Return and don't requeue
-			logger.Info("Vanus resource not found. Ignoring since object must be deleted.")
+			logger.Info("Core resource not found. Ignoring since object must be deleted.")
 			return ctrl.Result{}, nil
 		}
 		// Error reading the object - requeue the req.
-		logger.Error(err, "Failed to get Vanus.")
+		logger.Error(err, "Failed to get Core.")
 		return ctrl.Result{RequeueAfter: time.Duration(cons.RequeueIntervalInSecond) * time.Second}, err
 	}
 
-	result, err := r.handleEtcd(ctx, logger, vanus)
+	result, err := r.handleEtcd(ctx, logger, core)
 	if err != nil {
 		return result, err
 	}
-	result, err = r.handleController(ctx, logger, vanus)
+	result, err = r.handleController(ctx, logger, core)
 	if err != nil {
 		return result, err
 	}
-	result, err = r.handleStore(ctx, logger, vanus)
+	result, err = r.handleStore(ctx, logger, core)
 	if err != nil {
 		return result, err
 	}
-	result, err = r.handleTrigger(ctx, logger, vanus)
+	result, err = r.handleTrigger(ctx, logger, core)
 	if err != nil {
 		return result, err
 	}
-	result, err = r.handleTimer(ctx, logger, vanus)
+	result, err = r.handleTimer(ctx, logger, core)
 	if err != nil {
 		return result, err
 	}
-	result, err = r.handleGateway(ctx, logger, vanus)
+	result, err = r.handleGateway(ctx, logger, core)
 	if err != nil {
 		return result, err
 	}
@@ -107,9 +107,9 @@ func (r *VanusReconciler) Reconcile(ctx context.Context, req ctrl.Request) (ctrl
 }
 
 // SetupWithManager sets up the controller with the Manager.
-func (r *VanusReconciler) SetupWithManager(mgr ctrl.Manager) error {
+func (r *CoreReconciler) SetupWithManager(mgr ctrl.Manager) error {
 	return ctrl.NewControllerManagedBy(mgr).
-		For(&vanusv1alpha1.Vanus{}).
+		For(&vanusv1alpha1.Core{}).
 		Complete(r)
 }
 

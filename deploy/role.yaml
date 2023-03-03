@@ -97,9 +97,9 @@ rules:
   - update
   - watch
 - apiGroups:
-  - core.vanus.ai
+  - vanus.ai
   resources:
-  - vanus
+  - cores
   verbs:
   - create
   - delete
@@ -109,29 +109,29 @@ rules:
   - update
   - watch
 - apiGroups:
-  - core.vanus.ai
+  - vanus.ai
   resources:
-  - vanus/finalizers
+  - cores/finalizers
   verbs:
   - update
 - apiGroups:
-  - core.vanus.ai
+  - vanus.ai
   resources:
-  - vanus/spec
-  verbs:
-  - get
-  - patch
-  - update
-- apiGroups:
-  - core.vanus.ai
-  resources:
-  - vanus/status
+  - cores/spec
   verbs:
   - get
   - patch
   - update
 - apiGroups:
-  - core.vanus.ai
+  - vanus.ai
+  resources:
+  - cores/status
+  verbs:
+  - get
+  - patch
+  - update
+- apiGroups:
+  - vanus.ai
   resources:
   - connectors
   verbs:
@@ -143,13 +143,13 @@ rules:
   - update
   - watch
 - apiGroups:
-  - core.vanus.ai
+  - vanus.ai
   resources:
   - connectors/finalizers
   verbs:
   - update
 - apiGroups:
-  - core.vanus.ai
+  - vanus.ai
   resources:
   - connectors/spec
   verbs:
@@ -157,7 +157,7 @@ rules:
   - patch
   - update
 - apiGroups:
-  - core.vanus.ai
+  - vanus.ai
   resources:
   - connectors/status
   verbs:

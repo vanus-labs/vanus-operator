@@ -26,23 +26,23 @@ import (
 )
 
 const (
-	ResourceVanus     = "vanus"
+	ResourceCore      = "cores"
 	ResourceConnector = "connectors"
 )
 
-func (a *Api) createVanus(vanus *vanusv1alpha1.Vanus, namespace string) (*vanusv1alpha1.Vanus, error) {
-	existVanus, exist, err := a.existVanus(namespace, vanus.Name, &metav1.GetOptions{})
+func (a *Api) createCore(vanus *vanusv1alpha1.Core, namespace string) (*vanusv1alpha1.Core, error) {
+	existCore, exist, err := a.existCore(namespace, vanus.Name, &metav1.GetOptions{})
 	if err != nil {
-		return existVanus, err
+		return existCore, err
 	}
 	if exist {
-		return existVanus, nil
+		return existCore, nil
 	}
-	result := &vanusv1alpha1.Vanus{}
+	result := &vanusv1alpha1.Core{}
 	err = a.ctrl.ClientSet().
 		Post().
 		Namespace(namespace).
-		Resource(ResourceVanus).
+		Resource(ResourceCore).
 		Body(vanus).
 		Do(context.TODO()).
 		Into(result)
@@ -52,8 +52,8 @@ func (a *Api) createVanus(vanus *vanusv1alpha1.Vanus, namespace string) (*vanusv
 	return result, nil
 }
 
-func (a *Api) patchVanus(vanus *vanusv1alpha1.Vanus) (*vanusv1alpha1.Vanus, error) {
-	result := &vanusv1alpha1.Vanus{}
+func (a *Api) patchCore(vanus *vanusv1alpha1.Core) (*vanusv1alpha1.Core, error) {
+	result := &vanusv1alpha1.Core{}
 	body, err := json.Marshal(vanus)
 	if err != nil {
 		return nil, err
@@ -61,7 +61,7 @@ func (a *Api) patchVanus(vanus *vanusv1alpha1.Vanus) (*vanusv1alpha1.Vanus, erro
 	err = a.ctrl.ClientSet().Patch(types.MergePatchType).
 		Namespace(vanus.Namespace).
 		Name(vanus.Name).
-		Resource(ResourceVanus).
+		Resource(ResourceCore).
 		VersionedParams(&metav1.PatchOptions{}, scheme.ParameterCodec).
 		Body(body).
 		Do(context.TODO()).
@@ -72,18 +72,18 @@ func (a *Api) patchVanus(vanus *vanusv1alpha1.Vanus) (*vanusv1alpha1.Vanus, erro
 	return result, nil
 }
 
-func (a *Api) deleteVanus(namespace string, name string) error {
-	_, exist, err := a.existVanus(namespace, name, &metav1.GetOptions{})
+func (a *Api) deleteCore(namespace string, name string) error {
+	_, exist, err := a.existCore(namespace, name, &metav1.GetOptions{})
 	if err != nil {
 		return err
 	}
 	if !exist {
 		return nil
 	}
-	result := &vanusv1alpha1.Vanus{}
+	result := &vanusv1alpha1.Core{}
 	err = a.ctrl.ClientSet().
 		Delete().
-		Resource(ResourceVanus).
+		Resource(ResourceCore).
 		Namespace(namespace).
 		Name(name).
 		Do(context.TODO()).
@@ -94,11 +94,11 @@ func (a *Api) deleteVanus(namespace string, name string) error {
 	return nil
 }
 
-func (a *Api) listVanus(namespace string, opts *metav1.ListOptions) (*vanusv1alpha1.VanusList, error) {
-	result := &vanusv1alpha1.VanusList{}
+func (a *Api) listCore(namespace string, opts *metav1.ListOptions) (*vanusv1alpha1.CoreList, error) {
+	result := &vanusv1alpha1.CoreList{}
 	err := a.ctrl.ClientSet().
 		Get().
-		Resource(ResourceVanus).
+		Resource(ResourceCore).
 		Namespace(namespace).
 		VersionedParams(opts, scheme.ParameterCodec).
 		Do(context.TODO()).
@@ -109,11 +109,11 @@ func (a *Api) listVanus(namespace string, opts *metav1.ListOptions) (*vanusv1alp
 	return result, nil
 }
 
-func (a *Api) getVanus(namespace string, name string, opts *metav1.GetOptions) (*vanusv1alpha1.Vanus, error) {
-	result := &vanusv1alpha1.Vanus{}
+func (a *Api) getCore(namespace string, name string, opts *metav1.GetOptions) (*vanusv1alpha1.Core, error) {
+	result := &vanusv1alpha1.Core{}
 	err := a.ctrl.ClientSet().
 		Get().
-		Resource(ResourceVanus).
+		Resource(ResourceCore).
 		Namespace(namespace).
 		Name(name).
 		VersionedParams(opts, scheme.ParameterCodec).
@@ -125,11 +125,11 @@ func (a *Api) getVanus(namespace string, name string, opts *metav1.GetOptions) (
 	return result, nil
 }
 
-func (a *Api) existVanus(namespace string, name string, opts *metav1.GetOptions) (*vanusv1alpha1.Vanus, bool, error) {
-	result := &vanusv1alpha1.Vanus{}
+func (a *Api) existCore(namespace string, name string, opts *metav1.GetOptions) (*vanusv1alpha1.Core, bool, error) {
+	result := &vanusv1alpha1.Core{}
 	err := a.ctrl.ClientSet().
 		Get().
-		Resource(ResourceVanus).
+		Resource(ResourceCore).
 		Namespace(namespace).
 		Name(name).
 		VersionedParams(opts, scheme.ParameterCodec).

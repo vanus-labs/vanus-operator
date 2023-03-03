@@ -24,8 +24,8 @@ import (
 // EDIT THIS FILE!  THIS IS SCAFFOLDING FOR YOU TO OWN!
 // NOTE: json tags are required.  Any new fields you add must have json tags for the fields to be serialized.
 
-// VanusSpec defines the desired state of Vanus
-type VanusSpec struct {
+// CoreSpec defines the desired state of Core
+type CoreSpec struct {
 	// INSERT ADDITIONAL SPEC FIELDS - desired state of cluster
 	// Important: Run "make" to regenerate code after modifying this file
 
@@ -48,8 +48,8 @@ type VanusSpec struct {
 	VolumeClaimTemplates []corev1.PersistentVolumeClaim `json:"volumeClaimTemplates,omitempty"`
 }
 
-// VanusStatus defines the observed state of Vanus
-type VanusStatus struct {
+// CoreStatus defines the observed state of Core
+type CoreStatus struct {
 	// INSERT ADDITIONAL STATUS FIELD - define observed state of cluster
 	// Important: Run "make" to regenerate code after modifying this file
 }
@@ -57,26 +57,26 @@ type VanusStatus struct {
 //+kubebuilder:object:root=true
 //+kubebuilder:subresource:status
 
-// Vanus is the Schema for the vanus API
-type Vanus struct {
+// Core is the Schema for the cores API
+type Core struct {
 	metav1.TypeMeta   `json:",inline"`
 	metav1.ObjectMeta `json:"metadata,omitempty"`
 
-	Spec   VanusSpec   `json:"spec,omitempty"`
-	Status VanusStatus `json:"status,omitempty"`
+	Spec   CoreSpec   `json:"spec,omitempty"`
+	Status CoreStatus `json:"status,omitempty"`
 }
 
 //+kubebuilder:object:root=true
 
-// VanusList contains a list of Vanus
-type VanusList struct {
+// CoreList contains a list of Core
+type CoreList struct {
 	metav1.TypeMeta `json:",inline"`
 	metav1.ListMeta `json:"metadata,omitempty"`
-	Items           []Vanus `json:"items"`
+	Items           []Core `json:"items"`
 }
 
 func init() {
-	SchemeBuilder.Register(&Vanus{}, &VanusList{})
+	SchemeBuilder.Register(&Core{}, &CoreList{})
 }
 
 type Replicas struct {

@@ -31,15 +31,15 @@ import (
 	"k8s.io/client-go/tools/clientcmd"
 )
 
-func generateVanus() *vanusv1alpha1.Vanus {
+func generateVanus() *vanusv1alpha1.Core {
 	requests := make(map[corev1.ResourceName]resource.Quantity)
 	requests[corev1.ResourceStorage] = resource.MustParse("1Gi")
-	vanus := &vanusv1alpha1.Vanus{
+	vanus := &vanusv1alpha1.Core{
 		ObjectMeta: metav1.ObjectMeta{
 			Namespace: "default",
 			Name:      "vanus-controller-jk",
 		},
-		Spec: vanusv1alpha1.VanusSpec{
+		Spec: vanusv1alpha1.CoreSpec{
 			Replicas: vanusv1alpha1.Replicas{
 				Controller: 3,
 				Store:      3,
@@ -67,7 +67,7 @@ func generateVanus() *vanusv1alpha1.Vanus {
 
 func NewForConfig(c *rest.Config) (rest.Interface, error) {
 	config := *c
-	config.ContentConfig.GroupVersion = &schema.GroupVersion{Group: "core.vanus.ai", Version: "v1alpha1"}
+	config.ContentConfig.GroupVersion = &schema.GroupVersion{Group: "vanus.ai", Version: "v1alpha1"}
 	config.APIPath = "/apis"
 	config.NegotiatedSerializer = scheme.Codecs.WithoutConversion()
 	config.UserAgent = rest.DefaultKubernetesUserAgent()
@@ -80,8 +80,8 @@ func NewForConfig(c *rest.Config) (rest.Interface, error) {
 	return client, nil
 }
 
-func Create(client rest.Interface, controller *vanusv1alpha1.Vanus) (*vanusv1alpha1.Vanus, error) {
-	result := vanusv1alpha1.Vanus{}
+func Create(client rest.Interface, controller *vanusv1alpha1.Core) (*vanusv1alpha1.Core, error) {
+	result := vanusv1alpha1.Core{}
 	err := client.
 		Post().
 		Namespace("default").
@@ -93,8 +93,8 @@ func Create(client rest.Interface, controller *vanusv1alpha1.Vanus) (*vanusv1alp
 	return &result, err
 }
 
-func List(client rest.Interface, opts metav1.ListOptions) (*vanusv1alpha1.VanusList, error) {
-	result := vanusv1alpha1.VanusList{}
+func List(client rest.Interface, opts metav1.ListOptions) (*vanusv1alpha1.CoreList, error) {
+	result := vanusv1alpha1.CoreList{}
 	err := client.
 		Get().
 		Namespace("default").
@@ -106,8 +106,8 @@ func List(client rest.Interface, opts metav1.ListOptions) (*vanusv1alpha1.VanusL
 	return &result, err
 }
 
-func Get(client rest.Interface, opts metav1.GetOptions) (*vanusv1alpha1.Vanus, error) {
-	result := vanusv1alpha1.Vanus{}
+func Get(client rest.Interface, opts metav1.GetOptions) (*vanusv1alpha1.Core, error) {
+	result := vanusv1alpha1.Core{}
 	err := client.
 		Get().
 		Resource("controllers").
@@ -120,8 +120,8 @@ func Get(client rest.Interface, opts metav1.GetOptions) (*vanusv1alpha1.Vanus, e
 	return &result, err
 }
 
-func GetNotExist(client rest.Interface, opts metav1.GetOptions) (*vanusv1alpha1.Vanus, error) {
-	result := vanusv1alpha1.Vanus{}
+func GetNotExist(client rest.Interface, opts metav1.GetOptions) (*vanusv1alpha1.Core, error) {
+	result := vanusv1alpha1.Core{}
 	err := client.
 		Get().
 		Resource("controllers").
@@ -134,8 +134,8 @@ func GetNotExist(client rest.Interface, opts metav1.GetOptions) (*vanusv1alpha1.
 	return &result, err
 }
 
-func Delete(client rest.Interface, opts metav1.DeleteOptions) (*vanusv1alpha1.Vanus, error) {
-	result := vanusv1alpha1.Vanus{}
+func Delete(client rest.Interface, opts metav1.DeleteOptions) (*vanusv1alpha1.Core, error) {
+	result := vanusv1alpha1.Core{}
 	err := client.
 		Delete().
 		Resource("controllers").
@@ -148,8 +148,8 @@ func Delete(client rest.Interface, opts metav1.DeleteOptions) (*vanusv1alpha1.Va
 	return &result, err
 }
 
-func DeleteNotExist(client rest.Interface, opts metav1.DeleteOptions) (*vanusv1alpha1.Vanus, error) {
-	result := vanusv1alpha1.Vanus{}
+func DeleteNotExist(client rest.Interface, opts metav1.DeleteOptions) (*vanusv1alpha1.Core, error) {
+	result := vanusv1alpha1.Core{}
 	err := client.
 		Delete().
 		Resource("controllers").
@@ -162,7 +162,7 @@ func DeleteNotExist(client rest.Interface, opts metav1.DeleteOptions) (*vanusv1a
 	return &result, err
 }
 
-const GroupName = "core.vanus.ai"
+const GroupName = "vanus.ai"
 const GroupVersion = "v1alpha1"
 
 var SchemeGroupVersion = schema.GroupVersion{Group: GroupName, Version: GroupVersion}
@@ -174,8 +174,8 @@ var (
 
 func addKnownTypes(scheme *runtime.Scheme) error {
 	scheme.AddKnownTypes(SchemeGroupVersion,
-		&vanusv1alpha1.Vanus{},
-		&vanusv1alpha1.VanusList{},
+		&vanusv1alpha1.Core{},
+		&vanusv1alpha1.CoreList{},
 	)
 
 	metav1.AddToGroupVersion(scheme, SchemeGroupVersion)

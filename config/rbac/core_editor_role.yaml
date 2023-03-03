@@ -1,13 +1,13 @@
-# permissions for end users to edit vanus.
+# permissions for end users to edit cores.
 apiVersion: rbac.authorization.k8s.io/v1
 kind: ClusterRole
 metadata:
-  name: vanus-editor-role
+  name: core-editor-role
 rules:
 - apiGroups:
-  - core.vanus.ai
+  - vanus.ai
   resources:
-  - vanus
+  - cores
   verbs:
   - create
   - delete
@@ -17,8 +17,8 @@ rules:
   - update
   - watch
 - apiGroups:
-  - core.vanus.ai
+  - vanus.ai
   resources:
-  - vanus/status
+  - cores/status
   verbs:
   - get
