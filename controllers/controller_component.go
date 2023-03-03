@@ -37,18 +37,17 @@ import (
 	vanusv1alpha1 "github.com/vanus-labs/vanus-operator/api/v1alpha1"
 )
 
-func (r *VanusReconciler) handleController(ctx context.Context, logger logr.Logger, vanus *vanusv1alpha1.Vanus) (ctrl.Result, error) {
-	// controller := r.generateController(vanus)
+func (r *CoreReconciler) handleController(ctx context.Context, logger logr.Logger, core *vanusv1alpha1.Core) (ctrl.Result, error) {
 	var (
 		controller          *appsv1.StatefulSet
 		controllerConfigMap *corev1.ConfigMap
 	)
-	if strings.Compare(vanus.Spec.Version, EtcdSeparateVersion) < 0 {
-		controller = r.generateController(vanus)
-		controllerConfigMap = r.generateConfigMapForController(vanus)
+	if strings.Compare(core.Spec.Version, EtcdSeparateVersion) < 0 {
+		controller = r.generateController(core)
+		controllerConfigMap = r.generateConfigMapForController(core)
 	} else {
-		controller = r.generateNewController(vanus)
-		controllerConfigMap = r.generateConfigMapForNewController(vanus)
+		controller = r.generateNewController(core)
+		controllerConfigMap = r.generateConfigMapForNewController(core)
 	}
 	// Create Controller StatefulSet
 	// Check if the statefulSet already exists, if not create a new one
@@ -73,7 +72,7 @@ func (r *VanusReconciler) handleController(ctx context.Context, logger logr.Logg
 			} else {
 				logger.Info("Successfully create Controller StatefulSet")
 			}
-			controllerSvc := r.generateSvcForController(vanus)
+			controllerSvc := r.generateSvcForController(core)
 			// Create Controller Service
 			// Check if the service already exists, if not create a new one
 			svc := &corev1.Service{}
@@ -109,7 +108,7 @@ func (r *VanusReconciler) handleController(ctx context.Context, logger logr.Logg
 	logger.Info("Successfully update Controller ConfigMap")
 
 	logger.Info("Updating Controller StatefulSet.", "Namespace", sts.Namespace, "Name", sts.Name)
-	if strings.Compare(version(sts.Spec.Template.Spec.Containers[0].Image), EtcdSeparateVersion) < 0 && strings.Compare(vanus.Spec.Version, EtcdSeparateVersion) >= 0 {
+	if strings.Compare(version(sts.Spec.Template.Spec.Containers[0].Image), EtcdSeparateVersion) < 0 && strings.Compare(core.Spec.Version, EtcdSeparateVersion) >= 0 {
 		logger.Info("Updating will span the etcd separation version, so need to redeploy the controller component")
 		err = r.Delete(ctx, sts)
 		if err != nil {
@@ -122,7 +121,7 @@ func (r *VanusReconciler) handleController(ctx context.Context, logger logr.Logg
 			return ctrl.Result{}, err
 		}
 	} else {
-		updateController(sts, vanus)
+		updateController(sts, core)
 		err = r.Update(ctx, sts)
 		if err != nil {
 			logger.Error(err, "Failed to update Controller StatefulSet", "Namespace", sts.Namespace, "Name", sts.Name)
@@ -137,7 +136,7 @@ func (r *VanusReconciler) handleController(ctx context.Context, logger logr.Logg
 	ticker := time.NewTicker(defaultWaitForReadyTimeout)
 	defer ticker.Stop()
 	for {
-		ready, err := r.waitControllerIsReady(ctx, vanus)
+		ready, err := r.waitControllerIsReady(ctx, core)
 		if err != nil {
 			logger.Error(err, "Wait for Controller is ready but got error")
 			return ctrl.Result{RequeueAfter: time.Duration(cons.RequeueIntervalInSecond) * time.Second}, err
@@ -158,7 +157,7 @@ func (r *VanusReconciler) handleController(ctx context.Context, logger logr.Logg
 }
 
 // returns a Controller StatefulSet object
-func (r *VanusReconciler) generateController(vanus *vanusv1alpha1.Vanus) *appsv1.StatefulSet {
+func (r *CoreReconciler) generateController(core *vanusv1alpha1.Core) *appsv1.StatefulSet {
 	labels := genLabels(cons.DefaultControllerName)
 	annotations := annotationsForController()
 	sts := &appsv1.StatefulSet{
@@ -168,7 +167,7 @@ func (r *VanusReconciler) generateController(vanus *vanusv1alpha1.Vanus) *appsv1
 			Labels:    labels,
 		},
 		Spec: appsv1.StatefulSetSpec{
-			Replicas: &vanus.Spec.Replicas.Controller,
+			Replicas: &core.Spec.Replicas.Controller,
 			Selector: &metav1.LabelSelector{
 				MatchLabels: labels,
 			},
@@ -184,28 +183,28 @@ func (r *VanusReconciler) generateController(vanus *vanusv1alpha1.Vanus) *appsv1
 				Spec: corev1.PodSpec{
 					Containers: []corev1.Container{{
 						Name:            cons.ControllerContainerName,
-						Image:           fmt.Sprintf("%s:%s", cons.ControllerImageName, vanus.Spec.Version),
-						ImagePullPolicy: vanus.Spec.ImagePullPolicy,
-						Resources:       vanus.Spec.Resources,
-						Env:             getEnvForController(vanus),
-						Ports:           getPortsForController(vanus),
-						VolumeMounts:    getVolumeMountsForController(vanus),
-						Command:         getCommandForController(vanus),
+						Image:           fmt.Sprintf("%s:%s", cons.ControllerImageName, core.Spec.Version),
+						ImagePullPolicy: core.Spec.ImagePullPolicy,
+						Resources:       core.Spec.Resources,
+						Env:             getEnvForController(core),
+						Ports:           getPortsForController(core),
+						VolumeMounts:    getVolumeMountsForController(core),
+						Command:         getCommandForController(core),
 					}},
-					Volumes: getVolumesForController(vanus),
+					Volumes: getVolumesForController(core),
 				},
 			},
-			VolumeClaimTemplates: getVolumeClaimTemplatesForController(vanus),
+			VolumeClaimTemplates: getVolumeClaimTemplatesForController(core),
 		},
 	}
 	// Set Controller instance as the owner and controller
-	controllerutil.SetControllerReference(vanus, sts, r.Scheme)
+	controllerutil.SetControllerReference(core, sts, r.Scheme)
 
 	return sts
 }
 
 // returns a Controller StatefulSet object
-func (r *VanusReconciler) generateNewController(vanus *vanusv1alpha1.Vanus) *appsv1.StatefulSet {
+func (r *CoreReconciler) generateNewController(core *vanusv1alpha1.Core) *appsv1.StatefulSet {
 	labels := genLabels(cons.DefaultControllerName)
 	annotations := annotationsForController()
 	sts := &appsv1.StatefulSet{
@@ -215,7 +214,7 @@ func (r *VanusReconciler) generateNewController(vanus *vanusv1alpha1.Vanus) *app
 			Labels:    labels,
 		},
 		Spec: appsv1.StatefulSetSpec{
-			Replicas: &vanus.Spec.Replicas.Controller,
+			Replicas: &core.Spec.Replicas.Controller,
 			Selector: &metav1.LabelSelector{
 				MatchLabels: labels,
 			},
@@ -231,43 +230,43 @@ func (r *VanusReconciler) generateNewController(vanus *vanusv1alpha1.Vanus) *app
 				Spec: corev1.PodSpec{
 					Containers: []corev1.Container{{
 						Name:            cons.ControllerContainerName,
-						Image:           fmt.Sprintf("%s:%s", cons.ControllerImageName, vanus.Spec.Version),
-						ImagePullPolicy: vanus.Spec.ImagePullPolicy,
-						Resources:       vanus.Spec.Resources,
-						Env:             getEnvForController(vanus),
-						Ports:           getPortsForNewController(vanus),
-						VolumeMounts:    getVolumeMountsForNewController(vanus),
-						Command:         getCommandForController(vanus),
+						Image:           fmt.Sprintf("%s:%s", cons.ControllerImageName, core.Spec.Version),
+						ImagePullPolicy: core.Spec.ImagePullPolicy,
+						Resources:       core.Spec.Resources,
+						Env:             getEnvForController(core),
+						Ports:           getPortsForNewController(core),
+						VolumeMounts:    getVolumeMountsForNewController(core),
+						Command:         getCommandForController(core),
 					}},
-					Volumes: getVolumesForController(vanus),
+					Volumes: getVolumesForController(core),
 				},
 			},
 		},
 	}
 	// Set Controller instance as the owner and controller
-	controllerutil.SetControllerReference(vanus, sts, r.Scheme)
+	controllerutil.SetControllerReference(core, sts, r.Scheme)
 
 	return sts
 }
 
-func updateController(sts *appsv1.StatefulSet, vanus *vanusv1alpha1.Vanus) {
-	sts.Spec.Replicas = &vanus.Spec.Replicas.Controller
-	sts.Spec.Template.Spec.Containers[0].Image = fmt.Sprintf("%s:%s", cons.ControllerImageName, vanus.Spec.Version)
+func updateController(sts *appsv1.StatefulSet, core *vanusv1alpha1.Core) {
+	sts.Spec.Replicas = &core.Spec.Replicas.Controller
+	sts.Spec.Template.Spec.Containers[0].Image = fmt.Sprintf("%s:%s", cons.ControllerImageName, core.Spec.Version)
 }
 
-func (r *VanusReconciler) waitControllerIsReady(ctx context.Context, vanus *vanusv1alpha1.Vanus) (bool, error) {
+func (r *CoreReconciler) waitControllerIsReady(ctx context.Context, core *vanusv1alpha1.Core) (bool, error) {
 	sts := &appsv1.StatefulSet{}
 	err := r.Get(ctx, types.NamespacedName{Name: cons.DefaultControllerName, Namespace: cons.DefaultNamespace}, sts)
 	if err != nil {
 		return false, err
 	}
-	if sts.Status.Replicas == vanus.Spec.Replicas.Controller && sts.Status.ReadyReplicas == vanus.Spec.Replicas.Controller && sts.Status.AvailableReplicas == vanus.Spec.Replicas.Controller {
+	if sts.Status.Replicas == core.Spec.Replicas.Controller && sts.Status.ReadyReplicas == core.Spec.Replicas.Controller && sts.Status.AvailableReplicas == core.Spec.Replicas.Controller {
 		return true, nil
 	}
 	return false, nil
 }
 
-func getEnvForController(vanus *vanusv1alpha1.Vanus) []corev1.EnvVar {
+func getEnvForController(core *vanusv1alpha1.Core) []corev1.EnvVar {
 	defaultEnvs := []corev1.EnvVar{{
 		Name:      cons.EnvPodIP,
 		ValueFrom: &corev1.EnvVarSource{FieldRef: &corev1.ObjectFieldSelector{FieldPath: "status.podIP"}},
@@ -281,7 +280,7 @@ func getEnvForController(vanus *vanusv1alpha1.Vanus) []corev1.EnvVar {
 	return defaultEnvs
 }
 
-func getPortsForController(vanus *vanusv1alpha1.Vanus) []corev1.ContainerPort {
+func getPortsForController(core *vanusv1alpha1.Core) []corev1.ContainerPort {
 	defaultPorts := []corev1.ContainerPort{{
 		Name:          cons.ContainerPortNameGrpc,
 		ContainerPort: cons.ControllerPortGrpc,
@@ -298,7 +297,7 @@ func getPortsForController(vanus *vanusv1alpha1.Vanus) []corev1.ContainerPort {
 	return defaultPorts
 }
 
-func getPortsForNewController(vanus *vanusv1alpha1.Vanus) []corev1.ContainerPort {
+func getPortsForNewController(core *vanusv1alpha1.Core) []corev1.ContainerPort {
 	defaultPorts := []corev1.ContainerPort{{
 		Name:          cons.ContainerPortNameGrpc,
 		ContainerPort: cons.ControllerPortGrpc,
@@ -309,7 +308,7 @@ func getPortsForNewController(vanus *vanusv1alpha1.Vanus) []corev1.ContainerPort
 	return defaultPorts
 }
 
-func getVolumeMountsForController(vanus *vanusv1alpha1.Vanus) []corev1.VolumeMount {
+func getVolumeMountsForController(core *vanusv1alpha1.Core) []corev1.VolumeMount {
 	defaultVolumeMounts := []corev1.VolumeMount{{
 		MountPath: cons.ConfigMountPath,
 		Name:      cons.ControllerConfigMapName,
@@ -320,7 +319,7 @@ func getVolumeMountsForController(vanus *vanusv1alpha1.Vanus) []corev1.VolumeMou
 	return defaultVolumeMounts
 }
 
-func getVolumeMountsForNewController(vanus *vanusv1alpha1.Vanus) []corev1.VolumeMount {
+func getVolumeMountsForNewController(core *vanusv1alpha1.Core) []corev1.VolumeMount {
 	defaultVolumeMounts := []corev1.VolumeMount{{
 		MountPath: cons.ConfigMountPath,
 		Name:      cons.ControllerConfigMapName,
@@ -328,12 +327,12 @@ func getVolumeMountsForNewController(vanus *vanusv1alpha1.Vanus) []corev1.Volume
 	return defaultVolumeMounts
 }
 
-func getCommandForController(vanus *vanusv1alpha1.Vanus) []string {
+func getCommandForController(core *vanusv1alpha1.Core) []string {
 	defaultCommand := []string{"/bin/sh", "-c", "NODE_ID=${HOSTNAME##*-} /vanus/bin/controller"}
 	return defaultCommand
 }
 
-func getVolumesForController(vanus *vanusv1alpha1.Vanus) []corev1.Volume {
+func getVolumesForController(core *vanusv1alpha1.Core) []corev1.Volume {
 	defaultVolumes := []corev1.Volume{{
 		Name: cons.ControllerConfigMapName,
 		VolumeSource: corev1.VolumeSource{
@@ -346,7 +345,7 @@ func getVolumesForController(vanus *vanusv1alpha1.Vanus) []corev1.Volume {
 	return defaultVolumes
 }
 
-func getVolumeClaimTemplatesForController(vanus *vanusv1alpha1.Vanus) []corev1.PersistentVolumeClaim {
+func getVolumeClaimTemplatesForController(core *vanusv1alpha1.Core) []corev1.PersistentVolumeClaim {
 	labels := genLabels(cons.DefaultControllerName)
 	requests := make(map[corev1.ResourceName]resource.Quantity)
 	requests[corev1.ResourceStorage] = resource.MustParse(cons.VolumeStorage)
@@ -362,11 +361,11 @@ func getVolumeClaimTemplatesForController(vanus *vanusv1alpha1.Vanus) []corev1.P
 			},
 		},
 	}}
-	if len(vanus.Spec.VolumeClaimTemplates) != 0 {
-		if vanus.Spec.VolumeClaimTemplates[0].Name != "" {
-			defaultPersistentVolumeClaims[0].Name = vanus.Spec.VolumeClaimTemplates[0].Name
+	if len(core.Spec.VolumeClaimTemplates) != 0 {
+		if core.Spec.VolumeClaimTemplates[0].Name != "" {
+			defaultPersistentVolumeClaims[0].Name = core.Spec.VolumeClaimTemplates[0].Name
 		}
-		defaultPersistentVolumeClaims[0].Spec.Resources = vanus.Spec.VolumeClaimTemplates[0].Spec.Resources
+		defaultPersistentVolumeClaims[0].Spec.Resources = core.Spec.VolumeClaimTemplates[0].Spec.Resources
 	}
 	return defaultPersistentVolumeClaims
 }
@@ -379,7 +378,7 @@ func annotationsForController() map[string]string {
 	return map[string]string{"vanus.dev/metrics.port": fmt.Sprintf("%d", cons.ControllerPortMetrics)}
 }
 
-func (r *VanusReconciler) generateConfigMapForController(vanus *vanusv1alpha1.Vanus) *corev1.ConfigMap {
+func (r *CoreReconciler) generateConfigMapForController(core *vanusv1alpha1.Core) *corev1.ConfigMap {
 	data := make(map[string]string)
 	value := bytes.Buffer{}
 	value.WriteString("node_id: ${NODE_ID}\n")
@@ -387,15 +386,15 @@ func (r *VanusReconciler) generateConfigMapForController(vanus *vanusv1alpha1.Va
 	value.WriteString("ip: ${POD_IP}\n")
 	value.WriteString("port: 2048\n")
 	value.WriteString("etcd:\n")
-	for i := int32(0); i < vanus.Spec.Replicas.Controller; i++ {
+	for i := int32(0); i < core.Spec.Replicas.Controller; i++ {
 		value.WriteString(fmt.Sprintf("  - vanus-controller-%d.vanus-controller:2379\n", i))
 	}
 	value.WriteString("data_dir: /data\n")
-	value.WriteString(fmt.Sprintf("replicas: %d\n", vanus.Spec.Replicas.Controller))
+	value.WriteString(fmt.Sprintf("replicas: %d\n", core.Spec.Replicas.Controller))
 	value.WriteString("metadata:\n")
 	value.WriteString("  key_prefix: /vanus\n")
 	value.WriteString("topology:\n")
-	for i := int32(0); i < vanus.Spec.Replicas.Controller; i++ {
+	for i := int32(0); i < core.Spec.Replicas.Controller; i++ {
 		value.WriteString(fmt.Sprintf("  vanus-controller-%d: vanus-controller-%d.vanus-controller.vanus.svc:2048\n", i, i))
 	}
 	value.WriteString("embed_etcd:\n")
@@ -405,7 +404,7 @@ func (r *VanusReconciler) generateConfigMapForController(vanus *vanusv1alpha1.Va
 	value.WriteString("  advertise_client_addr: ${POD_NAME}.vanus-controller:2379\n")
 	value.WriteString("  advertise_peer_addr: ${POD_NAME}.vanus-controller:2380\n")
 	value.WriteString("  clusters:\n")
-	for i := int32(0); i < vanus.Spec.Replicas.Controller; i++ {
+	for i := int32(0); i < core.Spec.Replicas.Controller; i++ {
 		value.WriteString(fmt.Sprintf("    - vanus-controller-%d=http://vanus-controller-%d.vanus-controller:2380\n", i, i))
 	}
 	data["controller.yaml"] = value.String()
@@ -418,11 +417,11 @@ func (r *VanusReconciler) generateConfigMapForController(vanus *vanusv1alpha1.Va
 		Data: data,
 	}
 
-	controllerutil.SetControllerReference(vanus, cm, r.Scheme)
+	controllerutil.SetControllerReference(core, cm, r.Scheme)
 	return cm
 }
 
-func (r *VanusReconciler) generateConfigMapForNewController(vanus *vanusv1alpha1.Vanus) *corev1.ConfigMap {
+func (r *CoreReconciler) generateConfigMapForNewController(core *vanusv1alpha1.Core) *corev1.ConfigMap {
 	data := make(map[string]string)
 	value := bytes.Buffer{}
 	value.WriteString("node_id: ${NODE_ID}\n")
@@ -430,17 +429,17 @@ func (r *VanusReconciler) generateConfigMapForNewController(vanus *vanusv1alpha1
 	value.WriteString("ip: ${POD_IP}\n")
 	value.WriteString("port: 2048\n")
 	value.WriteString("etcd:\n")
-	for i := int32(0); i < vanus.Spec.Replicas.Controller; i++ {
+	for i := int32(0); i < core.Spec.Replicas.Controller; i++ {
 		value.WriteString(fmt.Sprintf("  - vanus-etcd-%d.vanus-etcd:2379\n", i))
 	}
 	value.WriteString("data_dir: /data\n")
-	value.WriteString(fmt.Sprintf("replicas: %d\n", vanus.Spec.Replicas.Controller))
+	value.WriteString(fmt.Sprintf("replicas: %d\n", core.Spec.Replicas.Controller))
 	value.WriteString("metadata:\n")
 	value.WriteString("  key_prefix: /vanus\n")
 	value.WriteString("leaderelection:\n")
 	value.WriteString("  lease_duration: 15\n")
 	value.WriteString("topology:\n")
-	for i := int32(0); i < vanus.Spec.Replicas.Controller; i++ {
+	for i := int32(0); i < core.Spec.Replicas.Controller; i++ {
 		value.WriteString(fmt.Sprintf("  vanus-controller-%d: vanus-controller-%d.vanus-controller.vanus.svc:2048\n", i, i))
 	}
 	data["controller.yaml"] = value.String()
@@ -453,11 +452,11 @@ func (r *VanusReconciler) generateConfigMapForNewController(vanus *vanusv1alpha1
 		Data: data,
 	}
 
-	controllerutil.SetControllerReference(vanus, cm, r.Scheme)
+	controllerutil.SetControllerReference(core, cm, r.Scheme)
 	return cm
 }
 
-func (r *VanusReconciler) generateSvcForController(vanus *vanusv1alpha1.Vanus) *corev1.Service {
+func (r *CoreReconciler) generateSvcForController(core *vanusv1alpha1.Core) *corev1.Service {
 	labels := genLabels(cons.DefaultControllerName)
 	svc := &corev1.Service{
 		ObjectMeta: metav1.ObjectMeta{
@@ -480,6 +479,6 @@ func (r *VanusReconciler) generateSvcForController(vanus *vanusv1alpha1.Vanus) *
 		},
 	}
 
-	controllerutil.SetControllerReference(vanus, svc, r.Scheme)
+	controllerutil.SetControllerReference(core, svc, r.Scheme)
 	return svc
 }

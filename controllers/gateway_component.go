@@ -34,7 +34,7 @@ import (
 	vanusv1alpha1 "github.com/vanus-labs/vanus-operator/api/v1alpha1"
 )
 
-func (r *VanusReconciler) handleGateway(ctx context.Context, logger logr.Logger, vanus *vanusv1alpha1.Vanus) (ctrl.Result, error) {
+func (r *CoreReconciler) handleGateway(ctx context.Context, logger logr.Logger, core *vanusv1alpha1.Core) (ctrl.Result, error) {
 	// Create Gateway Deployment
 	// Check if the statefulSet already exists, if not create a new one
 	dep := &appsv1.Deployment{}
@@ -42,7 +42,7 @@ func (r *VanusReconciler) handleGateway(ctx context.Context, logger logr.Logger,
 	if err != nil {
 		if errors.IsNotFound(err) {
 			// Create Gateway ConfigMap
-			gatewayConfigMap := r.generateConfigMapForGateway(vanus)
+			gatewayConfigMap := r.generateConfigMapForGateway(core)
 			logger.Info("Creating a new Gateway ConfigMap.", "Namespace", gatewayConfigMap.Namespace, "Name", gatewayConfigMap.Name)
 			err = r.Create(ctx, gatewayConfigMap)
 			if err != nil {
@@ -52,7 +52,7 @@ func (r *VanusReconciler) handleGateway(ctx context.Context, logger logr.Logger,
 				logger.Info("Successfully create Gateway ConfigMap")
 			}
 			logger.Info("Creating a new Gateway Deployment.", "Namespace", cons.DefaultNamespace, "Name", cons.DefaultGatewayName)
-			gateway := r.generateGateway(vanus)
+			gateway := r.generateGateway(core)
 			err = r.Create(ctx, gateway)
 			if err != nil {
 				logger.Error(err, "Failed to create new Gateway Deployment", "Namespace", gateway.Namespace, "Name", gateway.Name)
@@ -60,7 +60,7 @@ func (r *VanusReconciler) handleGateway(ctx context.Context, logger logr.Logger,
 			} else {
 				logger.Info("Successfully create Gateway Deployment")
 			}
-			gatewaySvc := r.generateSvcForGateway(vanus)
+			gatewaySvc := r.generateSvcForGateway(core)
 			// Create Gateway Service
 			// Check if the service already exists, if not create a new one
 			svc := &corev1.Service{}
@@ -88,7 +88,7 @@ func (r *VanusReconciler) handleGateway(ctx context.Context, logger logr.Logger,
 	}
 
 	// Update Gateway Deployment
-	updateGateway(dep, vanus)
+	updateGateway(dep, core)
 	err = r.Update(ctx, dep)
 	if err != nil {
 		logger.Error(err, "Failed to update Gateway Deployment", "Namespace", dep.Namespace, "Name", dep.Name)
@@ -100,7 +100,7 @@ func (r *VanusReconciler) handleGateway(ctx context.Context, logger logr.Logger,
 }
 
 // returns a Gateway Deployment object
-func (r *VanusReconciler) generateGateway(vanus *vanusv1alpha1.Vanus) *appsv1.Deployment {
+func (r *CoreReconciler) generateGateway(core *vanusv1alpha1.Core) *appsv1.Deployment {
 	labels := genLabels(cons.DefaultGatewayName)
 	annotations := annotationsForGateway()
 	dep := &appsv1.Deployment{
@@ -110,7 +110,7 @@ func (r *VanusReconciler) generateGateway(vanus *vanusv1alpha1.Vanus) *appsv1.De
 			Labels:    labels,
 		},
 		Spec: appsv1.DeploymentSpec{
-			Replicas: &vanus.Spec.Replicas.Gateway,
+			Replicas: &core.Spec.Replicas.Gateway,
 			Selector: &metav1.LabelSelector{
 				MatchLabels: labels,
 			},
@@ -123,30 +123,30 @@ func (r *VanusReconciler) generateGateway(vanus *vanusv1alpha1.Vanus) *appsv1.De
 					ServiceAccountName: cons.ServiceAccountName,
 					Containers: []corev1.Container{{
 						Name:            cons.GatewayContainerName,
-						Image:           fmt.Sprintf("%s:%s", cons.GatewayImageName, vanus.Spec.Version),
-						ImagePullPolicy: vanus.Spec.ImagePullPolicy,
-						Resources:       vanus.Spec.Resources,
-						Env:             getEnvForGateway(vanus),
-						Ports:           getPortsForGateway(vanus),
-						VolumeMounts:    getVolumeMountsForGateway(vanus),
+						Image:           fmt.Sprintf("%s:%s", cons.GatewayImageName, core.Spec.Version),
+						ImagePullPolicy: core.Spec.ImagePullPolicy,
+						Resources:       core.Spec.Resources,
+						Env:             getEnvForGateway(core),
+						Ports:           getPortsForGateway(core),
+						VolumeMounts:    getVolumeMountsForGateway(core),
 					}},
-					Volumes: getVolumesForGateway(vanus),
+					Volumes: getVolumesForGateway(core),
 				},
 			},
 		},
 	}
 	// Set trigger instance as the owner and controller
-	controllerutil.SetControllerReference(vanus, dep, r.Scheme)
+	controllerutil.SetControllerReference(core, dep, r.Scheme)
 
 	return dep
 }
 
-func updateGateway(dep *appsv1.Deployment, vanus *vanusv1alpha1.Vanus) {
-	dep.Spec.Replicas = &vanus.Spec.Replicas.Gateway
-	dep.Spec.Template.Spec.Containers[0].Image = fmt.Sprintf("%s:%s", cons.GatewayImageName, vanus.Spec.Version)
+func updateGateway(dep *appsv1.Deployment, core *vanusv1alpha1.Core) {
+	dep.Spec.Replicas = &core.Spec.Replicas.Gateway
+	dep.Spec.Template.Spec.Containers[0].Image = fmt.Sprintf("%s:%s", cons.GatewayImageName, core.Spec.Version)
 }
 
-func getEnvForGateway(vanus *vanusv1alpha1.Vanus) []corev1.EnvVar {
+func getEnvForGateway(core *vanusv1alpha1.Core) []corev1.EnvVar {
 	defaultEnvs := []corev1.EnvVar{{
 		Name:      cons.EnvPodIP,
 		ValueFrom: &corev1.EnvVarSource{FieldRef: &corev1.ObjectFieldSelector{FieldPath: "status.podIP"}},
@@ -160,7 +160,7 @@ func getEnvForGateway(vanus *vanusv1alpha1.Vanus) []corev1.EnvVar {
 	return defaultEnvs
 }
 
-func getPortsForGateway(vanus *vanusv1alpha1.Vanus) []corev1.ContainerPort {
+func getPortsForGateway(core *vanusv1alpha1.Core) []corev1.ContainerPort {
 	defaultPorts := []corev1.ContainerPort{{
 		Name:          cons.ContainerPortNameProxy,
 		ContainerPort: cons.GatewayPortProxy,
@@ -174,7 +174,7 @@ func getPortsForGateway(vanus *vanusv1alpha1.Vanus) []corev1.ContainerPort {
 	return defaultPorts
 }
 
-func getVolumeMountsForGateway(vanus *vanusv1alpha1.Vanus) []corev1.VolumeMount {
+func getVolumeMountsForGateway(core *vanusv1alpha1.Core) []corev1.VolumeMount {
 	defaultVolumeMounts := []corev1.VolumeMount{{
 		MountPath: cons.ConfigMountPath,
 		Name:      cons.GatewayConfigMapName,
@@ -182,7 +182,7 @@ func getVolumeMountsForGateway(vanus *vanusv1alpha1.Vanus) []corev1.VolumeMount 
 	return defaultVolumeMounts
 }
 
-func getVolumesForGateway(vanus *vanusv1alpha1.Vanus) []corev1.Volume {
+func getVolumesForGateway(core *vanusv1alpha1.Core) []corev1.Volume {
 	defaultVolumes := []corev1.Volume{{
 		Name: cons.GatewayConfigMapName,
 		VolumeSource: corev1.VolumeSource{
@@ -199,12 +199,12 @@ func annotationsForGateway() map[string]string {
 	return map[string]string{"vanus.dev/metrics.port": fmt.Sprintf("%d", cons.ControllerPortMetrics)}
 }
 
-func (r *VanusReconciler) generateConfigMapForGateway(vanus *vanusv1alpha1.Vanus) *corev1.ConfigMap {
+func (r *CoreReconciler) generateConfigMapForGateway(core *vanusv1alpha1.Core) *corev1.ConfigMap {
 	data := make(map[string]string)
 	value := bytes.Buffer{}
 	value.WriteString("port: 8080\n")
 	value.WriteString("controllers:\n")
-	for i := int32(0); i < vanus.Spec.Replicas.Controller; i++ {
+	for i := int32(0); i < core.Spec.Replicas.Controller; i++ {
 		value.WriteString(fmt.Sprintf("  - vanus-controller-%d.vanus-controller:2048\n", i))
 	}
 	data["gateway.yaml"] = value.String()
@@ -217,11 +217,11 @@ func (r *VanusReconciler) generateConfigMapForGateway(vanus *vanusv1alpha1.Vanus
 		Data: data,
 	}
 
-	controllerutil.SetControllerReference(vanus, cm, r.Scheme)
+	controllerutil.SetControllerReference(core, cm, r.Scheme)
 	return cm
 }
 
-func (r *VanusReconciler) generateSvcForGateway(vanus *vanusv1alpha1.Vanus) *corev1.Service {
+func (r *CoreReconciler) generateSvcForGateway(core *vanusv1alpha1.Core) *corev1.Service {
 	labels := genLabels(cons.DefaultGatewayName)
 	svc := &corev1.Service{
 		ObjectMeta: metav1.ObjectMeta{
@@ -252,6 +252,6 @@ func (r *VanusReconciler) generateSvcForGateway(vanus *vanusv1alpha1.Vanus) *cor
 		},
 	}
 
-	controllerutil.SetControllerReference(vanus, svc, r.Scheme)
+	controllerutil.SetControllerReference(core, svc, r.Scheme)
 	return svc
 }

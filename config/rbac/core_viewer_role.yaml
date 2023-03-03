@@ -1,20 +1,20 @@
-# permissions for end users to view vanus.
+# permissions for end users to view cores.
 apiVersion: rbac.authorization.k8s.io/v1
 kind: ClusterRole
 metadata:
-  name: vanus-viewer-role
+  name: core-viewer-role
 rules:
 - apiGroups:
-  - core.vanus.ai
+  - vanus.ai
   resources:
-  - vanus
+  - cores
   verbs:
   - get
   - list
   - watch
 - apiGroups:
-  - core.vanus.ai
+  - vanus.ai
   resources:
-  - vanus/status
+  - cores/status
   verbs:
   - get

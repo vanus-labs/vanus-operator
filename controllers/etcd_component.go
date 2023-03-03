@@ -35,18 +35,18 @@ import (
 	vanusv1alpha1 "github.com/vanus-labs/vanus-operator/api/v1alpha1"
 )
 
-func (r *VanusReconciler) handleEtcd(ctx context.Context, logger logr.Logger, vanus *vanusv1alpha1.Vanus) (ctrl.Result, error) {
+func (r *CoreReconciler) handleEtcd(ctx context.Context, logger logr.Logger, core *vanusv1alpha1.Core) (ctrl.Result, error) {
 	isDeployed, err := r.isDeployed(ctx)
 	if err != nil {
 		logger.Error(err, "Failed to check whether the cluster has been deployed.")
 		return ctrl.Result{RequeueAfter: time.Duration(cons.RequeueIntervalInSecond) * time.Second}, err
 	}
 
-	if strings.Compare(vanus.Spec.Version, EtcdSeparateVersion) >= 0 {
-		etcd := r.generateEtcd(vanus)
+	if strings.Compare(core.Spec.Version, EtcdSeparateVersion) >= 0 {
+		etcd := r.generateEtcd(core)
 		org := etcd.DeepCopy()
 		if isDeployed {
-			r.generateEtcdInRecoveryMode(vanus, etcd)
+			r.generateEtcdInRecoveryMode(core, etcd)
 		}
 		logger.Info("Generated Etcd StatefulSet.")
 		// Create Etcd StatefulSet
@@ -63,7 +63,7 @@ func (r *VanusReconciler) handleEtcd(ctx context.Context, logger logr.Logger, va
 				} else {
 					logger.Info("Successfully create Etcd StatefulSet")
 				}
-				etcdSvc := r.generateSvcForEtcd(vanus)
+				etcdSvc := r.generateSvcForEtcd(core)
 				// Create Etcd Service
 				// Check if the service already exists, if not create a new one
 				svc := &corev1.Service{}
@@ -157,7 +157,7 @@ func (r *VanusReconciler) handleEtcd(ctx context.Context, logger logr.Logger, va
 	return ctrl.Result{}, nil
 }
 
-func (r *VanusReconciler) isDeployed(ctx context.Context) (bool, error) {
+func (r *CoreReconciler) isDeployed(ctx context.Context) (bool, error) {
 	sts := &appsv1.StatefulSet{}
 	err := r.Get(ctx, types.NamespacedName{Name: cons.DefaultControllerName, Namespace: cons.DefaultNamespace}, sts)
 	if err != nil {
@@ -170,7 +170,7 @@ func (r *VanusReconciler) isDeployed(ctx context.Context) (bool, error) {
 	return true, nil
 }
 
-func (r *VanusReconciler) waitEtcdIsReady(ctx context.Context) (bool, error) {
+func (r *CoreReconciler) waitEtcdIsReady(ctx context.Context) (bool, error) {
 	sts := &appsv1.StatefulSet{}
 	err := r.Get(ctx, types.NamespacedName{Name: cons.DefaultEtcdName, Namespace: cons.DefaultNamespace}, sts)
 	if err != nil {
@@ -183,7 +183,7 @@ func (r *VanusReconciler) waitEtcdIsReady(ctx context.Context) (bool, error) {
 }
 
 // returns a Etcd StatefulSet object
-func (r *VanusReconciler) generateEtcd(vanus *vanusv1alpha1.Vanus) *appsv1.StatefulSet {
+func (r *CoreReconciler) generateEtcd(core *vanusv1alpha1.Core) *appsv1.StatefulSet {
 	var (
 		allowPrivilegeEscalation = false
 		runAsNonRoot             = true
@@ -215,9 +215,9 @@ func (r *VanusReconciler) generateEtcd(vanus *vanusv1alpha1.Vanus) *appsv1.State
 					Containers: []corev1.Container{{
 						Name:            cons.EtcdContainerName,
 						Image:           cons.EtcdImageName,
-						ImagePullPolicy: vanus.Spec.ImagePullPolicy,
-						Resources:       vanus.Spec.Resources,
-						Env:             getEnvForEtcd(vanus),
+						ImagePullPolicy: core.Spec.ImagePullPolicy,
+						Resources:       core.Spec.Resources,
+						Env:             getEnvForEtcd(core),
 						Lifecycle: &corev1.Lifecycle{
 							PreStop: &corev1.LifecycleHandler{
 								Exec: &corev1.ExecAction{
@@ -256,33 +256,33 @@ func (r *VanusReconciler) generateEtcd(vanus *vanusv1alpha1.Vanus) *appsv1.State
 						},
 						TerminationMessagePath:   "/dev/termination-log",
 						TerminationMessagePolicy: corev1.TerminationMessageReadFile,
-						Ports:                    getPortsForEtcd(vanus),
-						VolumeMounts:             getVolumeMountsForEtcd(vanus),
+						Ports:                    getPortsForEtcd(core),
+						VolumeMounts:             getVolumeMountsForEtcd(core),
 					}},
 					SecurityContext: &corev1.PodSecurityContext{
 						FSGroup: &fsGroup,
 					},
-					// Volumes: getVolumesForEtcd(vanus),
+					// Volumes: getVolumesForEtcd(core),
 				},
 			},
-			VolumeClaimTemplates: getVolumeClaimTemplatesForEtcd(vanus),
+			VolumeClaimTemplates: getVolumeClaimTemplatesForEtcd(core),
 		},
 	}
 
 	// Set Etcd instance as the owner and controller
-	controllerutil.SetControllerReference(vanus, sts, r.Scheme)
+	controllerutil.SetControllerReference(core, sts, r.Scheme)
 
 	return sts
 }
 
-func (r *VanusReconciler) generateEtcdInRecoveryMode(vanus *vanusv1alpha1.Vanus, sts *appsv1.StatefulSet) {
+func (r *CoreReconciler) generateEtcdInRecoveryMode(core *vanusv1alpha1.Core, sts *appsv1.StatefulSet) {
 	sts.Spec.Template.Spec.InitContainers = []corev1.Container{{
 		Name:            cons.EtcdInitContainerName,
 		Image:           cons.EtcdInitContainerImageName,
-		ImagePullPolicy: vanus.Spec.ImagePullPolicy,
-		Resources:       vanus.Spec.Resources,
-		Command:         getCommandForEtcd(vanus),
-		VolumeMounts:    getInitContainerVolumeMountsForEtcd(vanus),
+		ImagePullPolicy: core.Spec.ImagePullPolicy,
+		Resources:       core.Spec.Resources,
+		Command:         getCommandForEtcd(core),
+		VolumeMounts:    getInitContainerVolumeMountsForEtcd(core),
 	}}
 	sts.Spec.Template.Spec.Containers[0].VolumeMounts = append(sts.Spec.Template.Spec.Containers[0].VolumeMounts, sts.Spec.Template.Spec.InitContainers[0].VolumeMounts...)
 	sts.Spec.Template.Spec.Volumes = append(sts.Spec.Template.Spec.Volumes, corev1.Volume{
@@ -297,12 +297,12 @@ func (r *VanusReconciler) generateEtcdInRecoveryMode(vanus *vanusv1alpha1.Vanus,
 	})
 }
 
-func getCommandForEtcd(vanus *vanusv1alpha1.Vanus) []string {
+func getCommandForEtcd(core *vanusv1alpha1.Core) []string {
 	defaultCommand := []string{"/bin/sh", "run.sh"}
 	return defaultCommand
 }
 
-func getEnvForEtcd(vanus *vanusv1alpha1.Vanus) []corev1.EnvVar {
+func getEnvForEtcd(core *vanusv1alpha1.Core) []corev1.EnvVar {
 	defaultEnvs := []corev1.EnvVar{{
 		Name:  "BITNAMI_DEBUG",
 		Value: "false",
@@ -365,7 +365,7 @@ func getEnvForEtcd(vanus *vanusv1alpha1.Vanus) []corev1.EnvVar {
 	return defaultEnvs
 }
 
-func getPortsForEtcd(vanus *vanusv1alpha1.Vanus) []corev1.ContainerPort {
+func getPortsForEtcd(core *vanusv1alpha1.Core) []corev1.ContainerPort {
 	defaultPorts := []corev1.ContainerPort{{
 		Name:          cons.ContainerPortNameEtcdClient,
 		ContainerPort: cons.ControllerPortEtcdClient,
@@ -376,7 +376,7 @@ func getPortsForEtcd(vanus *vanusv1alpha1.Vanus) []corev1.ContainerPort {
 	return defaultPorts
 }
 
-func getVolumeMountsForEtcd(vanus *vanusv1alpha1.Vanus) []corev1.VolumeMount {
+func getVolumeMountsForEtcd(core *vanusv1alpha1.Core) []corev1.VolumeMount {
 	defaultVolumeMounts := []corev1.VolumeMount{{
 		MountPath: cons.EtcdVolumeMountPath,
 		Name:      cons.VolumeName,
@@ -384,7 +384,7 @@ func getVolumeMountsForEtcd(vanus *vanusv1alpha1.Vanus) []corev1.VolumeMount {
 	return defaultVolumeMounts
 }
 
-func getInitContainerVolumeMountsForEtcd(vanus *vanusv1alpha1.Vanus) []corev1.VolumeMount {
+func getInitContainerVolumeMountsForEtcd(core *vanusv1alpha1.Core) []corev1.VolumeMount {
 	defaultVolumeMounts := []corev1.VolumeMount{{
 		MountPath: cons.EtcdInitContainerVolumeMountPath,
 		Name:      cons.EtcdInitContainerVolumeMountName,
@@ -405,7 +405,7 @@ func getInitContainerVolumeMountsForEtcd(vanus *vanusv1alpha1.Vanus) []corev1.Vo
 // 	return defaultVolumes
 // }
 
-func getVolumeClaimTemplatesForEtcd(vanus *vanusv1alpha1.Vanus) []corev1.PersistentVolumeClaim {
+func getVolumeClaimTemplatesForEtcd(core *vanusv1alpha1.Core) []corev1.PersistentVolumeClaim {
 	labels := genLabels(cons.DefaultEtcdName)
 	requests := make(map[corev1.ResourceName]resource.Quantity)
 	requests[corev1.ResourceStorage] = resource.MustParse(cons.VolumeStorage)
@@ -421,16 +421,16 @@ func getVolumeClaimTemplatesForEtcd(vanus *vanusv1alpha1.Vanus) []corev1.Persist
 			},
 		},
 	}}
-	if len(vanus.Spec.VolumeClaimTemplates) != 0 {
-		if vanus.Spec.VolumeClaimTemplates[0].Name != "" {
-			defaultPersistentVolumeClaims[0].Name = vanus.Spec.VolumeClaimTemplates[0].Name
+	if len(core.Spec.VolumeClaimTemplates) != 0 {
+		if core.Spec.VolumeClaimTemplates[0].Name != "" {
+			defaultPersistentVolumeClaims[0].Name = core.Spec.VolumeClaimTemplates[0].Name
 		}
-		defaultPersistentVolumeClaims[0].Spec.Resources = vanus.Spec.VolumeClaimTemplates[0].Spec.Resources
+		defaultPersistentVolumeClaims[0].Spec.Resources = core.Spec.VolumeClaimTemplates[0].Spec.Resources
 	}
 	return defaultPersistentVolumeClaims
 }
 
-func (r *VanusReconciler) generateSvcForEtcd(vanus *vanusv1alpha1.Vanus) *corev1.Service {
+func (r *CoreReconciler) generateSvcForEtcd(core *vanusv1alpha1.Core) *corev1.Service {
 	labels := genLabels(cons.DefaultEtcdName)
 	svc := &corev1.Service{
 		ObjectMeta: metav1.ObjectMeta{
@@ -458,6 +458,6 @@ func (r *VanusReconciler) generateSvcForEtcd(vanus *vanusv1alpha1.Vanus) *corev1
 		},
 	}
 
-	controllerutil.SetControllerReference(vanus, svc, r.Scheme)
+	controllerutil.SetControllerReference(core, svc, r.Scheme)
 	return svc
 }

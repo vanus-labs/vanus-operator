@@ -1,4 +1,4 @@
-apiVersion: core.vanus.ai/v1alpha1
+apiVersion: vanus.ai/v1alpha1
 kind: Connector
 metadata:
   name: connector-sample

@@ -1,0 +1,6 @@
+apiVersion: vanus.ai/v1alpha1
+kind: Core
+metadata:
+  name: core-sample
+spec:
+  # TODO(user): Add fields here
