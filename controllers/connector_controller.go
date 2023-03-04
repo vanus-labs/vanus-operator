@@ -26,6 +26,7 @@ import (
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/runtime"
 	"k8s.io/apimachinery/pkg/types"
+	"k8s.io/apimachinery/pkg/util/intstr"
 	ctrl "sigs.k8s.io/controller-runtime"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/controller-runtime/pkg/controller/controllerutil"
@@ -105,6 +106,7 @@ func (r *ConnectorReconciler) Reconcile(ctx context.Context, req ctrl.Request) (
 			} else {
 				logger.Info("Successfully create Connector Deployment")
 			}
+
 			connectorSvc := r.generateSvcForConnector(connector)
 			// Create Connector Service
 			// Check if the service already exists, if not create a new one
@@ -166,8 +168,7 @@ func (r *ConnectorReconciler) getDeploymentForConnector(connector *vanusv1alpha1
 			},
 			Template: corev1.PodTemplateSpec{
 				ObjectMeta: metav1.ObjectMeta{
-					Labels:      labels,
-					Annotations: connector.Annotations,
+					Labels: labels,
 				},
 				Spec: corev1.PodSpec{
 					Containers: []corev1.Container{{
@@ -235,16 +236,21 @@ func (r *ConnectorReconciler) generateSvcForConnector(connector *vanusv1alpha1.C
 			Finalizers: []string{metav1.FinalizerOrphanDependents},
 		},
 		Spec: corev1.ServiceSpec{
-			ClusterIP: cons.HeadlessService,
-			Selector:  labels,
-			Type:      corev1.ServiceTypeClusterIP,
+			Selector: labels,
+			Type:     corev1.ServiceTypeClusterIP,
 			Ports: []corev1.ServicePort{
 				{
-					Name: connector.Name,
-					Port: 8080,
+					Name:       connector.Name,
+					Port:       80,
+					TargetPort: intstr.FromInt(8080),
 				},
 			},
 		},
+	}
+
+	if connector.Spec.ServiceType == string(corev1.ServiceTypeLoadBalancer) {
+		connectorSvc.Annotations = connector.Spec.Annotations
+		connectorSvc.Spec.Type = corev1.ServiceTypeLoadBalancer
 	}
 
 	controllerutil.SetControllerReference(connector, connectorSvc, r.Scheme)

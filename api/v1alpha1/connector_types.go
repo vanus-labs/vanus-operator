@@ -35,6 +35,8 @@ type ConnectorSpec struct {
 	Name string `json:"name,omitempty"`
 	// Type is the type of connector.
 	Type string `json:"type,omitempty"`
+	// ServiceType is the type of connector service.
+	ServiceType string `json:"serviceType,omitempty"`
 	// Config is the file of config.
 	Config string `json:"config,omitempty"`
 	// annotations is the annotation of connector.

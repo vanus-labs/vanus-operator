@@ -72,7 +72,7 @@ func (a *Api) createConnectorHandler(params connector.CreateConnectorParams) mid
 		return utils.Response(400, err)
 	}
 
-	log.Infof("parse connector params finish, name: %s, kind: %s, namespace: %s\n", c.name, c.kind, c.namespace)
+	log.Infof("parse connector params finish, config: %s\n", c.String())
 
 	// Check if the connector already exists, if exist, return error
 	exist, err := a.checkConnectorExist(c.name)
@@ -151,12 +151,13 @@ func (a *Api) listConnectorHandler(params connector.ListConnectorParams) middlew
 			return utils.Response(500, err)
 		}
 		data = append(data, &models.ConnectorInfo{
-			Kind:    c.Spec.Kind,
-			Name:    c.Spec.Name,
-			Type:    c.Spec.Type,
-			Version: getConnectorVersion(c.Spec.Image),
-			Status:  status,
-			Reason:  reason,
+			Kind:        c.Spec.Kind,
+			Name:        c.Spec.Name,
+			Type:        c.Spec.Type,
+			ServiceType: c.Spec.ServiceType,
+			Version:     getConnectorVersion(c.Spec.Image),
+			Status:      status,
+			Reason:      reason,
 		})
 	}
 	return connector.NewListConnectorOK().WithPayload(&connector.ListConnectorOKBody{
@@ -184,12 +185,13 @@ func (a *Api) getConnectorHandler(params connector.GetConnectorParams) middlewar
 	return connector.NewGetConnectorOK().WithPayload(&connector.GetConnectorOKBody{
 		Code: &retcode,
 		Data: &models.ConnectorInfo{
-			Kind:    c.Spec.Kind,
-			Name:    c.Spec.Name,
-			Type:    c.Spec.Type,
-			Version: getConnectorVersion(c.Spec.Image),
-			Status:  status,
-			Reason:  reason,
+			Kind:        c.Spec.Kind,
+			Name:        c.Spec.Name,
+			Type:        c.Spec.Type,
+			ServiceType: c.Spec.ServiceType,
+			Version:     getConnectorVersion(c.Spec.Image),
+			Status:      status,
+			Reason:      reason,
 		},
 		Message: &msg,
 	})
@@ -213,9 +215,20 @@ type connectorConfig struct {
 	namespace  string
 	kind       string
 	ctype      string
+	stype      string
 	version    string
 	config     map[string]interface{}
 	annotaions map[string]string
+}
+
+func (c *connectorConfig) String() string {
+	return fmt.Sprintf("name: %s, namespace: %s, kind: %s, type: %s, service_type: %s, version: %s\n",
+		c.name,
+		c.namespace,
+		c.kind,
+		c.ctype,
+		c.stype,
+		c.version)
 }
 
 func genConnectorConfig(connector *models.ConnectorInfo) (*connectorConfig, error) {
@@ -225,6 +238,7 @@ func genConnectorConfig(connector *models.ConnectorInfo) (*connectorConfig, erro
 		namespace: cons.DefaultNamespace,
 		kind:      connector.Kind,
 		ctype:     connector.Type,
+		stype:     connector.ServiceType,
 		version:   connector.Version,
 		config:    connector.Config,
 	}
@@ -248,7 +262,7 @@ func labelsForConnector(name string) map[string]string {
 func generateConnector(c *connectorConfig) *vanusv1alpha1.Connector {
 	labels := labelsForConnector(c.name)
 	config, _ := yaml.Marshal(c.config)
-	controller := &vanusv1alpha1.Connector{
+	connector := &vanusv1alpha1.Connector{
 		ObjectMeta: metav1.ObjectMeta{
 			Name:        c.name,
 			Namespace:   c.namespace,
@@ -259,13 +273,14 @@ func generateConnector(c *connectorConfig) *vanusv1alpha1.Connector {
 			Name:            c.name,
 			Kind:            c.kind,
 			Type:            c.ctype,
+			ServiceType:     c.stype,
 			Config:          string(config),
 			Annotations:     c.annotaions,
 			Image:           fmt.Sprintf("public.ecr.aws/vanus/connector/%s-%s:%s", c.kind, c.ctype, c.version),
 			ImagePullPolicy: corev1.PullIfNotPresent,
 		},
 	}
-	return controller
+	return connector
 }
 
 func getConnectorVersion(s string) string {

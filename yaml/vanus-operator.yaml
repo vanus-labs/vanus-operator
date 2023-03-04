@@ -483,6 +483,9 @@ spec:
               name:
                 description: Name is the name of connector.
                 type: string
+              serviceType:
+                description: ServiceType is the type of connector service.
+                type: string
               type:
                 description: Type is the type of connector.
                 type: string
