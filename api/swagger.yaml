@@ -421,6 +421,9 @@ definitions:
       type:
         type: "string"
         description: "connector type"
+      service_type:
+        type: "string"
+        description: "connector service type"
       version:
         type: "string"
         description: "connector version"
