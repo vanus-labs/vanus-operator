@@ -266,7 +266,7 @@ func init() {
             "required": true,
             "schema": {
               "type": "object",
-              "$ref": "#/definitions/Connector_info"
+              "$ref": "#/definitions/Connector_create"
             }
           }
         ],
@@ -550,6 +550,50 @@ func init() {
         },
         "version": {
           "description": "cluster version",
+          "type": "string"
+        }
+      }
+    },
+    "Connector_create": {
+      "description": "Connector create params",
+      "type": "object",
+      "properties": {
+        "annotations": {
+          "type": "object",
+          "required": [
+            "default"
+          ],
+          "additionalProperties": {
+            "type": "string"
+          }
+        },
+        "config": {
+          "type": "object",
+          "required": [
+            "default"
+          ],
+          "additionalProperties": {
+            "type": "object"
+          }
+        },
+        "kind": {
+          "description": "connector kind",
+          "type": "string"
+        },
+        "name": {
+          "description": "connector name",
+          "type": "string"
+        },
+        "service_type": {
+          "description": "connector service type",
+          "type": "string"
+        },
+        "type": {
+          "description": "connector type",
+          "type": "string"
+        },
+        "version": {
+          "description": "connector version",
           "type": "string"
         }
       }
@@ -867,7 +911,7 @@ func init() {
             "required": true,
             "schema": {
               "type": "object",
-              "$ref": "#/definitions/Connector_info"
+              "$ref": "#/definitions/Connector_create"
             }
           }
         ],
@@ -1151,6 +1195,50 @@ func init() {
         },
         "version": {
           "description": "cluster version",
+          "type": "string"
+        }
+      }
+    },
+    "Connector_create": {
+      "description": "Connector create params",
+      "type": "object",
+      "properties": {
+        "annotations": {
+          "type": "object",
+          "required": [
+            "default"
+          ],
+          "additionalProperties": {
+            "type": "string"
+          }
+        },
+        "config": {
+          "type": "object",
+          "required": [
+            "default"
+          ],
+          "additionalProperties": {
+            "type": "object"
+          }
+        },
+        "kind": {
+          "description": "connector kind",
+          "type": "string"
+        },
+        "name": {
+          "description": "connector name",
+          "type": "string"
+        },
+        "service_type": {
+          "description": "connector service type",
+          "type": "string"
+        },
+        "type": {
+          "description": "connector type",
+          "type": "string"
+        },
+        "version": {
+          "description": "connector version",
           "type": "string"
         }
       }

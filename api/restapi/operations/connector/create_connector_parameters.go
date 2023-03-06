@@ -39,7 +39,7 @@ type CreateConnectorParams struct {
 	  Required: true
 	  In: body
 	*/
-	Connector *models.ConnectorInfo
+	Connector *models.ConnectorCreate
 }
 
 // BindRequest both binds and validates a request, it assumes that complex things implement a Validatable(strfmt.Registry) error interface
@@ -53,7 +53,7 @@ func (o *CreateConnectorParams) BindRequest(r *http.Request, route *middleware.M
 
 	if runtime.HasBody(r) {
 		defer r.Body.Close()
-		var body models.ConnectorInfo
+		var body models.ConnectorCreate
 		if err := route.Consumer.Consume(r.Body, &body); err != nil {
 			if err == io.EOF {
 				res = append(res, errors.Required("connector", "body", ""))

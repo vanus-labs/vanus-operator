@@ -231,7 +231,7 @@ func (c *connectorConfig) String() string {
 		c.version)
 }
 
-func genConnectorConfig(connector *models.ConnectorInfo) (*connectorConfig, error) {
+func genConnectorConfig(connector *models.ConnectorCreate) (*connectorConfig, error) {
 	// check required parameters
 	c := &connectorConfig{
 		name:      connector.Name,

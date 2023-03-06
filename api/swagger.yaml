@@ -184,7 +184,7 @@ paths:
           required: true
           schema:
             type: "object"
-            $ref: "#/definitions/Connector_info"
+            $ref: "#/definitions/Connector_create"
           description: "Connector info"
       responses:
         '200':
@@ -408,6 +408,38 @@ definitions:
         default: false
         description: "true means force delete, default false"
 
+  Connector_create:
+    type: "object"
+    description: "Connector create params"
+    properties:
+      name:
+        type: "string"
+        description: "connector name"
+      kind:
+        type: "string"
+        description: "connector kind"
+      type:
+        type: "string"
+        description: "connector type"
+      service_type:
+        type: "string"
+        description: "connector service type"
+      version:
+        type: "string"
+        description: "connector version"
+      config:
+        type: object
+        required:
+          - default
+        additionalProperties:
+          type: object
+      annotations:
+        type: object
+        required:
+          - default
+        additionalProperties:
+          type: string
+
   Connector_info:
     type: "object"
     description: "Connector info"
@@ -445,3 +477,4 @@ definitions:
       reason:
         type: "string"
         description: "connector status reason"
+
