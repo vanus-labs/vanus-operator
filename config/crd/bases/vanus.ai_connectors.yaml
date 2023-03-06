@@ -57,6 +57,9 @@ spec:
               name:
                 description: Name is the name of connector.
                 type: string
+              servicePort:
+                description: ServicePort is the port of connector service.
+                type: string
               serviceType:
                 description: ServiceType is the type of connector service.
                 type: string

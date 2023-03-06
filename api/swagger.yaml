@@ -424,6 +424,9 @@ definitions:
       service_type:
         type: "string"
         description: "connector service type"
+      service_port:
+        type: "string"
+        description: "connector service port"
       version:
         type: "string"
         description: "connector version"
@@ -456,6 +459,9 @@ definitions:
       service_type:
         type: "string"
         description: "connector service type"
+      service_port:
+        type: "string"
+        description: "connector service port"
       version:
         type: "string"
         description: "connector version"

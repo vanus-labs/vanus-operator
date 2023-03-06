@@ -16,6 +16,7 @@ package controllers
 
 import (
 	"context"
+	"strconv"
 	"time"
 
 	cons "github.com/vanus-labs/vanus-operator/internal/constants"
@@ -228,6 +229,10 @@ func labelsForConnector(name string) map[string]string {
 
 func (r *ConnectorReconciler) generateSvcForConnector(connector *vanusv1alpha1.Connector) *corev1.Service {
 	labels := labelsForConnector(connector.Name)
+	var port int32 = int32(80)
+	if p, err := strconv.Atoi(connector.Spec.ServicePort); err != nil {
+		port = int32(p)
+	}
 	connectorSvc := &corev1.Service{
 		ObjectMeta: metav1.ObjectMeta{
 			Namespace:  connector.Namespace,
@@ -241,7 +246,7 @@ func (r *ConnectorReconciler) generateSvcForConnector(connector *vanusv1alpha1.C
 			Ports: []corev1.ServicePort{
 				{
 					Name:       connector.Name,
-					Port:       80,
+					Port:       port,
 					TargetPort: intstr.FromInt(8080),
 				},
 			},
