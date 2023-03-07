@@ -1,0 +1,63 @@
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: vanus-operator
+  namespace: vanus
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: vanus-operator
+  template:
+    metadata:
+      labels:
+        app: vanus-operator
+    spec:
+      serviceAccountName: vanus-operator
+      terminationGracePeriodSeconds: 10
+      containers:
+      - name: manager
+        # Replace this with the built image name
+        image: public.ecr.aws/vanus/operator:latest
+        imagePullPolicy: Always
+        command:
+        - /operator/manager
+        args:
+        - --leader-elect
+        securityContext:
+          allowPrivilegeEscalation: false
+        livenessProbe:
+          httpGet:
+            path: /healthz
+            port: 8081
+          initialDelaySeconds: 15
+          periodSeconds: 20
+        readinessProbe:
+          httpGet:
+            path: /readyz
+            port: 8081
+          initialDelaySeconds: 5
+          periodSeconds: 10
+        env:
+        - name: WATCH_NAMESPACE
+          valueFrom:
+            fieldRef:
+              fieldPath: metadata.namespace
+        - name: POD_NAME
+          valueFrom:
+            fieldRef:
+              fieldPath: metadata.name
+        - name: OPERATOR_NAME
+          value: "vanus-operator"
+      - name: apiserver
+        # Replace this with the built image name
+        image: public.ecr.aws/vanus/operator:latest
+        imagePullPolicy: Always
+        ports:
+          - name: apiserver
+            containerPort: 8089
+        command:
+        - /operator/apiserver
+        securityContext:
+          allowPrivilegeEscalation: false

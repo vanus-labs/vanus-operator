@@ -35,14 +35,8 @@ type ConnectorSpec struct {
 	Name string `json:"name,omitempty"`
 	// Type is the type of connector.
 	Type string `json:"type,omitempty"`
-	// ServiceType is the type of connector service.
-	ServiceType string `json:"serviceType,omitempty"`
-	// ServicePort is the port of connector service.
-	ServicePort string `json:"servicePort,omitempty"`
 	// Config is the file of config.
 	Config string `json:"config,omitempty"`
-	// annotations is the annotation of connector.
-	Annotations map[string]string `json:"annotations,omitempty"`
 	// Image is the name of the controller docker image to use for the Pods.
 	// Must be provided together with ImagePullSecrets in order to use an image in a private registry.
 	Image string `json:"image,omitempty"`

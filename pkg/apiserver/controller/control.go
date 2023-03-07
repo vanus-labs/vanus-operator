@@ -24,6 +24,7 @@ import (
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/runtime"
 	"k8s.io/apimachinery/pkg/runtime/schema"
+	"k8s.io/client-go/kubernetes"
 	"k8s.io/client-go/kubernetes/scheme"
 	"k8s.io/client-go/rest"
 	ctrlclient "sigs.k8s.io/controller-runtime/pkg/client"
@@ -54,8 +55,9 @@ type Controller struct {
 	config *rest.Config
 
 	// k8s client and cache
-	clientset rest.Interface
-	client    *k8s.ClientCache
+	k8sclientset *kubernetes.Clientset
+	clientset    rest.Interface
+	client       *k8s.ClientCache
 
 	timeout     time.Duration
 	singleCache *cache.Cache
@@ -80,16 +82,21 @@ func RESTClientForConfigOrDie(config *rest.Config) *rest.RESTClient {
 }
 
 func New(config *rest.Config) *Controller {
+	k8sclientset, err := kubernetes.NewForConfig(config)
+	if err != nil {
+		panic(err)
+	}
 	DefaultRestConfig(config)
 	AddToScheme(scheme.Scheme)
 	return &Controller{
-		config:      config,
-		timeout:     time.Second * 10,
-		clientset:   RESTClientForConfigOrDie(config),
-		client:      k8s.NewClientCache(config, nil),
-		stopCh:      make(chan struct{}),
-		singleCache: cache.NewCache(time.Second * 5),
-		ctx:         context.Background(),
+		config:       config,
+		timeout:      time.Second * 10,
+		k8sclientset: k8sclientset,
+		clientset:    RESTClientForConfigOrDie(config),
+		client:       k8s.NewClientCache(config, nil),
+		stopCh:       make(chan struct{}),
+		singleCache:  cache.NewCache(time.Second * 5),
+		ctx:          context.Background(),
 	}
 }
 
@@ -131,6 +138,10 @@ func (c *Controller) Update(obj ctrlclient.Object, opts ...ctrlclient.UpdateOpti
 	ctx, cancle := context.WithTimeout(c.ctx, c.timeout)
 	defer cancle()
 	return c.client.Update(ctx, obj, opts...)
+}
+
+func (c *Controller) K8SClientSet() *kubernetes.Clientset {
+	return c.k8sclientset
 }
 
 func (c *Controller) ClientSet() rest.Interface {

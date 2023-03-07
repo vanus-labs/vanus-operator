@@ -58,7 +58,6 @@ const (
 
 var (
 	defaultConnectorImageTag string = "latest"
-	defaultConnectorSvcPort  string = "80"
 )
 
 // All registered processing functions should appear under Registxxx in order
@@ -126,6 +125,18 @@ func (a *Api) deleteConnectorHandler(params connector.DeleteConnectorParams) mid
 		return utils.Response(400, errors.New("connector not exist"))
 	}
 
+	c, err := a.getConnector(cons.DefaultNamespace, params.Name, &metav1.GetOptions{})
+	if err != nil {
+		log.Errorf("get connector failed, err: %s\n", err.Error())
+		return utils.Response(500, err)
+	}
+
+	err = a.updateIngress(c)
+	if err != nil {
+		log.Errorf("update ingress failed, err: %s\n", err.Error())
+		return utils.Response(500, err)
+	}
+
 	err = a.deleteConnector(cons.DefaultNamespace, params.Name)
 	if err != nil {
 		log.Errorf("delete connector failed, err: %s\n", err.Error())
@@ -159,9 +170,8 @@ func (a *Api) listConnectorHandler(params connector.ListConnectorParams) middlew
 			Kind:        c.Spec.Kind,
 			Name:        c.Spec.Name,
 			Type:        c.Spec.Type,
-			ServiceType: c.Spec.ServiceType,
-			ServicePort: c.Spec.ServicePort,
 			Version:     getConnectorVersion(c.Spec.Image),
+			Annotations: c.Annotations,
 			Status:      status,
 			Reason:      reason,
 		})
@@ -194,9 +204,8 @@ func (a *Api) getConnectorHandler(params connector.GetConnectorParams) middlewar
 			Kind:        c.Spec.Kind,
 			Name:        c.Spec.Name,
 			Type:        c.Spec.Type,
-			ServiceType: c.Spec.ServiceType,
-			ServicePort: c.Spec.ServicePort,
 			Version:     getConnectorVersion(c.Spec.Image),
+			Annotations: c.Annotations,
 			Status:      status,
 			Reason:      reason,
 		},
@@ -222,48 +231,34 @@ type connectorConfig struct {
 	namespace  string
 	kind       string
 	ctype      string
-	stype      string
-	sport      string
 	version    string
 	config     map[string]interface{}
 	annotaions map[string]string
 }
 
 func (c *connectorConfig) String() string {
-	return fmt.Sprintf("name: %s, namespace: %s, kind: %s, type: %s, service_type: %s, service_port: %s, version: %s\n",
+	return fmt.Sprintf("name: %s, namespace: %s, kind: %s, type: %s, version: %s, annotations: %+v\n",
 		c.name,
 		c.namespace,
 		c.kind,
 		c.ctype,
-		c.stype,
-		c.sport,
-		c.version)
+		c.version,
+		c.annotaions)
 }
 
 func genConnectorConfig(connector *models.ConnectorCreate) (*connectorConfig, error) {
 	// check required parameters
 	c := &connectorConfig{
-		name:      connector.Name,
-		namespace: cons.DefaultNamespace,
-		kind:      connector.Kind,
-		ctype:     connector.Type,
-		stype:     connector.ServiceType,
-		sport:     connector.ServicePort,
-		version:   connector.Version,
-		config:    connector.Config,
+		name:       connector.Name,
+		namespace:  cons.DefaultNamespace,
+		kind:       connector.Kind,
+		ctype:      connector.Type,
+		version:    connector.Version,
+		config:     connector.Config,
+		annotaions: connector.Annotations,
 	}
 	if connector.Version == "" {
 		c.version = defaultConnectorImageTag
-	}
-	if connector.ServicePort == "" {
-		c.sport = defaultConnectorSvcPort
-	}
-	if len(connector.Annotations) != 0 {
-		annotations := make(map[string]string, len(connector.Annotations))
-		for key, value := range connector.Annotations {
-			annotations[key] = value
-		}
-		c.annotaions = annotations
 	}
 	return c, nil
 }
@@ -286,10 +281,7 @@ func generateConnector(c *connectorConfig) *vanusv1alpha1.Connector {
 			Name:            c.name,
 			Kind:            c.kind,
 			Type:            c.ctype,
-			ServiceType:     c.stype,
-			ServicePort:     c.sport,
 			Config:          string(config),
-			Annotations:     c.annotaions,
 			Image:           fmt.Sprintf("public.ecr.aws/vanus/connector/%s-%s:%s", c.kind, c.ctype, c.version),
 			ImagePullPolicy: corev1.PullIfNotPresent,
 		},

@@ -19,6 +19,8 @@ import (
 	"encoding/json"
 
 	vanusv1alpha1 "github.com/vanus-labs/vanus-operator/api/v1alpha1"
+	cons "github.com/vanus-labs/vanus-operator/internal/constants"
+	networkingv1 "k8s.io/api/networking/v1"
 	"k8s.io/apimachinery/pkg/api/errors"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/types"
@@ -26,8 +28,9 @@ import (
 )
 
 const (
-	ResourceCore      = "cores"
-	ResourceConnector = "connectors"
+	ResourceCore                         = "cores"
+	ResourceConnector                    = "connectors"
+	ConnectorNetworkHostDomainAnnotation = "connector.vanus.ai/network-host-domain"
 )
 
 func (a *Api) createCore(vanus *vanusv1alpha1.Core, namespace string) (*vanusv1alpha1.Core, error) {
@@ -249,4 +252,25 @@ func (a *Api) existConnector(namespace string, name string, opts *metav1.GetOpti
 		return result, false, err
 	}
 	return result, true, nil
+}
+
+func (a *Api) updateIngress(connector *vanusv1alpha1.Connector) error {
+	ingress, err := a.ctrl.K8SClientSet().NetworkingV1().Ingresses(cons.DefaultNamespace).Get(context.TODO(), cons.DefaultOperatorName, metav1.GetOptions{})
+	if err != nil {
+		return err
+	}
+	var newIngressRules []networkingv1.IngressRule = make([]networkingv1.IngressRule, 0)
+	annotation, ok := connector.Annotations[ConnectorNetworkHostDomainAnnotation]
+	if !ok {
+		return nil
+	}
+	for idx, rule := range ingress.Spec.Rules {
+		if rule.Host == annotation {
+			continue
+		}
+		newIngressRules = append(newIngressRules, ingress.Spec.Rules[idx])
+	}
+	ingress.Spec.Rules = newIngressRules
+	_, err = a.ctrl.K8SClientSet().NetworkingV1().Ingresses(cons.DefaultNamespace).Update(context.TODO(), ingress, metav1.UpdateOptions{})
+	return err
 }

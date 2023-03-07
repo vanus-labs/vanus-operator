@@ -584,14 +584,6 @@ func init() {
           "description": "connector name",
           "type": "string"
         },
-        "service_port": {
-          "description": "connector service port",
-          "type": "string"
-        },
-        "service_type": {
-          "description": "connector service type",
-          "type": "string"
-        },
         "type": {
           "description": "connector type",
           "type": "string"
@@ -634,14 +626,6 @@ func init() {
         },
         "reason": {
           "description": "connector status reason",
-          "type": "string"
-        },
-        "service_port": {
-          "description": "connector service port",
-          "type": "string"
-        },
-        "service_type": {
-          "description": "connector service type",
           "type": "string"
         },
         "status": {
@@ -1237,14 +1221,6 @@ func init() {
           "description": "connector name",
           "type": "string"
         },
-        "service_port": {
-          "description": "connector service port",
-          "type": "string"
-        },
-        "service_type": {
-          "description": "connector service type",
-          "type": "string"
-        },
         "type": {
           "description": "connector type",
           "type": "string"
@@ -1287,14 +1263,6 @@ func init() {
         },
         "reason": {
           "description": "connector status reason",
-          "type": "string"
-        },
-        "service_port": {
-          "description": "connector service port",
-          "type": "string"
-        },
-        "service_type": {
-          "description": "connector service type",
           "type": "string"
         },
         "status": {
