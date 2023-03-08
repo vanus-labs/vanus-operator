@@ -32,12 +32,6 @@ type ConnectorInfo struct {
 	// connector status reason
 	Reason string `json:"reason,omitempty"`
 
-	// connector service port
-	ServicePort string `json:"service_port,omitempty"`
-
-	// connector service type
-	ServiceType string `json:"service_type,omitempty"`
-
 	// connector status
 	Status string `json:"status,omitempty"`
 

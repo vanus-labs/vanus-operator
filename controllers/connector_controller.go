@@ -16,12 +16,14 @@ package controllers
 
 import (
 	"context"
+	stderr "errors"
 	"strconv"
 	"time"
 
 	cons "github.com/vanus-labs/vanus-operator/internal/constants"
 	appsv1 "k8s.io/api/apps/v1"
 	corev1 "k8s.io/api/core/v1"
+	networkingv1 "k8s.io/api/networking/v1"
 	"k8s.io/apimachinery/pkg/api/errors"
 	"k8s.io/apimachinery/pkg/api/resource"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
@@ -34,6 +36,16 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/log"
 
 	vanusv1alpha1 "github.com/vanus-labs/vanus-operator/api/v1alpha1"
+)
+
+const (
+	ConnectorServiceTypeAnnotation       = "connector.vanus.ai/service-type"
+	ConnectorServicePortAnnotation       = "connector.vanus.ai/service-port"
+	ConnectorNetworkHostDomainAnnotation = "connector.vanus.ai/network-host-domain"
+)
+
+var (
+	defaultConnectorSvcPort int32 = 80
 )
 
 // ConnectorReconciler reconciles a Connector object
@@ -78,11 +90,10 @@ func (r *ConnectorReconciler) Reconcile(ctx context.Context, req ctrl.Request) (
 		return ctrl.Result{RequeueAfter: time.Duration(cons.RequeueIntervalInSecond) * time.Second}, err
 	}
 
-	connectorDeployment := r.getDeploymentForConnector(connector)
 	// Create Connector Deployment
 	// Check if the Deployment already exists, if not create a new one
 	sts := &appsv1.Deployment{}
-	err = r.Get(ctx, types.NamespacedName{Name: connectorDeployment.Name, Namespace: connectorDeployment.Namespace}, sts)
+	err = r.Get(ctx, types.NamespacedName{Name: connector.Name, Namespace: connector.Namespace}, sts)
 	if err != nil {
 		if errors.IsNotFound(err) {
 			// Create Connector ConfigMap
@@ -99,6 +110,9 @@ func (r *ConnectorReconciler) Reconcile(ctx context.Context, req ctrl.Request) (
 			} else {
 				logger.Info("Successfully create Connector ConfigMap")
 			}
+
+			// Create Connector Deployment
+			connectorDeployment := r.getDeploymentForConnector(connector)
 			logger.Info("Creating a new Connector Deployment.", "Deployment.Namespace", connectorDeployment.Namespace, "Deployment.Name", connectorDeployment.Name)
 			err = r.Create(ctx, connectorDeployment)
 			if err != nil {
@@ -108,9 +122,9 @@ func (r *ConnectorReconciler) Reconcile(ctx context.Context, req ctrl.Request) (
 				logger.Info("Successfully create Connector Deployment")
 			}
 
-			connectorSvc := r.generateSvcForConnector(connector)
 			// Create Connector Service
 			// Check if the service already exists, if not create a new one
+			connectorSvc := r.generateSvcForConnector(connector)
 			svc := &corev1.Service{}
 			err = r.Get(ctx, types.NamespacedName{Name: connectorSvc.Name, Namespace: connectorSvc.Namespace}, svc)
 			if err != nil {
@@ -128,6 +142,33 @@ func (r *ConnectorReconciler) Reconcile(ctx context.Context, req ctrl.Request) (
 					return ctrl.Result{RequeueAfter: time.Duration(cons.RequeueIntervalInSecond) * time.Second}, err
 				}
 			}
+
+			// Update Ingress
+			if _, ok := connector.Annotations[ConnectorNetworkHostDomainAnnotation]; ok {
+				ingress := &networkingv1.Ingress{}
+				err = r.Get(ctx, types.NamespacedName{Name: cons.DefaultOperatorName, Namespace: cons.DefaultNamespace}, ingress)
+				if err != nil {
+					if errors.IsNotFound(err) {
+						logger.Error(err, "Failed to get operator Ingress cause not found.")
+						return ctrl.Result{RequeueAfter: time.Duration(cons.RequeueIntervalInSecond) * time.Second}, err
+					}
+					logger.Error(err, "Failed to get operator Ingress.")
+					return ctrl.Result{RequeueAfter: time.Duration(cons.RequeueIntervalInSecond) * time.Second}, err
+				}
+				updateIngress, err := r.generateIngressForConnector(connector, ingress)
+				if err != nil {
+					logger.Error(err, "Failed to generate update Ingress.")
+					return ctrl.Result{RequeueAfter: time.Duration(cons.RequeueIntervalInSecond) * time.Second}, err
+				}
+				err = r.Update(ctx, updateIngress)
+				if err != nil {
+					logger.Error(err, "Failed to update operator Ingress", "Ingress.Namespace", updateIngress.Namespace, "Ingress.Name", updateIngress.Name)
+					return ctrl.Result{}, err
+				} else {
+					logger.Info("Successfully update operator Ingress")
+				}
+			}
+
 			return ctrl.Result{}, nil
 		} else {
 			logger.Error(err, "Failed to get Connector Deployment.")
@@ -227,41 +268,6 @@ func labelsForConnector(name string) map[string]string {
 	return map[string]string{"app": name}
 }
 
-func (r *ConnectorReconciler) generateSvcForConnector(connector *vanusv1alpha1.Connector) *corev1.Service {
-	labels := labelsForConnector(connector.Name)
-	var port int32 = int32(80)
-	if p, err := strconv.Atoi(connector.Spec.ServicePort); err != nil {
-		port = int32(p)
-	}
-	connectorSvc := &corev1.Service{
-		ObjectMeta: metav1.ObjectMeta{
-			Namespace:  connector.Namespace,
-			Name:       connector.Name,
-			Labels:     labels,
-			Finalizers: []string{metav1.FinalizerOrphanDependents},
-		},
-		Spec: corev1.ServiceSpec{
-			Selector: labels,
-			Type:     corev1.ServiceTypeClusterIP,
-			Ports: []corev1.ServicePort{
-				{
-					Name:       connector.Name,
-					Port:       port,
-					TargetPort: intstr.FromInt(8080),
-				},
-			},
-		},
-	}
-
-	if connector.Spec.ServiceType == string(corev1.ServiceTypeLoadBalancer) {
-		connectorSvc.Annotations = connector.Spec.Annotations
-		connectorSvc.Spec.Type = corev1.ServiceTypeLoadBalancer
-	}
-
-	controllerutil.SetControllerReference(connector, connectorSvc, r.Scheme)
-	return connectorSvc
-}
-
 func (r *ConnectorReconciler) generateConfigMapForConnector(connector *vanusv1alpha1.Connector) (*corev1.ConfigMap, error) {
 	labels := labelsForConnector(connector.Name)
 	data := make(map[string]string)
@@ -278,4 +284,82 @@ func (r *ConnectorReconciler) generateConfigMapForConnector(connector *vanusv1al
 
 	controllerutil.SetControllerReference(connector, connectorConfigMap, r.Scheme)
 	return connectorConfigMap, nil
+}
+
+func (r *ConnectorReconciler) generateSvcForConnector(connector *vanusv1alpha1.Connector) *corev1.Service {
+	labels := labelsForConnector(connector.Name)
+	var (
+		svcPort int32              = defaultConnectorSvcPort
+		svcType corev1.ServiceType = corev1.ServiceTypeClusterIP
+	)
+	if port, ok := connector.Annotations[ConnectorServicePortAnnotation]; ok && port != "" {
+		if p, err := strconv.Atoi(port); err == nil {
+			svcPort = int32(p)
+		}
+	}
+	if stype, ok := connector.Annotations[ConnectorServiceTypeAnnotation]; ok && stype == string(corev1.ServiceTypeLoadBalancer) {
+		svcType = corev1.ServiceTypeLoadBalancer
+	}
+	connectorSvc := &corev1.Service{
+		ObjectMeta: metav1.ObjectMeta{
+			Namespace:   connector.Namespace,
+			Name:        connector.Name,
+			Labels:      labels,
+			Annotations: connector.Annotations,
+			Finalizers:  []string{metav1.FinalizerOrphanDependents},
+		},
+		Spec: corev1.ServiceSpec{
+			Selector: labels,
+			Type:     svcType,
+			Ports: []corev1.ServicePort{
+				{
+					Name:       connector.Name,
+					Port:       svcPort,
+					TargetPort: intstr.FromInt(8080),
+				},
+			},
+		},
+	}
+
+	controllerutil.SetControllerReference(connector, connectorSvc, r.Scheme)
+	return connectorSvc
+}
+
+func (r *ConnectorReconciler) generateIngressForConnector(connector *vanusv1alpha1.Connector, ingress *networkingv1.Ingress) (*networkingv1.Ingress, error) {
+	if _, ok := connector.Annotations[ConnectorNetworkHostDomainAnnotation]; !ok {
+		return nil, stderr.New("connector network host domain annotation not found")
+	}
+	var (
+		svcPort int32 = defaultConnectorSvcPort
+	)
+	if port, ok := connector.Annotations[ConnectorServicePortAnnotation]; ok && port != "" {
+		if p, err := strconv.Atoi(port); err == nil {
+			svcPort = int32(p)
+		}
+	}
+	var pathType networkingv1.PathType = networkingv1.PathTypePrefix
+	var httpIngressPath networkingv1.HTTPIngressPath = networkingv1.HTTPIngressPath{
+		Path:     "/",
+		PathType: &pathType,
+		Backend: networkingv1.IngressBackend{
+			Service: &networkingv1.IngressServiceBackend{
+				Name: connector.Name,
+				Port: networkingv1.ServiceBackendPort{
+					Number: svcPort,
+				},
+			},
+		},
+	}
+	var ingressRuleValue = networkingv1.IngressRuleValue{
+		HTTP: &networkingv1.HTTPIngressRuleValue{
+			Paths: []networkingv1.HTTPIngressPath{httpIngressPath},
+		},
+	}
+	var ingressRule = networkingv1.IngressRule{
+		Host:             connector.Annotations[ConnectorNetworkHostDomainAnnotation],
+		IngressRuleValue: ingressRuleValue,
+	}
+
+	ingress.Spec.Rules = append(ingress.Spec.Rules, ingressRule)
+	return ingress, nil
 }

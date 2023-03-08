@@ -19,6 +19,7 @@ const (
 	DefaultNamespace        = "vanus"
 	DefaultVanusClusterName = "vanus-cluster"
 
+	DefaultOperatorName   = "vanus-operator"
 	DefaultControllerName = "vanus-controller"
 	DefaultEtcdName       = "vanus-etcd"
 	DefaultStoreName      = "vanus-store"

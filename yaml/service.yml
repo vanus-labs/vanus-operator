@@ -1,0 +1,15 @@
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: vanus-operator
+  namespace: vanus
+spec:
+  selector:
+    app: vanus-operator
+  type: NodePort
+  ports:
+    - port: 8089
+      targetPort: 8089
+      nodePort: 30009
+      name: proxy

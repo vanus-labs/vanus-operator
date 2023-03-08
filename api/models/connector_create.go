@@ -29,12 +29,6 @@ type ConnectorCreate struct {
 	// connector name
 	Name string `json:"name,omitempty"`
 
-	// connector service port
-	ServicePort string `json:"service_port,omitempty"`
-
-	// connector service type
-	ServiceType string `json:"service_type,omitempty"`
-
 	// connector type
 	Type string `json:"type,omitempty"`
 
