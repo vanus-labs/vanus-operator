@@ -17,7 +17,6 @@ package controllers
 import (
 	"context"
 	stderr "errors"
-	"strings"
 	"time"
 
 	"github.com/go-logr/logr"
@@ -36,138 +35,75 @@ import (
 )
 
 func (r *CoreReconciler) handleEtcd(ctx context.Context, logger logr.Logger, core *vanusv1alpha1.Core) (ctrl.Result, error) {
-	isDeployed, err := r.isDeployed(ctx)
+	// Create Etcd StatefulSet
+	// Check if the statefulSet already exists, if not create a new one
+	sts := &appsv1.StatefulSet{}
+	err := r.Get(ctx, types.NamespacedName{Name: cons.DefaultEtcdName, Namespace: cons.DefaultNamespace}, sts)
 	if err != nil {
-		logger.Error(err, "Failed to check whether the cluster has been deployed.")
-		return ctrl.Result{RequeueAfter: time.Duration(cons.RequeueIntervalInSecond) * time.Second}, err
-	}
-
-	if strings.Compare(core.Spec.Version, EtcdSeparateVersion) >= 0 {
-		etcd := r.generateEtcd(core)
-		org := etcd.DeepCopy()
-		if isDeployed {
-			r.generateEtcdInRecoveryMode(core, etcd)
-		}
-		logger.Info("Generated Etcd StatefulSet.")
-		// Create Etcd StatefulSet
-		// Check if the statefulSet already exists, if not create a new one
-		sts := &appsv1.StatefulSet{}
-		err = r.Get(ctx, types.NamespacedName{Name: etcd.Name, Namespace: etcd.Namespace}, sts)
-		if err != nil {
-			if errors.IsNotFound(err) {
-				logger.Info("Creating a new Etcd StatefulSet.", "Namespace", etcd.Namespace, "Name", etcd.Name)
-				err = r.Create(ctx, etcd)
-				if err != nil {
-					logger.Error(err, "Failed to create new Etcd StatefulSet", "Namespace", etcd.Namespace, "Name", etcd.Name)
-					return ctrl.Result{}, err
-				} else {
-					logger.Info("Successfully create Etcd StatefulSet")
-				}
-				etcdSvc := r.generateSvcForEtcd(core)
-				// Create Etcd Service
-				// Check if the service already exists, if not create a new one
-				svc := &corev1.Service{}
-				err = r.Get(ctx, types.NamespacedName{Name: etcdSvc.Name, Namespace: etcdSvc.Namespace}, svc)
-				if err != nil {
-					if errors.IsNotFound(err) {
-						logger.Info("Creating a new Etcd Service.", "Namespace", etcdSvc.Namespace, "Name", etcdSvc.Name)
-						err = r.Create(ctx, etcdSvc)
-						if err != nil {
-							logger.Error(err, "Failed to create new Etcd Service", "Namespace", etcdSvc.Namespace, "Name", etcdSvc.Name)
-							return ctrl.Result{}, err
-						} else {
-							logger.Info("Successfully create Etcd Service")
-						}
-					} else {
-						logger.Error(err, "Failed to get Etcd Service.")
-						return ctrl.Result{RequeueAfter: time.Duration(cons.RequeueIntervalInSecond) * time.Second}, err
-					}
-				}
-
-				// Wait for Etcd is ready
-				start := time.Now()
-				logger.Info("Wait for Etcd install is ready")
-				t1 := time.NewTicker(defaultWaitForReadyTimeout)
-				defer t1.Stop()
-				for {
-					ready, err := r.waitEtcdIsReady(ctx)
-					if err != nil {
-						logger.Error(err, "Wait for Etcd install is ready but got error")
-						return ctrl.Result{RequeueAfter: time.Duration(cons.RequeueIntervalInSecond) * time.Second}, err
-					}
-					if ready {
-						break
-					}
-					select {
-					case <-t1.C:
-						return ctrl.Result{RequeueAfter: time.Duration(cons.RequeueIntervalInSecond) * time.Second}, stderr.New("etcd cluster isn't ready")
-					default:
-						time.Sleep(time.Second)
-					}
-				}
-				logger.Info("Etcd is ready", "WaitingTime", time.Since(start))
-
-				if !isDeployed {
-					return ctrl.Result{}, nil
-				}
-
-				logger.Info("Updating Etcd StatefulSet.", "Namespace", etcd.Namespace, "Name", etcd.Name)
-				err = r.Update(ctx, org)
-				if err != nil {
-					logger.Error(err, "Failed to update Etcd StatefulSet", "Namespace", etcd.Namespace, "Name", etcd.Name)
-					return ctrl.Result{}, err
-				} else {
-					logger.Info("Successfully update Etcd StatefulSet")
-				}
-
-				// Wait for Etcd is ready
-				start = time.Now()
-				logger.Info("Wait for Etcd upgrade is ready")
-				time.Sleep(time.Minute)
-				t2 := time.NewTicker(defaultWaitForReadyTimeout)
-				defer t2.Stop()
-				for {
-					ready, err := r.waitEtcdIsReady(ctx)
-					if err != nil {
-						logger.Error(err, "Wait for Etcd is ready but got error")
-						return ctrl.Result{RequeueAfter: time.Duration(cons.RequeueIntervalInSecond) * time.Second}, err
-					}
-					if ready {
-						break
-					}
-					select {
-					case <-t2.C:
-						return ctrl.Result{RequeueAfter: time.Duration(cons.RequeueIntervalInSecond) * time.Second}, stderr.New("etcd cluster isn't ready")
-					default:
-						time.Sleep(time.Second)
-					}
-				}
-				logger.Info("Etcd is ready", "WaitingTime", time.Since(start))
-
-				return ctrl.Result{}, nil
+		if errors.IsNotFound(err) {
+			// Create Etcd Service
+			etcd := r.generateEtcd(core)
+			logger.Info("Creating a new Etcd StatefulSet.", "Namespace", etcd.Namespace, "Name", etcd.Name)
+			err = r.Create(ctx, etcd)
+			if err != nil {
+				logger.Error(err, "Failed to create new Etcd StatefulSet", "Namespace", etcd.Namespace, "Name", etcd.Name)
+				return ctrl.Result{}, err
 			} else {
-				logger.Error(err, "Failed to get Etcd StatefulSet.")
-				return ctrl.Result{RequeueAfter: time.Duration(cons.RequeueIntervalInSecond) * time.Second}, err
+				logger.Info("Successfully create Etcd StatefulSet")
 			}
+			etcdSvc := r.generateSvcForEtcd(core)
+			// Create Etcd Service
+			// Check if the service already exists, if not create a new one
+			svc := &corev1.Service{}
+			err = r.Get(ctx, types.NamespacedName{Name: etcdSvc.Name, Namespace: etcdSvc.Namespace}, svc)
+			if err != nil {
+				if errors.IsNotFound(err) {
+					logger.Info("Creating a new Etcd Service.", "Namespace", etcdSvc.Namespace, "Name", etcdSvc.Name)
+					err = r.Create(ctx, etcdSvc)
+					if err != nil {
+						logger.Error(err, "Failed to create new Etcd Service", "Namespace", etcdSvc.Namespace, "Name", etcdSvc.Name)
+						return ctrl.Result{}, err
+					} else {
+						logger.Info("Successfully create Etcd Service")
+					}
+				} else {
+					logger.Error(err, "Failed to get Etcd Service.")
+					return ctrl.Result{RequeueAfter: time.Duration(cons.RequeueIntervalInSecond) * time.Second}, err
+				}
+			}
+
+			// Wait for Etcd is ready
+			start := time.Now()
+			logger.Info("Wait for Etcd install is ready")
+			ticker := time.NewTicker(defaultWaitForReadyTimeout)
+			defer ticker.Stop()
+			for {
+				ready, err := r.waitEtcdIsReady(ctx)
+				if err != nil {
+					logger.Error(err, "Wait for Etcd install is ready but got error")
+					return ctrl.Result{RequeueAfter: time.Duration(cons.RequeueIntervalInSecond) * time.Second}, err
+				}
+				if ready {
+					break
+				}
+				select {
+				case <-ticker.C:
+					return ctrl.Result{RequeueAfter: time.Duration(cons.RequeueIntervalInSecond) * time.Second}, stderr.New("etcd cluster isn't ready")
+				default:
+					time.Sleep(time.Second)
+				}
+			}
+			logger.Info("Etcd is ready", "WaitingTime", time.Since(start))
+			return ctrl.Result{}, nil
+		} else {
+			logger.Error(err, "Failed to get Etcd StatefulSet.")
+			return ctrl.Result{RequeueAfter: time.Duration(cons.RequeueIntervalInSecond) * time.Second}, err
 		}
 	}
 
 	// Update Etcd StatefulSet Not Supported.
 
 	return ctrl.Result{}, nil
-}
-
-func (r *CoreReconciler) isDeployed(ctx context.Context) (bool, error) {
-	sts := &appsv1.StatefulSet{}
-	err := r.Get(ctx, types.NamespacedName{Name: cons.DefaultControllerName, Namespace: cons.DefaultNamespace}, sts)
-	if err != nil {
-		if errors.IsNotFound(err) {
-			return false, nil
-		} else {
-			return false, err
-		}
-	}
-	return true, nil
 }
 
 func (r *CoreReconciler) waitEtcdIsReady(ctx context.Context) (bool, error) {
@@ -275,33 +211,6 @@ func (r *CoreReconciler) generateEtcd(core *vanusv1alpha1.Core) *appsv1.Stateful
 	return sts
 }
 
-func (r *CoreReconciler) generateEtcdInRecoveryMode(core *vanusv1alpha1.Core, sts *appsv1.StatefulSet) {
-	sts.Spec.Template.Spec.InitContainers = []corev1.Container{{
-		Name:            cons.EtcdInitContainerName,
-		Image:           cons.EtcdInitContainerImageName,
-		ImagePullPolicy: core.Spec.ImagePullPolicy,
-		Resources:       core.Spec.Resources,
-		Command:         getCommandForEtcd(core),
-		VolumeMounts:    getInitContainerVolumeMountsForEtcd(core),
-	}}
-	sts.Spec.Template.Spec.Containers[0].VolumeMounts = append(sts.Spec.Template.Spec.Containers[0].VolumeMounts, sts.Spec.Template.Spec.InitContainers[0].VolumeMounts...)
-	sts.Spec.Template.Spec.Volumes = append(sts.Spec.Template.Spec.Volumes, corev1.Volume{
-		Name: cons.EtcdInitContainerVolumeMountName,
-		VolumeSource: corev1.VolumeSource{
-			EmptyDir: &corev1.EmptyDirVolumeSource{},
-		},
-	})
-	sts.Spec.Template.Spec.Containers[0].Env = append(sts.Spec.Template.Spec.Containers[0].Env, corev1.EnvVar{
-		Name:  "ETCD_START_FROM_SNAPSHOT",
-		Value: "yes",
-	})
-}
-
-func getCommandForEtcd(core *vanusv1alpha1.Core) []string {
-	defaultCommand := []string{"/bin/sh", "run.sh"}
-	return defaultCommand
-}
-
 func getEnvForEtcd(core *vanusv1alpha1.Core) []corev1.EnvVar {
 	defaultEnvs := []corev1.EnvVar{{
 		Name:  "BITNAMI_DEBUG",
@@ -383,27 +292,6 @@ func getVolumeMountsForEtcd(core *vanusv1alpha1.Core) []corev1.VolumeMount {
 	}}
 	return defaultVolumeMounts
 }
-
-func getInitContainerVolumeMountsForEtcd(core *vanusv1alpha1.Core) []corev1.VolumeMount {
-	defaultVolumeMounts := []corev1.VolumeMount{{
-		MountPath: cons.EtcdInitContainerVolumeMountPath,
-		Name:      cons.EtcdInitContainerVolumeMountName,
-	}}
-	return defaultVolumeMounts
-}
-
-// func getVolumesForEtcd(vanus *vanusv1alpha1.Vanus) []corev1.Volume {
-// 	defaultVolumes := []corev1.Volume{{
-// 		Name: cons.EtcdConfigMapName,
-// 		VolumeSource: corev1.VolumeSource{
-// 			ConfigMap: &corev1.ConfigMapVolumeSource{
-// 				LocalObjectReference: corev1.LocalObjectReference{
-// 					Name: cons.EtcdConfigMapName,
-// 				},
-// 			}},
-// 	}}
-// 	return defaultVolumes
-// }
 
 func getVolumeClaimTemplatesForEtcd(core *vanusv1alpha1.Core) []corev1.PersistentVolumeClaim {
 	labels := genLabels(cons.DefaultEtcdName)

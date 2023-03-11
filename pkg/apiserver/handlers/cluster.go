@@ -17,6 +17,7 @@ package handlers
 import (
 	"errors"
 	"fmt"
+	"strings"
 
 	"github.com/go-openapi/runtime/middleware"
 	"github.com/vanus-labs/vanus-operator/api/models"
@@ -30,10 +31,8 @@ import (
 	log "k8s.io/klog/v2"
 )
 
-var (
-	WorkloadOldReplicAnno = "replic.ecns.io/workload"
-	// revisionAnnoKey       = "deployment.kubernetes.io/revision"
-	// rolloutReasonAnno     = "kubernetes.io/change-cause"
+const (
+	DefaultInitialVersion = "v0.7.0"
 )
 
 func RegistClusterHandler(a *Api) {
@@ -56,6 +55,12 @@ func (a *Api) createClusterHandler(params cluster.CreateClusterParams) middlewar
 	}
 
 	log.Infof("parse cluster params finish, config: %s\n", c.String())
+
+	isVaild, err := a.checkParamsValid(params)
+	if !isVaild {
+		log.Errorf("cluster params invalid, err: %s\n", err.Error())
+		return utils.Response(400, err)
+	}
 
 	// Check if the cluster already exists, if exist, return error
 	exist, err := a.checkClusterExist()
@@ -91,7 +96,7 @@ func (a *Api) createClusterHandler(params cluster.CreateClusterParams) middlewar
 	log.Infof("Successfully create Core cluster: %+v\n", resultCore)
 
 	retcode := int32(200)
-	msg := "create cluster success"
+	msg := "success"
 	return cluster.NewCreateClusterOK().WithPayload(&cluster.CreateClusterOKBody{
 		Code:    &retcode,
 		Message: &msg,
@@ -117,7 +122,7 @@ func (a *Api) deleteClusterHandler(params cluster.DeleteClusterParams) middlewar
 	}
 
 	retcode := int32(200)
-	msg := "delete cluster success"
+	msg := "success"
 	return cluster.NewDeleteClusterOK().WithPayload(&cluster.DeleteClusterOKBody{
 		Code:    &retcode,
 		Message: &msg,
@@ -148,7 +153,7 @@ func (a *Api) patchClusterHandler(params cluster.PatchClusterParams) middleware.
 	}
 	log.Infof("Successfully patch Core cluster: %+v\n", resultCore)
 	retcode := int32(200)
-	msg := "patch vanus cluster success"
+	msg := "success"
 	return cluster.NewPatchClusterOK().WithPayload(&cluster.PatchClusterOKBody{
 		Code:    &retcode,
 		Message: &msg,
@@ -162,7 +167,7 @@ func (a *Api) getClusterHandler(params cluster.GetClusterParams) middleware.Resp
 		return utils.Response(500, err)
 	}
 	retcode := int32(200)
-	msg := "get cluster success"
+	msg := "success"
 	return cluster.NewGetClusterOK().WithPayload(&cluster.GetClusterOKBody{
 		Code: &retcode,
 		Data: &models.ClusterInfo{
@@ -173,8 +178,15 @@ func (a *Api) getClusterHandler(params cluster.GetClusterParams) middleware.Resp
 	})
 }
 
+func (a *Api) checkParamsValid(params cluster.CreateClusterParams) (bool, error) {
+	if strings.Compare(params.Create.Version, DefaultInitialVersion) < 0 {
+		log.Errorf("Only supports %s and later version.\n", DefaultInitialVersion)
+		return false, errors.New("unsupported version")
+	}
+	return true, nil
+}
+
 func (a *Api) checkClusterExist() (bool, error) {
-	// TODO(jiangkai): need to check other components
 	_, exist, err := a.existCore(cons.DefaultNamespace, cons.DefaultVanusClusterName, &metav1.GetOptions{})
 	if err != nil {
 		log.Errorf("Failed to get Core cluster, err: %s\n", err.Error())

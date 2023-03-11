@@ -106,7 +106,7 @@ func (a *Api) createConnectorHandler(params connector.CreateConnectorParams) mid
 	log.Infof("Successfully create Connector: %+v\n", resultConnector)
 
 	retcode := int32(200)
-	msg := "create connector success"
+	msg := "success"
 	return connector.NewCreateConnectorOK().WithPayload(&connector.CreateConnectorOKBody{
 		Code:    &retcode,
 		Message: &msg,
@@ -144,7 +144,7 @@ func (a *Api) deleteConnectorHandler(params connector.DeleteConnectorParams) mid
 	}
 
 	retcode := int32(200)
-	msg := "delete connector success"
+	msg := "success"
 	return connector.NewDeleteConnectorOK().WithPayload(&connector.DeleteConnectorOKBody{
 		Code:    &retcode,
 		Message: &msg,
@@ -158,7 +158,7 @@ func (a *Api) listConnectorHandler(params connector.ListConnectorParams) middlew
 		return utils.Response(500, err)
 	}
 	retcode := int32(200)
-	msg := "list connectors success"
+	msg := "success"
 	data := make([]*models.ConnectorInfo, 0)
 	for _, c := range connectors.Items {
 		status, reason, err := a.getConnectorStatus(c.Name)
@@ -190,7 +190,7 @@ func (a *Api) getConnectorHandler(params connector.GetConnectorParams) middlewar
 		return utils.Response(500, err)
 	}
 	retcode := int32(200)
-	msg := "get connector success"
+	msg := "success"
 
 	status, reason, err := a.getConnectorStatus(params.Name)
 	if err != nil {
