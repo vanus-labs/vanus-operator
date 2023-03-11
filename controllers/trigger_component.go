@@ -35,7 +35,6 @@ import (
 
 func (r *CoreReconciler) handleTrigger(ctx context.Context, logger logr.Logger, core *vanusv1alpha1.Core) (ctrl.Result, error) {
 	trigger := r.generateTrigger(core)
-	// Create Trigger Deployment
 	// Check if the statefulSet already exists, if not create a new one
 	dep := &appsv1.Deployment{}
 	err := r.Get(ctx, types.NamespacedName{Name: trigger.Name, Namespace: trigger.Namespace}, dep)
@@ -51,6 +50,7 @@ func (r *CoreReconciler) handleTrigger(ctx context.Context, logger logr.Logger, 
 			} else {
 				logger.Info("Successfully create Trigger ConfigMap")
 			}
+			// Create Trigger Deployment
 			logger.Info("Creating a new Trigger Deployment.", "Namespace", trigger.Namespace, "Name", trigger.Name)
 			err = r.Create(ctx, trigger)
 			if err != nil {
@@ -66,7 +66,8 @@ func (r *CoreReconciler) handleTrigger(ctx context.Context, logger logr.Logger, 
 		}
 	}
 
-	// Update Trigger StatefulSet
+	// Update Trigger Deployment
+	logger.Info("Updating Trigger Deployment.", "Namespace", trigger.Namespace, "Name", trigger.Name)
 	err = r.Update(ctx, trigger)
 	if err != nil {
 		logger.Error(err, "Failed to update Trigger Deployment", "Namespace", trigger.Namespace, "Name", trigger.Name)

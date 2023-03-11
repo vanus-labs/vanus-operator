@@ -36,7 +36,6 @@ import (
 
 func (r *CoreReconciler) handleGateway(ctx context.Context, logger logr.Logger, core *vanusv1alpha1.Core) (ctrl.Result, error) {
 	gateway := r.generateGateway(core)
-	// Create Gateway Deployment
 	// Check if the statefulSet already exists, if not create a new one
 	dep := &appsv1.Deployment{}
 	err := r.Get(ctx, types.NamespacedName{Name: gateway.Name, Namespace: gateway.Namespace}, dep)
@@ -52,6 +51,7 @@ func (r *CoreReconciler) handleGateway(ctx context.Context, logger logr.Logger, 
 			} else {
 				logger.Info("Successfully create Gateway ConfigMap")
 			}
+			// Create Gateway Deployment
 			logger.Info("Creating a new Gateway Deployment.", "Namespace", gateway.Namespace, "Name", gateway.Name)
 			err = r.Create(ctx, gateway)
 			if err != nil {
@@ -60,8 +60,8 @@ func (r *CoreReconciler) handleGateway(ctx context.Context, logger logr.Logger, 
 			} else {
 				logger.Info("Successfully create Gateway Deployment")
 			}
-			gatewaySvc := r.generateSvcForGateway(core)
 			// Create Gateway Service
+			gatewaySvc := r.generateSvcForGateway(core)
 			// Check if the service already exists, if not create a new one
 			svc := &corev1.Service{}
 			err = r.Get(ctx, types.NamespacedName{Name: gatewaySvc.Name, Namespace: gatewaySvc.Namespace}, svc)
@@ -87,7 +87,8 @@ func (r *CoreReconciler) handleGateway(ctx context.Context, logger logr.Logger, 
 		}
 	}
 
-	// Update Gateway StatefulSet
+	// Update Gateway Deployment
+	logger.Info("Updating Gateway Deployment.", "Namespace", gateway.Namespace, "Name", gateway.Name)
 	err = r.Update(ctx, gateway)
 	if err != nil {
 		logger.Error(err, "Failed to update Gateway Deployment", "Namespace", gateway.Namespace, "Name", gateway.Name)

@@ -16,7 +16,6 @@ package controllers
 
 import (
 	"context"
-	"strings"
 	"time"
 
 	cons "github.com/vanus-labs/vanus-operator/internal/constants"
@@ -111,8 +110,4 @@ func (r *CoreReconciler) SetupWithManager(mgr ctrl.Manager) error {
 	return ctrl.NewControllerManagedBy(mgr).
 		For(&vanusv1alpha1.Core{}).
 		Complete(r)
-}
-
-func version(image string) string {
-	return strings.Split(image, ":")[1]
 }

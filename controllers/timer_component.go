@@ -18,7 +18,6 @@ import (
 	"bytes"
 	"context"
 	"fmt"
-	"strings"
 	"time"
 
 	"github.com/go-logr/logr"
@@ -35,23 +34,14 @@ import (
 )
 
 func (r *CoreReconciler) handleTimer(ctx context.Context, logger logr.Logger, core *vanusv1alpha1.Core) (ctrl.Result, error) {
-	var (
-		timer          *appsv1.Deployment
-		timerConfigMap *corev1.ConfigMap
-	)
-	timer = r.generateTimer(core)
-	if strings.Compare(core.Spec.Version, EtcdSeparateVersion) < 0 {
-		timerConfigMap = r.generateConfigMapForTimer(core)
-	} else {
-		timerConfigMap = r.generateConfigMapForNewTimer(core)
-	}
-	// Create Timer Deployment
+	timer := r.generateTimer(core)
 	// Check if the statefulSet already exists, if not create a new one
 	dep := &appsv1.Deployment{}
 	err := r.Get(ctx, types.NamespacedName{Name: timer.Name, Namespace: timer.Namespace}, dep)
 	if err != nil {
 		if errors.IsNotFound(err) {
 			// Create Timer ConfigMap
+			timerConfigMap := r.generateConfigMapForTimer(core)
 			logger.Info("Creating a new Timer ConfigMap.", "Namespace", timerConfigMap.Namespace, "Name", timerConfigMap.Name)
 			err = r.Create(ctx, timerConfigMap)
 			if err != nil {
@@ -60,6 +50,7 @@ func (r *CoreReconciler) handleTimer(ctx context.Context, logger logr.Logger, co
 			} else {
 				logger.Info("Successfully create Timer ConfigMap")
 			}
+			// Create Timer Deployment
 			logger.Info("Creating a new Timer Deployment.", "Namespace", timer.Namespace, "Name", timer.Name)
 			err = r.Create(ctx, timer)
 			if err != nil {
@@ -75,15 +66,8 @@ func (r *CoreReconciler) handleTimer(ctx context.Context, logger logr.Logger, co
 		}
 	}
 
-	logger.Info("Updating Timer ConfigMap.", "Namespace", timerConfigMap.Namespace, "Name", timerConfigMap.Name)
-	err = r.Update(ctx, timerConfigMap)
-	if err != nil {
-		logger.Error(err, "Failed to update Timer ConfigMap", "Namespace", timerConfigMap.Namespace, "Name", timerConfigMap.Name)
-		return ctrl.Result{}, err
-	}
-	logger.Info("Successfully update Timer ConfigMap")
-
-	// Update Timer StatefulSet
+	// Update Timer Deployment
+	logger.Info("Updating Timer Deployment.", "Namespace", timer.Namespace, "Name", timer.Name)
 	err = r.Update(ctx, timer)
 	if err != nil {
 		logger.Error(err, "Failed to update Timer Deployment", "Namespace", timer.Namespace, "Name", timer.Name)
@@ -174,41 +158,6 @@ func annotationsForTimer() map[string]string {
 }
 
 func (r *CoreReconciler) generateConfigMapForTimer(core *vanusv1alpha1.Core) *corev1.ConfigMap {
-	data := make(map[string]string)
-	value := bytes.Buffer{}
-	value.WriteString("name: timer\n")
-	value.WriteString("ip: ${POD_IP}\n")
-	value.WriteString("etcd:\n")
-	for i := int32(0); i < core.Spec.Replicas.Controller; i++ {
-		value.WriteString(fmt.Sprintf("  - vanus-controller-%d.vanus-controller:2379\n", i))
-	}
-	value.WriteString("controllers:\n")
-	for i := int32(0); i < core.Spec.Replicas.Controller; i++ {
-		value.WriteString(fmt.Sprintf("  - vanus-controller-%d.vanus-controller.vanus.svc:2048\n", i))
-	}
-	value.WriteString("metadata:\n")
-	value.WriteString("  key_prefix: /vanus\n")
-	value.WriteString("leaderelection:\n")
-	value.WriteString("  lease_duration: 15\n")
-	value.WriteString("timingwheel:\n")
-	value.WriteString("  tick: 1\n")
-	value.WriteString("  wheel_size: 32\n")
-	value.WriteString("  layers: 4\n")
-	data["timer.yaml"] = value.String()
-	cm := &corev1.ConfigMap{
-		ObjectMeta: metav1.ObjectMeta{
-			Namespace:  cons.DefaultNamespace,
-			Name:       cons.TimerConfigMapName,
-			Finalizers: []string{metav1.FinalizerOrphanDependents},
-		},
-		Data: data,
-	}
-
-	controllerutil.SetControllerReference(core, cm, r.Scheme)
-	return cm
-}
-
-func (r *CoreReconciler) generateConfigMapForNewTimer(core *vanusv1alpha1.Core) *corev1.ConfigMap {
 	data := make(map[string]string)
 	value := bytes.Buffer{}
 	value.WriteString("name: timer\n")

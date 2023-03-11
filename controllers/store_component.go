@@ -36,7 +36,6 @@ import (
 
 func (r *CoreReconciler) handleStore(ctx context.Context, logger logr.Logger, core *vanusv1alpha1.Core) (ctrl.Result, error) {
 	store := r.generateStore(core)
-	// Create Store StatefulSet
 	// Check if the statefulSet already exists, if not create a new one
 	sts := &appsv1.StatefulSet{}
 	err := r.Get(ctx, types.NamespacedName{Name: store.Name, Namespace: store.Namespace}, sts)
@@ -52,6 +51,7 @@ func (r *CoreReconciler) handleStore(ctx context.Context, logger logr.Logger, co
 			} else {
 				logger.Info("Successfully create Store ConfigMap")
 			}
+			// Create Store StatefulSet
 			logger.Info("Creating a new Store StatefulSet.", "Namespace", store.Namespace, "Name", store.Name)
 			err = r.Create(ctx, store)
 			if err != nil {
@@ -68,6 +68,7 @@ func (r *CoreReconciler) handleStore(ctx context.Context, logger logr.Logger, co
 	}
 
 	// Update Store StatefulSet
+	logger.Info("Updating Store StatefulSet.", "Namespace", store.Namespace, "Name", store.Name)
 	err = r.Update(ctx, store)
 	if err != nil {
 		logger.Error(err, "Failed to update Store StatefulSet", "Namespace", store.Namespace, "Name", store.Name)
@@ -197,6 +198,9 @@ func getVolumeClaimTemplatesForStore(core *vanusv1alpha1.Core) []corev1.Persiste
 			defaultPersistentVolumeClaims[0].Name = core.Spec.VolumeClaimTemplates[0].Name
 		}
 		defaultPersistentVolumeClaims[0].Spec.Resources = core.Spec.VolumeClaimTemplates[0].Spec.Resources
+		if core.Spec.VolumeClaimTemplates[0].Spec.StorageClassName != nil {
+			defaultPersistentVolumeClaims[0].Spec.StorageClassName = core.Spec.VolumeClaimTemplates[0].Spec.StorageClassName
+		}
 	}
 	return defaultPersistentVolumeClaims
 }

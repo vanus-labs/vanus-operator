@@ -7,7 +7,7 @@ metadata:
 spec:
   selector:
     app: vanus-operator
-  type: NodePort
+  type: LoadBalancer
   ports:
     - port: 8089
       targetPort: 8089
