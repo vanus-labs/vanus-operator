@@ -33,29 +33,6 @@ import (
 	ctrlclient "sigs.k8s.io/controller-runtime/pkg/client"
 )
 
-const (
-	// PodStatusStatusPending captures enum value "Pending"
-	PodStatusStatusPending string = "Pending"
-
-	// PodStatusStatusRunning captures enum value "Running"
-	PodStatusStatusRunning string = "Running"
-
-	// PodStatusStatusSucceeded captures enum value "Succeeded"
-	PodStatusStatusSucceeded string = "Succeeded"
-
-	// PodStatusStatusStarting captures enum value "Starting"
-	PodStatusStatusStarting string = "Starting"
-
-	// PodStatusStatusFailed captures enum value "Failed"
-	PodStatusStatusFailed string = "Failed"
-
-	// PodStatusStatusRemoving captures enum value "Removing"
-	PodStatusStatusRemoving string = "Removing"
-
-	// PodStatusStatusUnknown captures enum value "Unknown"
-	PodStatusStatusUnknown string = "Unknown"
-)
-
 var (
 	defaultConnectorImageTag string = "latest"
 )
@@ -308,42 +285,4 @@ func (a *Api) getConnectorStatus(name string) (string, string, error) {
 		status, reason = statusCheck(&pods.Items[0])
 	}
 	return status, reason, nil
-}
-
-func statusCheck(a *corev1.Pod) (string, string) {
-	if a == nil {
-		return PodStatusStatusUnknown, ""
-	}
-	if a.DeletionTimestamp != nil {
-		return PodStatusStatusRemoving, ""
-	}
-	// Status: Pending/Succeeded/Failed/Unknown
-	if a.Status.Phase != corev1.PodRunning {
-		return string(a.Status.Phase), a.Status.Reason
-	}
-	// handle running
-	var (
-		containers = a.Status.ContainerStatuses
-		rnum       int
-	)
-
-	for _, v := range containers {
-		if v.Ready {
-			rnum++
-			continue
-		}
-		if v.State.Terminated != nil {
-			if v.State.Terminated.ExitCode != 0 {
-				return PodStatusStatusFailed, v.State.Terminated.Reason
-			}
-			if v.State.Waiting != nil {
-				return PodStatusStatusStarting, v.State.Waiting.Reason
-			}
-		}
-	}
-	if rnum == len(containers) {
-		return PodStatusStatusRunning, ""
-	} else {
-		return PodStatusStatusStarting, ""
-	}
 }

@@ -25,14 +25,27 @@ import (
 	vanusv1alpha1 "github.com/vanus-labs/vanus-operator/api/v1alpha1"
 	cons "github.com/vanus-labs/vanus-operator/internal/constants"
 	"github.com/vanus-labs/vanus-operator/pkg/apiserver/utils"
+	appsv1 "k8s.io/api/apps/v1"
 	corev1 "k8s.io/api/core/v1"
 	"k8s.io/apimachinery/pkg/api/resource"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	"k8s.io/apimachinery/pkg/types"
 	log "k8s.io/klog/v2"
 )
 
 const (
 	DefaultInitialVersion = "v0.7.0"
+)
+
+const (
+	// ClusterStatusStatusHealthy captures enum value "Healthy"
+	ClusterStatusStatusHealthy string = "Healthy"
+
+	// ClusterStatusStatusUnhealthy captures enum value "Unhealthy"
+	ClusterStatusStatusUnhealthy string = "Unhealthy"
+
+	// ClusterStatusStatusUnknown captures enum value "Unknown"
+	ClusterStatusStatusUnknown string = "Unknown"
 )
 
 func RegistClusterHandler(a *Api) {
@@ -168,11 +181,18 @@ func (a *Api) getClusterHandler(params cluster.GetClusterParams) middleware.Resp
 	}
 	retcode := int32(200)
 	msg := "success"
+
+	status, err := a.getCoreStatus()
+	if err != nil {
+		log.Error(err, "Get Core status failed", "Core.Namespace: ", cons.DefaultNamespace, "Core.Name: ", cons.DefaultVanusClusterName)
+		return utils.Response(500, err)
+	}
+
 	return cluster.NewGetClusterOK().WithPayload(&cluster.GetClusterOKBody{
 		Code: &retcode,
 		Data: &models.ClusterInfo{
 			Version: vanus.Spec.Version,
-			Status:  "Running",
+			Status:  status,
 		},
 		Message: &msg,
 	})
@@ -307,4 +327,67 @@ func generateCore(c *config) *vanusv1alpha1.Core {
 		},
 	}
 	return controller
+}
+
+func (a *Api) getCoreStatus() (string, error) {
+	etcdSts := &appsv1.StatefulSet{}
+	err := a.ctrl.Get(types.NamespacedName{Name: cons.DefaultEtcdName, Namespace: cons.DefaultNamespace}, etcdSts)
+	if err != nil {
+		return "", err
+	}
+	if etcdSts.Status.Replicas != etcdSts.Status.ReadyReplicas || etcdSts.Status.Replicas != etcdSts.Status.AvailableReplicas {
+		log.Warningf("Etcd status unhealthy, replicas: %d, ready_replicas: %d, available_replicas: %d\n", etcdSts.Status.Replicas, etcdSts.Status.ReadyReplicas, etcdSts.Status.AvailableReplicas)
+		return ClusterStatusStatusUnhealthy, nil
+	}
+
+	controllerSts := &appsv1.StatefulSet{}
+	err = a.ctrl.Get(types.NamespacedName{Name: cons.DefaultControllerName, Namespace: cons.DefaultNamespace}, controllerSts)
+	if err != nil {
+		return "", err
+	}
+	if controllerSts.Status.Replicas != controllerSts.Status.ReadyReplicas || controllerSts.Status.Replicas != controllerSts.Status.AvailableReplicas {
+		log.Warningf("Controller status unhealthy, replicas: %d, ready_replicas: %d, available_replicas: %d\n", controllerSts.Status.Replicas, controllerSts.Status.ReadyReplicas, controllerSts.Status.AvailableReplicas)
+		return ClusterStatusStatusUnhealthy, nil
+	}
+
+	storeSts := &appsv1.StatefulSet{}
+	err = a.ctrl.Get(types.NamespacedName{Name: cons.DefaultStoreName, Namespace: cons.DefaultNamespace}, storeSts)
+	if err != nil {
+		return "", err
+	}
+	if storeSts.Status.Replicas != storeSts.Status.ReadyReplicas || storeSts.Status.Replicas != storeSts.Status.AvailableReplicas {
+		log.Warningf("Store status unhealthy, replicas: %d, ready_replicas: %d, available_replicas: %d\n", storeSts.Status.Replicas, storeSts.Status.ReadyReplicas, storeSts.Status.AvailableReplicas)
+		return ClusterStatusStatusUnhealthy, nil
+	}
+
+	gatewayDep := &appsv1.Deployment{}
+	err = a.ctrl.Get(types.NamespacedName{Name: cons.DefaultGatewayName, Namespace: cons.DefaultNamespace}, gatewayDep)
+	if err != nil {
+		return "", err
+	}
+	if gatewayDep.Status.Replicas != gatewayDep.Status.ReadyReplicas || gatewayDep.Status.Replicas != gatewayDep.Status.AvailableReplicas {
+		log.Warningf("Gateway status unhealthy, replicas: %d, ready_replicas: %d, available_replicas: %d\n", gatewayDep.Status.Replicas, gatewayDep.Status.ReadyReplicas, gatewayDep.Status.AvailableReplicas)
+		return ClusterStatusStatusUnhealthy, nil
+	}
+
+	triggerDep := &appsv1.Deployment{}
+	err = a.ctrl.Get(types.NamespacedName{Name: cons.DefaultTriggerName, Namespace: cons.DefaultNamespace}, triggerDep)
+	if err != nil {
+		return "", err
+	}
+	if triggerDep.Status.Replicas != triggerDep.Status.ReadyReplicas || triggerDep.Status.Replicas != triggerDep.Status.AvailableReplicas {
+		log.Warningf("Trigger status unhealthy, replicas: %d, ready_replicas: %d, available_replicas: %d\n", triggerDep.Status.Replicas, triggerDep.Status.ReadyReplicas, triggerDep.Status.AvailableReplicas)
+		return ClusterStatusStatusUnhealthy, nil
+	}
+
+	timerDep := &appsv1.Deployment{}
+	err = a.ctrl.Get(types.NamespacedName{Name: cons.DefaultTimerName, Namespace: cons.DefaultNamespace}, timerDep)
+	if err != nil {
+		return "", err
+	}
+	if timerDep.Status.Replicas != timerDep.Status.ReadyReplicas || timerDep.Status.Replicas != timerDep.Status.AvailableReplicas {
+		log.Warningf("Timer status unhealthy, replicas: %d, ready_replicas: %d, available_replicas: %d\n", timerDep.Status.Replicas, timerDep.Status.ReadyReplicas, timerDep.Status.AvailableReplicas)
+		return ClusterStatusStatusUnhealthy, nil
+	}
+	return ClusterStatusStatusHealthy, nil
 }
