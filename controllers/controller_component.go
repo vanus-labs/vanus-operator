@@ -249,8 +249,6 @@ func (r *CoreReconciler) generateConfigMapForController(core *vanusv1alpha1.Core
 	value.WriteString("port: 2048\n")
 	value.WriteString(fmt.Sprintf("replicas: %d\n", core.Spec.Replicas.Controller))
 	value.WriteString("segment_capacity: 4194304\n")
-	value.WriteString("metadata:\n")
-	value.WriteString("  key_prefix: /vanus\n")
 	value.WriteString("observability:\n")
 	value.WriteString("  metrics:\n")
 	value.WriteString("    enable: true\n")
