@@ -277,10 +277,10 @@ func getEnvForEtcd(core *vanusv1alpha1.Core) []corev1.EnvVar {
 func getPortsForEtcd(core *vanusv1alpha1.Core) []corev1.ContainerPort {
 	defaultPorts := []corev1.ContainerPort{{
 		Name:          cons.ContainerPortNameEtcdClient,
-		ContainerPort: cons.ControllerPortEtcdClient,
+		ContainerPort: cons.EtcdPortClient,
 	}, {
 		Name:          cons.ContainerPortNameEtcdPeer,
-		ContainerPort: cons.ControllerPortEtcdPeer,
+		ContainerPort: cons.EtcdPortPeer,
 	}}
 	return defaultPorts
 }
@@ -296,7 +296,11 @@ func getVolumeMountsForEtcd(core *vanusv1alpha1.Core) []corev1.VolumeMount {
 func getVolumeClaimTemplatesForEtcd(core *vanusv1alpha1.Core) []corev1.PersistentVolumeClaim {
 	labels := genLabels(cons.DefaultEtcdName)
 	requests := make(map[corev1.ResourceName]resource.Quantity)
-	requests[corev1.ResourceStorage] = resource.MustParse(cons.VolumeStorage)
+	if val, ok := core.Annotations[cons.CoreComponentEtcdStorageSizeAnnotation]; ok {
+		requests[corev1.ResourceStorage] = resource.MustParse(val)
+	} else {
+		requests[corev1.ResourceStorage] = resource.MustParse(cons.DefaultEtcdStorageSize)
+	}
 	defaultPersistentVolumeClaims := []corev1.PersistentVolumeClaim{{
 		ObjectMeta: metav1.ObjectMeta{
 			Labels: labels,
@@ -309,11 +313,8 @@ func getVolumeClaimTemplatesForEtcd(core *vanusv1alpha1.Core) []corev1.Persisten
 			},
 		},
 	}}
-	if len(core.Spec.VolumeClaimTemplates) != 0 {
-		if core.Spec.VolumeClaimTemplates[0].Name != "" {
-			defaultPersistentVolumeClaims[0].Name = core.Spec.VolumeClaimTemplates[0].Name
-		}
-		defaultPersistentVolumeClaims[0].Spec.Resources = core.Spec.VolumeClaimTemplates[0].Spec.Resources
+	if val, ok := core.Annotations[cons.CoreComponentEtcdStorageClassAnnotation]; ok && val != "" {
+		defaultPersistentVolumeClaims[0].Spec.StorageClassName = &val
 	}
 	return defaultPersistentVolumeClaims
 }
@@ -333,14 +334,14 @@ func (r *CoreReconciler) generateSvcForEtcd(core *vanusv1alpha1.Core) *corev1.Se
 			Ports: []corev1.ServicePort{
 				{
 					Name:       cons.ContainerPortNameEtcdClient,
-					Port:       cons.ControllerPortEtcdClient,
+					Port:       cons.EtcdPortClient,
 					Protocol:   corev1.ProtocolTCP,
-					TargetPort: intstr.FromInt(cons.ControllerPortEtcdClient),
+					TargetPort: intstr.FromInt(cons.EtcdPortClient),
 				}, {
 					Name:       cons.ContainerPortNameEtcdPeer,
-					Port:       cons.ControllerPortEtcdPeer,
+					Port:       cons.EtcdPortPeer,
 					Protocol:   corev1.ProtocolTCP,
-					TargetPort: intstr.FromInt(cons.ControllerPortEtcdPeer),
+					TargetPort: intstr.FromInt(cons.EtcdPortPeer),
 				}},
 			PublishNotReadyAddresses: true,
 		},

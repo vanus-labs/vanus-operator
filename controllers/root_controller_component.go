@@ -35,77 +35,77 @@ import (
 	vanusv1alpha1 "github.com/vanus-labs/vanus-operator/api/v1alpha1"
 )
 
-func (r *CoreReconciler) handleController(ctx context.Context, logger logr.Logger, core *vanusv1alpha1.Core) (ctrl.Result, error) {
-	controller := r.generateController(core)
+func (r *CoreReconciler) handleRootController(ctx context.Context, logger logr.Logger, core *vanusv1alpha1.Core) (ctrl.Result, error) {
+	rootController := r.generateRootController(core)
 	// Check if the statefulSet already exists, if not create a new one
 	sts := &appsv1.StatefulSet{}
-	err := r.Get(ctx, types.NamespacedName{Name: cons.DefaultControllerName, Namespace: cons.DefaultNamespace}, sts)
+	err := r.Get(ctx, types.NamespacedName{Name: cons.DefaultRootControllerName, Namespace: cons.DefaultNamespace}, sts)
 	if err != nil {
 		if errors.IsNotFound(err) {
-			// Create Controller ConfigMap
-			controllerConfigMap := r.generateConfigMapForController(core)
-			logger.Info("Creating a new Controller ConfigMap.", "Namespace", controllerConfigMap.Namespace, "Name", controllerConfigMap.Name)
-			err = r.Create(ctx, controllerConfigMap)
+			// Create rootController ConfigMap
+			rootControllerConfigMap := r.generateConfigMapForRootController(core)
+			logger.Info("Creating a new rootController ConfigMap.", "Namespace", rootControllerConfigMap.Namespace, "Name", rootControllerConfigMap.Name)
+			err = r.Create(ctx, rootControllerConfigMap)
 			if err != nil {
-				logger.Error(err, "Failed to create new Controller ConfigMap", "Namespace", controllerConfigMap.Namespace, "Name", controllerConfigMap.Name)
+				logger.Error(err, "Failed to create new rootController ConfigMap", "Namespace", rootControllerConfigMap.Namespace, "Name", rootControllerConfigMap.Name)
 				return ctrl.Result{}, err
 			} else {
-				logger.Info("Successfully create Controller ConfigMap")
+				logger.Info("Successfully create rootController ConfigMap")
 			}
-			// Create Controller StatefulSet
-			logger.Info("Creating a new Controller StatefulSet.", "Namespace", controller.Namespace, "Name", controller.Name)
-			err = r.Create(ctx, controller)
+			// Create rootController StatefulSet
+			logger.Info("Creating a new rootController StatefulSet.", "Namespace", rootController.Namespace, "Name", rootController.Name)
+			err = r.Create(ctx, rootController)
 			if err != nil {
-				logger.Error(err, "Failed to create new Controller StatefulSet", "Namespace", controller.Namespace, "Name", controller.Name)
+				logger.Error(err, "Failed to create new rootController StatefulSet", "Namespace", rootController.Namespace, "Name", rootController.Name)
 				return ctrl.Result{}, err
 			} else {
-				logger.Info("Successfully create Controller StatefulSet")
+				logger.Info("Successfully create rootController StatefulSet")
 			}
-			// Create Controller Service
-			controllerSvc := r.generateSvcForController(core)
+			// Create rootController Service
+			rootControllerSvc := r.generateSvcForRootController(core)
 			// Check if the service already exists, if not create a new one
 			svc := &corev1.Service{}
-			err = r.Get(ctx, types.NamespacedName{Name: controllerSvc.Name, Namespace: controllerSvc.Namespace}, svc)
+			err = r.Get(ctx, types.NamespacedName{Name: rootControllerSvc.Name, Namespace: rootControllerSvc.Namespace}, svc)
 			if err != nil {
 				if errors.IsNotFound(err) {
-					logger.Info("Creating a new Controller Service.", "Namespace", controllerSvc.Namespace, "Name", controllerSvc.Name)
-					err = r.Create(ctx, controllerSvc)
+					logger.Info("Creating a new rootController Service.", "Namespace", rootControllerSvc.Namespace, "Name", rootControllerSvc.Name)
+					err = r.Create(ctx, rootControllerSvc)
 					if err != nil {
-						logger.Error(err, "Failed to create new Controller Service", "Namespace", controllerSvc.Namespace, "Name", controllerSvc.Name)
+						logger.Error(err, "Failed to create new rootController Service", "Namespace", rootControllerSvc.Namespace, "Name", rootControllerSvc.Name)
 						return ctrl.Result{}, err
 					} else {
-						logger.Info("Successfully create Controller Service")
+						logger.Info("Successfully create rootController Service")
 					}
 				} else {
-					logger.Error(err, "Failed to get Controller Service.")
+					logger.Error(err, "Failed to get rootController Service.")
 					return ctrl.Result{RequeueAfter: time.Duration(cons.RequeueIntervalInSecond) * time.Second}, err
 				}
 			}
 			return ctrl.Result{}, nil
 		} else {
-			logger.Error(err, "Failed to get Controller StatefulSet.")
+			logger.Error(err, "Failed to get rootController StatefulSet.")
 			return ctrl.Result{RequeueAfter: time.Duration(cons.RequeueIntervalInSecond) * time.Second}, err
 		}
 	}
 
-	// Update Controller StatefulSet
-	logger.Info("Updating Controller StatefulSet.", "Namespace", controller.Namespace, "Name", controller.Name)
-	err = r.Update(ctx, controller)
+	// Update rootController StatefulSet
+	logger.Info("Updating rootController StatefulSet.", "Namespace", rootController.Namespace, "Name", rootController.Name)
+	err = r.Update(ctx, rootController)
 	if err != nil {
-		logger.Error(err, "Failed to update Controller StatefulSet", "Namespace", controller.Namespace, "Name", controller.Name)
+		logger.Error(err, "Failed to update rootController StatefulSet", "Namespace", rootController.Namespace, "Name", rootController.Name)
 		return ctrl.Result{}, err
 	}
-	logger.Info("Successfully update Controller StatefulSet")
+	logger.Info("Successfully update rootController StatefulSet")
 
-	// Wait for Controller is ready
+	// Wait for rootController is ready
 	start := time.Now()
-	logger.Info("Wait for Controller is ready")
+	logger.Info("Wait for rootController is ready")
 	t := time.NewTicker(defaultWaitForReadyTimeout)
 	defer t.Stop()
 	for {
-		ready, err := r.waitControllerIsReady(ctx, core)
+		ready, err := r.waitRootControllerIsReady(ctx, core)
 		if err != nil {
-			logger.Error(err, "Wait for Controller is ready but got error")
+			logger.Error(err, "Wait for rootController is ready but got error")
 			return ctrl.Result{RequeueAfter: time.Duration(cons.RequeueIntervalInSecond) * time.Second}, err
 		}
 		if ready {
@@ -113,23 +113,23 @@ func (r *CoreReconciler) handleController(ctx context.Context, logger logr.Logge
 		}
 		select {
 		case <-t.C:
-			return ctrl.Result{RequeueAfter: time.Duration(cons.RequeueIntervalInSecond) * time.Second}, stderr.New("controller isn't ready")
+			return ctrl.Result{RequeueAfter: time.Duration(cons.RequeueIntervalInSecond) * time.Second}, stderr.New("root-controller isn't ready")
 		default:
 			time.Sleep(time.Second)
 		}
 	}
-	logger.Info("Controller is ready", "WaitingTime", time.Since(start))
+	logger.Info("rootController is ready", "WaitingTime", time.Since(start))
 
 	return ctrl.Result{}, nil
 }
 
-// returns a Controller StatefulSet object
-func (r *CoreReconciler) generateController(core *vanusv1alpha1.Core) *appsv1.StatefulSet {
-	labels := genLabels(cons.DefaultControllerName)
-	annotations := annotationsForController()
+// returns a rootController StatefulSet object
+func (r *CoreReconciler) generateRootController(core *vanusv1alpha1.Core) *appsv1.StatefulSet {
+	labels := genLabels(cons.DefaultRootControllerName)
+	annotations := annotationsForRootController()
 	sts := &appsv1.StatefulSet{
 		ObjectMeta: metav1.ObjectMeta{
-			Name:      cons.DefaultControllerName,
+			Name:      cons.DefaultRootControllerName,
 			Namespace: cons.DefaultNamespace,
 			Labels:    labels,
 		},
@@ -141,7 +141,7 @@ func (r *CoreReconciler) generateController(core *vanusv1alpha1.Core) *appsv1.St
 			UpdateStrategy: appsv1.StatefulSetUpdateStrategy{
 				Type: appsv1.RollingUpdateStatefulSetStrategyType,
 			},
-			ServiceName: cons.DefaultControllerName,
+			ServiceName: cons.DefaultRootControllerName,
 			Template: corev1.PodTemplateSpec{
 				ObjectMeta: metav1.ObjectMeta{
 					Annotations: annotations,
@@ -149,29 +149,29 @@ func (r *CoreReconciler) generateController(core *vanusv1alpha1.Core) *appsv1.St
 				},
 				Spec: corev1.PodSpec{
 					Containers: []corev1.Container{{
-						Name:            cons.ControllerContainerName,
-						Image:           fmt.Sprintf("%s:%s", cons.ControllerImageName, core.Spec.Version),
+						Name:            cons.RootControllerContainerName,
+						Image:           fmt.Sprintf("%s:%s", cons.RootControllerImageName, core.Spec.Version),
 						ImagePullPolicy: core.Spec.ImagePullPolicy,
 						Resources:       core.Spec.Resources,
-						Env:             getEnvForController(core),
-						Ports:           getPortsForController(core),
-						VolumeMounts:    getVolumeMountsForController(core),
-						Command:         getCommandForController(core),
+						Env:             getEnvForRootController(core),
+						Ports:           getPortsForRootController(core),
+						VolumeMounts:    getVolumeMountsForRootController(core),
+						Command:         getCommandForRootController(core),
 					}},
-					Volumes: getVolumesForController(core),
+					Volumes: getVolumesForRootController(core),
 				},
 			},
 		},
 	}
-	// Set Controller instance as the owner and controller
+	// Set rootController instance as the owner and root-controller
 	controllerutil.SetControllerReference(core, sts, r.Scheme)
 
 	return sts
 }
 
-func (r *CoreReconciler) waitControllerIsReady(ctx context.Context, core *vanusv1alpha1.Core) (bool, error) {
+func (r *CoreReconciler) waitRootControllerIsReady(ctx context.Context, core *vanusv1alpha1.Core) (bool, error) {
 	sts := &appsv1.StatefulSet{}
-	err := r.Get(ctx, types.NamespacedName{Name: cons.DefaultControllerName, Namespace: cons.DefaultNamespace}, sts)
+	err := r.Get(ctx, types.NamespacedName{Name: cons.DefaultRootControllerName, Namespace: cons.DefaultNamespace}, sts)
 	if err != nil {
 		return false, err
 	}
@@ -181,7 +181,7 @@ func (r *CoreReconciler) waitControllerIsReady(ctx context.Context, core *vanusv
 	return false, nil
 }
 
-func getEnvForController(core *vanusv1alpha1.Core) []corev1.EnvVar {
+func getEnvForRootController(core *vanusv1alpha1.Core) []corev1.EnvVar {
 	defaultEnvs := []corev1.EnvVar{{
 		Name:      cons.EnvPodIP,
 		ValueFrom: &corev1.EnvVarSource{FieldRef: &corev1.ObjectFieldSelector{FieldPath: "status.podIP"}},
@@ -195,64 +195,54 @@ func getEnvForController(core *vanusv1alpha1.Core) []corev1.EnvVar {
 	return defaultEnvs
 }
 
-func getPortsForController(core *vanusv1alpha1.Core) []corev1.ContainerPort {
+func getPortsForRootController(core *vanusv1alpha1.Core) []corev1.ContainerPort {
 	defaultPorts := []corev1.ContainerPort{{
 		Name:          cons.ContainerPortNameGrpc,
-		ContainerPort: cons.ControllerPortGrpc,
+		ContainerPort: cons.RootControllerPortGrpc,
 	}, {
 		Name:          cons.ContainerPortNameMetrics,
-		ContainerPort: cons.ControllerPortMetrics,
+		ContainerPort: cons.RootControllerPortMetrics,
 	}}
 	return defaultPorts
 }
 
-func getVolumeMountsForController(core *vanusv1alpha1.Core) []corev1.VolumeMount {
+func getVolumeMountsForRootController(core *vanusv1alpha1.Core) []corev1.VolumeMount {
 	defaultVolumeMounts := []corev1.VolumeMount{{
 		MountPath: cons.ConfigMountPath,
-		Name:      cons.ControllerConfigMapName,
+		Name:      cons.RootControllerConfigMapName,
 	}}
 	return defaultVolumeMounts
 }
 
-func getCommandForController(core *vanusv1alpha1.Core) []string {
-	defaultCommand := []string{"/bin/sh", "-c", "NODE_ID=${HOSTNAME##*-} /vanus/bin/controller"}
+func getCommandForRootController(core *vanusv1alpha1.Core) []string {
+	defaultCommand := []string{"/bin/sh", "-c", "NODE_ID=${HOSTNAME##*-} /vanus/bin/root-controller"}
 	return defaultCommand
 }
 
-func getVolumesForController(core *vanusv1alpha1.Core) []corev1.Volume {
+func getVolumesForRootController(core *vanusv1alpha1.Core) []corev1.Volume {
 	defaultVolumes := []corev1.Volume{{
-		Name: cons.ControllerConfigMapName,
+		Name: cons.RootControllerConfigMapName,
 		VolumeSource: corev1.VolumeSource{
 			ConfigMap: &corev1.ConfigMapVolumeSource{
 				LocalObjectReference: corev1.LocalObjectReference{
-					Name: cons.ControllerConfigMapName,
+					Name: cons.RootControllerConfigMapName,
 				},
 			}},
 	}}
 	return defaultVolumes
 }
 
-func genLabels(name string) map[string]string {
-	return map[string]string{"app": name}
+func annotationsForRootController() map[string]string {
+	return map[string]string{"vanus.dev/metrics.port": fmt.Sprintf("%d", cons.RootControllerPortMetrics)}
 }
 
-func annotationsForController() map[string]string {
-	return map[string]string{"vanus.dev/metrics.port": fmt.Sprintf("%d", cons.ControllerPortMetrics)}
-}
-
-func (r *CoreReconciler) generateConfigMapForController(core *vanusv1alpha1.Core) *corev1.ConfigMap {
+func (r *CoreReconciler) generateConfigMapForRootController(core *vanusv1alpha1.Core) *corev1.ConfigMap {
 	data := make(map[string]string)
 	value := bytes.Buffer{}
 	value.WriteString("node_id: ${NODE_ID}\n")
 	value.WriteString("name: ${POD_NAME}\n")
 	value.WriteString("ip: ${POD_IP}\n")
-	value.WriteString(fmt.Sprintf("port: %d\n", cons.ControllerPortGrpc))
-	value.WriteString(fmt.Sprintf("replicas: %d\n", cons.DefaultControllerReplicas))
-	value.WriteString("segment_capacity: 4194304\n")
-	value.WriteString("root_controllers:\n")
-	for i := int32(0); i < cons.DefaultControllerReplicas; i++ {
-		value.WriteString(fmt.Sprintf("  - vanus-root-controller-%d.vanus-root-controller:%d\n", i, cons.RootControllerPortGrpc))
-	}
+	value.WriteString(fmt.Sprintf("port: %d\n", cons.RootControllerPortGrpc))
 	value.WriteString("observability:\n")
 	value.WriteString("  metrics:\n")
 	value.WriteString("    enable: true\n")
@@ -262,7 +252,7 @@ func (r *CoreReconciler) generateConfigMapForController(core *vanusv1alpha1.Core
 	value.WriteString("    otel_collector: http://127.0.0.1:4318\n")
 
 	value.WriteString("cluster:\n")
-	value.WriteString("  component_name: controller\n")
+	value.WriteString("  component_name: root-controller\n")
 	value.WriteString("  lease_duration_in_sec: 15\n")
 	value.WriteString("  etcd:\n")
 	for i := int32(0); i < 3; i++ {
@@ -270,13 +260,13 @@ func (r *CoreReconciler) generateConfigMapForController(core *vanusv1alpha1.Core
 	}
 	value.WriteString("  topology:\n")
 	for i := int32(0); i < cons.DefaultControllerReplicas; i++ {
-		value.WriteString(fmt.Sprintf("    vanus-controller-%d: vanus-controller-%d.vanus-controller.vanus.svc:%d\n", i, i, cons.ControllerPortGrpc))
+		value.WriteString(fmt.Sprintf("    vanus-root-controller-%d: vanus-root-controller-%d.vanus-root-controller.vanus.svc:%d\n", i, i, cons.RootControllerPortGrpc))
 	}
-	data["controller.yaml"] = value.String()
+	data["root.yaml"] = value.String()
 	cm := &corev1.ConfigMap{
 		ObjectMeta: metav1.ObjectMeta{
 			Namespace:  cons.DefaultNamespace,
-			Name:       cons.ControllerConfigMapName,
+			Name:       cons.RootControllerConfigMapName,
 			Finalizers: []string{metav1.FinalizerOrphanDependents},
 		},
 		Data: data,
@@ -286,12 +276,12 @@ func (r *CoreReconciler) generateConfigMapForController(core *vanusv1alpha1.Core
 	return cm
 }
 
-func (r *CoreReconciler) generateSvcForController(core *vanusv1alpha1.Core) *corev1.Service {
-	labels := genLabels(cons.DefaultControllerName)
+func (r *CoreReconciler) generateSvcForRootController(core *vanusv1alpha1.Core) *corev1.Service {
+	labels := genLabels(cons.DefaultRootControllerName)
 	svc := &corev1.Service{
 		ObjectMeta: metav1.ObjectMeta{
 			Namespace:  cons.DefaultNamespace,
-			Name:       cons.DefaultControllerName,
+			Name:       cons.DefaultRootControllerName,
 			Labels:     labels,
 			Finalizers: []string{metav1.FinalizerOrphanDependents},
 		},
@@ -300,10 +290,10 @@ func (r *CoreReconciler) generateSvcForController(core *vanusv1alpha1.Core) *cor
 			Selector:  labels,
 			Ports: []corev1.ServicePort{
 				{
-					Name:       cons.DefaultControllerName,
-					Port:       cons.ControllerPortGrpc,
+					Name:       cons.DefaultRootControllerName,
+					Port:       cons.RootControllerPortGrpc,
 					Protocol:   corev1.ProtocolTCP,
-					TargetPort: intstr.FromInt(cons.ControllerPortGrpc),
+					TargetPort: intstr.FromInt(cons.RootControllerPortGrpc),
 				},
 			},
 		},

@@ -38,12 +38,6 @@ import (
 	vanusv1alpha1 "github.com/vanus-labs/vanus-operator/api/v1alpha1"
 )
 
-const (
-	ConnectorServiceTypeAnnotation       = "connector.vanus.ai/service-type"
-	ConnectorServicePortAnnotation       = "connector.vanus.ai/service-port"
-	ConnectorNetworkHostDomainAnnotation = "connector.vanus.ai/network-host-domain"
-)
-
 var (
 	defaultConnectorSvcPort int32 = 80
 )
@@ -144,7 +138,7 @@ func (r *ConnectorReconciler) Reconcile(ctx context.Context, req ctrl.Request) (
 			}
 
 			// Update Ingress
-			if _, ok := connector.Annotations[ConnectorNetworkHostDomainAnnotation]; ok {
+			if _, ok := connector.Annotations[cons.ConnectorNetworkHostDomainAnnotation]; ok {
 				ingress := &networkingv1.Ingress{}
 				err = r.Get(ctx, types.NamespacedName{Name: cons.DefaultOperatorName, Namespace: cons.DefaultNamespace}, ingress)
 				if err != nil {
@@ -292,12 +286,12 @@ func (r *ConnectorReconciler) generateSvcForConnector(connector *vanusv1alpha1.C
 		svcPort int32              = defaultConnectorSvcPort
 		svcType corev1.ServiceType = corev1.ServiceTypeClusterIP
 	)
-	if port, ok := connector.Annotations[ConnectorServicePortAnnotation]; ok && port != "" {
+	if port, ok := connector.Annotations[cons.ConnectorServicePortAnnotation]; ok && port != "" {
 		if p, err := strconv.Atoi(port); err == nil {
 			svcPort = int32(p)
 		}
 	}
-	if stype, ok := connector.Annotations[ConnectorServiceTypeAnnotation]; ok && stype == string(corev1.ServiceTypeLoadBalancer) {
+	if stype, ok := connector.Annotations[cons.ConnectorServiceTypeAnnotation]; ok && stype == string(corev1.ServiceTypeLoadBalancer) {
 		svcType = corev1.ServiceTypeLoadBalancer
 	}
 	connectorSvc := &corev1.Service{
@@ -326,13 +320,13 @@ func (r *ConnectorReconciler) generateSvcForConnector(connector *vanusv1alpha1.C
 }
 
 func (r *ConnectorReconciler) generateIngressForConnector(connector *vanusv1alpha1.Connector, ingress *networkingv1.Ingress) (*networkingv1.Ingress, error) {
-	if _, ok := connector.Annotations[ConnectorNetworkHostDomainAnnotation]; !ok {
+	if _, ok := connector.Annotations[cons.ConnectorNetworkHostDomainAnnotation]; !ok {
 		return nil, stderr.New("connector network host domain annotation not found")
 	}
 	var (
 		svcPort int32 = defaultConnectorSvcPort
 	)
-	if port, ok := connector.Annotations[ConnectorServicePortAnnotation]; ok && port != "" {
+	if port, ok := connector.Annotations[cons.ConnectorServicePortAnnotation]; ok && port != "" {
 		if p, err := strconv.Atoi(port); err == nil {
 			svcPort = int32(p)
 		}
@@ -356,7 +350,7 @@ func (r *ConnectorReconciler) generateIngressForConnector(connector *vanusv1alph
 		},
 	}
 	var ingressRule = networkingv1.IngressRule{
-		Host:             connector.Annotations[ConnectorNetworkHostDomainAnnotation],
+		Host:             connector.Annotations[cons.ConnectorNetworkHostDomainAnnotation],
 		IngressRuleValue: ingressRuleValue,
 	}
 

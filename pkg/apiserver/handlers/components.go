@@ -28,9 +28,8 @@ import (
 )
 
 const (
-	ResourceCore                         = "cores"
-	ResourceConnector                    = "connectors"
-	ConnectorNetworkHostDomainAnnotation = "connector.vanus.ai/network-host-domain"
+	ResourceCore      = "cores"
+	ResourceConnector = "connectors"
 )
 
 func (a *Api) createCore(vanus *vanusv1alpha1.Core, namespace string) (*vanusv1alpha1.Core, error) {
@@ -260,7 +259,7 @@ func (a *Api) updateIngress(connector *vanusv1alpha1.Connector) error {
 		return err
 	}
 	var newIngressRules []networkingv1.IngressRule = make([]networkingv1.IngressRule, 0)
-	annotation, ok := connector.Annotations[ConnectorNetworkHostDomainAnnotation]
+	annotation, ok := connector.Annotations[cons.ConnectorNetworkHostDomainAnnotation]
 	if !ok {
 		return nil
 	}

@@ -17,26 +17,8 @@ import (
 // swagger:model Cluster_create
 type ClusterCreate struct {
 
-	// controller replicas
-	ControllerReplicas *int32 `json:"controller_replicas,omitempty"`
-
-	// gateway replicas
-	GatewayReplicas *int32 `json:"gateway_replicas,omitempty"`
-
-	// metadata storage size
-	MetadataStorageSize *string `json:"metadata_storage_size,omitempty"`
-
-	// store replicas
-	StoreReplicas *int32 `json:"store_replicas,omitempty"`
-
-	// store storage size
-	StoreStorageSize *string `json:"store_storage_size,omitempty"`
-
-	// timer replicas
-	TimerReplicas *int32 `json:"timer_replicas,omitempty"`
-
-	// trigger replicas
-	TriggerReplicas *int32 `json:"trigger_replicas,omitempty"`
+	// annotations
+	Annotations map[string]string `json:"annotations,omitempty"`
 
 	// cluster version
 	Version string `json:"version,omitempty"`

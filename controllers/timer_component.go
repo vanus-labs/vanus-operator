@@ -88,7 +88,7 @@ func (r *CoreReconciler) generateTimer(core *vanusv1alpha1.Core) *appsv1.Deploym
 			Labels:    labels,
 		},
 		Spec: appsv1.DeploymentSpec{
-			Replicas: &core.Spec.Replicas.Timer,
+			Replicas: &cons.DefaultTimerReplicas,
 			Selector: &metav1.LabelSelector{
 				MatchLabels: labels,
 			},
@@ -163,11 +163,11 @@ func (r *CoreReconciler) generateConfigMapForTimer(core *vanusv1alpha1.Core) *co
 	value.WriteString("name: timer\n")
 	value.WriteString("ip: ${POD_IP}\n")
 	value.WriteString("etcd:\n")
-	for i := int32(0); i < core.Spec.Replicas.Controller; i++ {
+	for i := int32(0); i < cons.DefaultEtcdReplicas; i++ {
 		value.WriteString(fmt.Sprintf("  - vanus-etcd-%d.vanus-etcd:2379\n", i))
 	}
 	value.WriteString("controllers:\n")
-	for i := int32(0); i < core.Spec.Replicas.Controller; i++ {
+	for i := int32(0); i < cons.DefaultControllerReplicas; i++ {
 		value.WriteString(fmt.Sprintf("  - vanus-controller-%d.vanus-controller.vanus.svc:2048\n", i))
 	}
 	value.WriteString("leaderelection:\n")

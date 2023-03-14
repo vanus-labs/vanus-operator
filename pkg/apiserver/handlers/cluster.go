@@ -16,7 +16,6 @@ package handlers
 
 import (
 	"errors"
-	"fmt"
 	"strings"
 
 	"github.com/go-openapi/runtime/middleware"
@@ -26,7 +25,6 @@ import (
 	cons "github.com/vanus-labs/vanus-operator/internal/constants"
 	"github.com/vanus-labs/vanus-operator/pkg/apiserver/utils"
 	corev1 "k8s.io/api/core/v1"
-	"k8s.io/apimachinery/pkg/api/resource"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	log "k8s.io/klog/v2"
 )
@@ -44,19 +42,13 @@ func RegistClusterHandler(a *Api) {
 
 func (a *Api) createClusterHandler(params cluster.CreateClusterParams) middleware.Responder {
 	var (
-		failedToExit  = false
-		vanusDeployed = false
+		failedToExit = false
+		coreDeployed = false
 	)
-	// Parse cluster params
-	c, err := genClusterConfig(params.Create)
-	if err != nil {
-		log.Error(err, "parse cluster params failed")
-		return utils.Response(400, err)
-	}
 
-	log.Infof("parse cluster params finish, config: %s\n", c.String())
+	log.Infof("show cluster create params, version: %s, annotations: %+v\n", params.Create.Version, params.Create.Annotations)
 
-	isVaild, err := a.checkParamsValid(params)
+	isVaild, err := a.checkParamsValid(params.Create)
 	if !isVaild {
 		log.Errorf("cluster params invalid, err: %s\n", err.Error())
 		return utils.Response(400, err)
@@ -75,8 +67,8 @@ func (a *Api) createClusterHandler(params cluster.CreateClusterParams) middlewar
 
 	defer func() {
 		if failedToExit {
-			if vanusDeployed {
-				err = a.deleteCore(cons.DefaultVanusClusterName, c.namespace)
+			if coreDeployed {
+				err = a.deleteCore(cons.DefaultVanusClusterName, cons.DefaultNamespace)
 				if err != nil {
 					log.Warningf("clear controller failed when failed to exit, err: %s\n", err.Error())
 				}
@@ -84,15 +76,15 @@ func (a *Api) createClusterHandler(params cluster.CreateClusterParams) middlewar
 		}
 	}()
 
-	log.Infof("Creating a new Core cluster, Core.Namespace: %s, Core.Name: %s\n", c.namespace, cons.DefaultVanusClusterName)
-	vanus := generateCore(c)
-	resultCore, err := a.createCore(vanus, c.namespace)
+	log.Infof("Creating a new Core cluster, Core.Namespace: %s, Core.Name: %s\n", cons.DefaultNamespace, cons.DefaultVanusClusterName)
+	core := generateCore(params.Create)
+	resultCore, err := a.createCore(core, cons.DefaultNamespace)
 	if err != nil {
 		log.Errorf("Failed to create new Core cluster, Core.Namespace: %s, Core.Name: %s, err: %s\n", cons.DefaultNamespace, cons.DefaultVanusClusterName, err.Error())
 		failedToExit = true
 		return utils.Response(500, err)
 	}
-	vanusDeployed = true
+	coreDeployed = true
 	log.Infof("Successfully create Core cluster: %+v\n", resultCore)
 
 	retcode := int32(200)
@@ -130,23 +122,17 @@ func (a *Api) deleteClusterHandler(params cluster.DeleteClusterParams) middlewar
 }
 
 func (a *Api) patchClusterHandler(params cluster.PatchClusterParams) middleware.Responder {
-	vanus := &vanusv1alpha1.Core{
+	core := &vanusv1alpha1.Core{
 		ObjectMeta: metav1.ObjectMeta{
-			Namespace: cons.DefaultNamespace,
-			Name:      cons.DefaultVanusClusterName,
+			Namespace:   cons.DefaultNamespace,
+			Name:        cons.DefaultVanusClusterName,
+			Annotations: params.Patch.Annotations,
 		},
 		Spec: vanusv1alpha1.CoreSpec{
-			Replicas: vanusv1alpha1.Replicas{
-				Controller: params.Patch.ControllerReplicas,
-				Store:      params.Patch.StoreReplicas,
-				Trigger:    params.Patch.TriggerReplicas,
-				Timer:      params.Patch.TimerReplicas,
-				Gateway:    params.Patch.GatewayReplicas,
-			},
 			Version: params.Patch.Version,
 		},
 	}
-	resultCore, err := a.patchCore(vanus)
+	resultCore, err := a.patchCore(core)
 	if err != nil {
 		log.Errorf("Failed to patch Core cluster, Core.Namespace: %s, Core.Name: %s, err: %s\n", cons.DefaultNamespace, cons.DefaultVanusClusterName, err.Error())
 		return utils.Response(500, err)
@@ -178,8 +164,11 @@ func (a *Api) getClusterHandler(params cluster.GetClusterParams) middleware.Resp
 	})
 }
 
-func (a *Api) checkParamsValid(params cluster.CreateClusterParams) (bool, error) {
-	if strings.Compare(params.Create.Version, DefaultInitialVersion) < 0 {
+func (a *Api) checkParamsValid(cluster *models.ClusterCreate) (bool, error) {
+	if cluster.Version == "" {
+		return false, errors.New("cluster version is required parameters")
+	}
+	if strings.Compare(cluster.Version, DefaultInitialVersion) < 0 {
 		log.Errorf("Only supports %s and later version.\n", DefaultInitialVersion)
 		return false, errors.New("unsupported version")
 	}
@@ -195,115 +184,17 @@ func (a *Api) checkClusterExist() (bool, error) {
 	return exist, err
 }
 
-type config struct {
-	namespace           string
-	version             string
-	controllerReplicas  int32
-	storeReplicas       int32
-	triggerReplicas     int32
-	timerReplicas       int32
-	gatewayReplicas     int32
-	metadataStorageSize string
-	storeStorageSize    string
-}
-
-func (c *config) String() string {
-	return fmt.Sprintf("namespace: %s, version: %s, controller_replicas: %d, store_replicas: %d, trigger_replicas: %d, timer_replicas: %d, gateway_replicas: %d, metadata_storage_size: %s, store_storage_size: %s\n",
-		c.namespace,
-		c.version,
-		c.controllerReplicas,
-		c.storeReplicas,
-		c.triggerReplicas,
-		c.timerReplicas,
-		c.gatewayReplicas,
-		c.metadataStorageSize,
-		c.storeStorageSize)
-}
-
-func genClusterConfig(cluster *models.ClusterCreate) (*config, error) {
-	// check required parameters
-	if cluster.Version == "" {
-		return nil, errors.New("cluster version is required parameters")
-	}
-
-	c := &config{
-		version:   cluster.Version,
-		namespace: cons.DefaultNamespace,
-	}
-	if cluster.ControllerReplicas != nil {
-		c.controllerReplicas = *cluster.ControllerReplicas
-	} else {
-		c.controllerReplicas = 3
-	}
-	if cluster.StoreReplicas != nil {
-		c.storeReplicas = *cluster.StoreReplicas
-	} else {
-		c.storeReplicas = 3
-	}
-	if cluster.TriggerReplicas != nil {
-		c.triggerReplicas = *cluster.TriggerReplicas
-	} else {
-		c.triggerReplicas = 1
-	}
-	if cluster.TimerReplicas != nil {
-		c.timerReplicas = *cluster.TimerReplicas
-	} else {
-		c.timerReplicas = 2
-	}
-	if cluster.GatewayReplicas != nil {
-		c.gatewayReplicas = *cluster.GatewayReplicas
-	} else {
-		c.gatewayReplicas = 1
-	}
-	if cluster.MetadataStorageSize != nil {
-		c.metadataStorageSize = *cluster.MetadataStorageSize
-	} else {
-		c.metadataStorageSize = "10Gi"
-	}
-	if cluster.StoreStorageSize != nil {
-		c.storeStorageSize = *cluster.StoreStorageSize
-	} else {
-		c.storeStorageSize = "10Gi"
-	}
-	return c, nil
-}
-
-func genLabels(name string) map[string]string {
-	return map[string]string{"app": name}
-}
-
-func generateCore(c *config) *vanusv1alpha1.Core {
-	labels := genLabels(cons.DefaultVanusClusterName)
-	requests := make(map[corev1.ResourceName]resource.Quantity)
-	requests[corev1.ResourceStorage] = resource.MustParse(c.storeStorageSize)
+func generateCore(cluster *models.ClusterCreate) *vanusv1alpha1.Core {
 	controller := &vanusv1alpha1.Core{
 		ObjectMeta: metav1.ObjectMeta{
-			Namespace: c.namespace,
-			Name:      cons.DefaultVanusClusterName,
+			Namespace:   cons.DefaultNamespace,
+			Name:        cons.DefaultVanusClusterName,
+			Annotations: cluster.Annotations,
 		},
 		Spec: vanusv1alpha1.CoreSpec{
-			Replicas: vanusv1alpha1.Replicas{
-				Controller: c.controllerReplicas,
-				Store:      c.storeReplicas,
-				Trigger:    c.triggerReplicas,
-				Timer:      c.timerReplicas,
-				Gateway:    c.gatewayReplicas,
-			},
-			Version:         c.version,
+			Version:         cluster.Version,
 			ImagePullPolicy: corev1.PullIfNotPresent,
 			Resources:       corev1.ResourceRequirements{},
-			VolumeClaimTemplates: []corev1.PersistentVolumeClaim{{
-				ObjectMeta: metav1.ObjectMeta{
-					Labels: labels,
-					Name:   cons.VolumeName,
-				},
-				Spec: corev1.PersistentVolumeClaimSpec{
-					AccessModes: []corev1.PersistentVolumeAccessMode{corev1.ReadWriteOnce},
-					Resources: corev1.ResourceRequirements{
-						Requests: requests,
-					},
-				},
-			}},
 		},
 	}
 	return controller

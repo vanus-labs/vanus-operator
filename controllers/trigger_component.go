@@ -22,6 +22,7 @@ import (
 
 	"github.com/go-logr/logr"
 	cons "github.com/vanus-labs/vanus-operator/internal/constants"
+	"github.com/vanus-labs/vanus-operator/pkg/apiserver/handlers/convert"
 	appsv1 "k8s.io/api/apps/v1"
 	corev1 "k8s.io/api/core/v1"
 	"k8s.io/apimachinery/pkg/api/errors"
@@ -88,7 +89,7 @@ func (r *CoreReconciler) generateTrigger(core *vanusv1alpha1.Core) *appsv1.Deplo
 			Labels:    labels,
 		},
 		Spec: appsv1.DeploymentSpec{
-			Replicas: &core.Spec.Replicas.Trigger,
+			Replicas: &cons.DefaultTriggerReplicas,
 			Selector: &metav1.LabelSelector{
 				MatchLabels: labels,
 			},
@@ -112,6 +113,14 @@ func (r *CoreReconciler) generateTrigger(core *vanusv1alpha1.Core) *appsv1.Deplo
 				},
 			},
 		},
+	}
+	if val, ok := core.Annotations[cons.CoreComponentTriggerReplicasAnnotation]; ok && val != "" {
+		replicas, err := convert.StrToInt32(val)
+		if err == nil {
+			dep.Spec.Replicas = &replicas
+		} else {
+			dep.Spec.Replicas = &cons.DefaultTriggerReplicas
+		}
 	}
 	// Set Trigger instance as the owner and controller
 	controllerutil.SetControllerReference(core, dep, r.Scheme)
@@ -172,7 +181,7 @@ func (r *CoreReconciler) generateConfigMapForTrigger(core *vanusv1alpha1.Core) *
 	value.WriteString("port: 2148\n")
 	value.WriteString("ip: ${POD_IP}\n")
 	value.WriteString("controllers:\n")
-	for i := int32(0); i < core.Spec.Replicas.Controller; i++ {
+	for i := int32(0); i < cons.DefaultControllerReplicas; i++ {
 		value.WriteString(fmt.Sprintf("  - vanus-controller-%d.vanus-controller.vanus.svc:2048\n", i))
 	}
 	data["trigger.yaml"] = value.String()

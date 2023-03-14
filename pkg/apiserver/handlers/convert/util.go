@@ -12,11 +12,48 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-package convert2ecns
+package convert
 
-const (
-	Container_Running    = "running"
-	Container_Waiting    = "waiting"
-	Container_Failed     = "failed"
-	Container_Terminated = "terminated"
+import (
+	"io"
+	"strconv"
+	"time"
+
+	"k8s.io/client-go/util/jsonpath"
 )
+
+var (
+	parse *jsonpath.JSONPath
+)
+
+func init() {
+	parse = jsonpath.New("")
+}
+
+func PtrS(s string) *string {
+	return &s
+}
+
+func PtrInt32(s int32) *int32 {
+	return &s
+}
+
+func PtrBool(s bool) *bool {
+	return &s
+}
+
+func Format(t time.Time) string {
+	return t.UTC().Format(time.RFC3339)
+}
+
+func Parse(data interface{}, w io.Writer) error {
+	return parse.Execute(w, data)
+}
+
+func StrToInt32(s string) (int32, error) {
+	num, err := strconv.Atoi(s)
+	if err != nil {
+		return -1, err
+	}
+	return int32(num), nil
+}
