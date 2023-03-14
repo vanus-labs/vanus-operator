@@ -79,7 +79,6 @@ func init() {
         "operationId": "createCluster",
         "parameters": [
           {
-            "description": "需要创建的Cluster信息",
             "name": "create",
             "in": "body",
             "required": true,
@@ -448,45 +447,14 @@ func init() {
       "description": "cluster create params",
       "type": "object",
       "properties": {
-        "controller_replicas": {
-          "description": "controller replicas",
-          "type": "integer",
-          "format": "int32",
-          "default": 3
-        },
-        "gateway_replicas": {
-          "description": "gateway replicas",
-          "type": "integer",
-          "format": "int32",
-          "default": 1
-        },
-        "metadata_storage_size": {
-          "description": "metadata storage size",
-          "type": "string",
-          "default": "10Gi"
-        },
-        "store_replicas": {
-          "description": "store replicas",
-          "type": "integer",
-          "format": "int32",
-          "default": 3
-        },
-        "store_storage_size": {
-          "description": "store storage size",
-          "type": "string",
-          "default": "10Gi"
-        },
-        "timer_replicas": {
-          "description": "timer replicas",
-          "type": "integer",
-          "format": "int32",
-          "default": 2
-        },
-        "trigger_replicas": {
-          "description": "trigger replicas",
-          "type": "integer",
-          "format": "int32",
-          "default": 1
+        "annotations": {
+          "type": "object",
+          "required": [
+            "default"
+          ],
+          "additionalProperties": {
+            "type": "string"
+          }
         },
         "version": {
           "description": "cluster version",
@@ -523,30 +491,14 @@ func init() {
       "description": "cluster patch params",
       "type": "object",
       "properties": {
-        "controller_replicas": {
-          "description": "controller replicas",
-          "type": "integer",
-          "format": "int32"
-        },
-        "gateway_replicas": {
-          "description": "gateway replicas",
-          "type": "integer",
-          "format": "int32"
-        },
-        "store_replicas": {
-          "description": "store replicas",
-          "type": "integer",
-          "format": "int32"
-        },
-        "timer_replicas": {
-          "description": "timer replicas",
-          "type": "integer",
-          "format": "int32"
-        },
-        "trigger_replicas": {
-          "description": "trigger replicas",
-          "type": "integer",
-          "format": "int32"
+        "annotations": {
+          "type": "object",
+          "required": [
+            "default"
+          ],
+          "additionalProperties": {
+            "type": "string"
+          }
         },
         "version": {
           "description": "cluster version",
@@ -716,7 +668,6 @@ func init() {
         "operationId": "createCluster",
         "parameters": [
           {
-            "description": "需要创建的Cluster信息",
             "name": "create",
             "in": "body",
             "required": true,
@@ -1085,45 +1036,14 @@ func init() {
       "description": "cluster create params",
       "type": "object",
       "properties": {
-        "controller_replicas": {
-          "description": "controller replicas",
-          "type": "integer",
-          "format": "int32",
-          "default": 3
-        },
-        "gateway_replicas": {
-          "description": "gateway replicas",
-          "type": "integer",
-          "format": "int32",
-          "default": 1
-        },
-        "metadata_storage_size": {
-          "description": "metadata storage size",
-          "type": "string",
-          "default": "10Gi"
-        },
-        "store_replicas": {
-          "description": "store replicas",
-          "type": "integer",
-          "format": "int32",
-          "default": 3
-        },
-        "store_storage_size": {
-          "description": "store storage size",
-          "type": "string",
-          "default": "10Gi"
-        },
-        "timer_replicas": {
-          "description": "timer replicas",
-          "type": "integer",
-          "format": "int32",
-          "default": 2
-        },
-        "trigger_replicas": {
-          "description": "trigger replicas",
-          "type": "integer",
-          "format": "int32",
-          "default": 1
+        "annotations": {
+          "type": "object",
+          "required": [
+            "default"
+          ],
+          "additionalProperties": {
+            "type": "string"
+          }
         },
         "version": {
           "description": "cluster version",
@@ -1160,30 +1080,14 @@ func init() {
       "description": "cluster patch params",
       "type": "object",
       "properties": {
-        "controller_replicas": {
-          "description": "controller replicas",
-          "type": "integer",
-          "format": "int32"
-        },
-        "gateway_replicas": {
-          "description": "gateway replicas",
-          "type": "integer",
-          "format": "int32"
-        },
-        "store_replicas": {
-          "description": "store replicas",
-          "type": "integer",
-          "format": "int32"
-        },
-        "timer_replicas": {
-          "description": "timer replicas",
-          "type": "integer",
-          "format": "int32"
-        },
-        "trigger_replicas": {
-          "description": "trigger replicas",
-          "type": "integer",
-          "format": "int32"
+        "annotations": {
+          "type": "object",
+          "required": [
+            "default"
+          ],
+          "additionalProperties": {
+            "type": "string"
+          }
         },
         "version": {
           "description": "cluster version",

@@ -22,6 +22,7 @@ import (
 
 	"github.com/go-logr/logr"
 	cons "github.com/vanus-labs/vanus-operator/internal/constants"
+	"github.com/vanus-labs/vanus-operator/pkg/apiserver/handlers/convert"
 	appsv1 "k8s.io/api/apps/v1"
 	corev1 "k8s.io/api/core/v1"
 	"k8s.io/apimachinery/pkg/api/errors"
@@ -90,7 +91,7 @@ func (r *CoreReconciler) generateStore(core *vanusv1alpha1.Core) *appsv1.Statefu
 			Labels:    labels,
 		},
 		Spec: appsv1.StatefulSetSpec{
-			Replicas: &core.Spec.Replicas.Store,
+			Replicas: &cons.DefaultStoreReplicas,
 			Selector: &metav1.LabelSelector{
 				MatchLabels: labels,
 			},
@@ -119,6 +120,14 @@ func (r *CoreReconciler) generateStore(core *vanusv1alpha1.Core) *appsv1.Statefu
 			},
 			VolumeClaimTemplates: getVolumeClaimTemplatesForStore(core),
 		},
+	}
+	if val, ok := core.Annotations[cons.CoreComponentStoreReplicasAnnotation]; ok && val != "" {
+		replicas, err := convert.StrToInt32(val)
+		if err == nil {
+			sts.Spec.Replicas = &replicas
+		} else {
+			sts.Spec.Replicas = &cons.DefaultStoreReplicas
+		}
 	}
 	// Set Store instance as the owner and controller
 	controllerutil.SetControllerReference(core, sts, r.Scheme)
@@ -180,7 +189,11 @@ func getVolumesForStore(core *vanusv1alpha1.Core) []corev1.Volume {
 func getVolumeClaimTemplatesForStore(core *vanusv1alpha1.Core) []corev1.PersistentVolumeClaim {
 	labels := genLabels(cons.DefaultStoreName)
 	requests := make(map[corev1.ResourceName]resource.Quantity)
-	requests[corev1.ResourceStorage] = resource.MustParse(cons.VolumeStorage)
+	if val, ok := core.Annotations[cons.CoreComponentStoreStorageSizeAnnotation]; ok {
+		requests[corev1.ResourceStorage] = resource.MustParse(val)
+	} else {
+		requests[corev1.ResourceStorage] = resource.MustParse(cons.DefaultStoreStorageSize)
+	}
 	defaultPersistentVolumeClaims := []corev1.PersistentVolumeClaim{{
 		ObjectMeta: metav1.ObjectMeta{
 			Labels: labels,
@@ -193,14 +206,8 @@ func getVolumeClaimTemplatesForStore(core *vanusv1alpha1.Core) []corev1.Persiste
 			},
 		},
 	}}
-	if len(core.Spec.VolumeClaimTemplates) != 0 {
-		if core.Spec.VolumeClaimTemplates[0].Name != "" {
-			defaultPersistentVolumeClaims[0].Name = core.Spec.VolumeClaimTemplates[0].Name
-		}
-		defaultPersistentVolumeClaims[0].Spec.Resources = core.Spec.VolumeClaimTemplates[0].Spec.Resources
-		if core.Spec.VolumeClaimTemplates[0].Spec.StorageClassName != nil {
-			defaultPersistentVolumeClaims[0].Spec.StorageClassName = core.Spec.VolumeClaimTemplates[0].Spec.StorageClassName
-		}
+	if val, ok := core.Annotations[cons.CoreComponentStoreStorageClassAnnotation]; ok && val != "" {
+		defaultPersistentVolumeClaims[0].Spec.StorageClassName = &val
 	}
 	return defaultPersistentVolumeClaims
 }
@@ -215,7 +222,7 @@ func (r *CoreReconciler) generateConfigMapForStore(core *vanusv1alpha1.Core) *co
 	value.WriteString("port: 11811\n")
 	value.WriteString("ip: ${POD_IP}\n")
 	value.WriteString("controllers:\n")
-	for i := int32(0); i < core.Spec.Replicas.Controller; i++ {
+	for i := int32(0); i < cons.DefaultControllerReplicas; i++ {
 		value.WriteString(fmt.Sprintf("  - vanus-controller-%d.vanus-controller:2048\n", i))
 	}
 	value.WriteString("volume:\n")

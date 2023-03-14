@@ -110,7 +110,7 @@ func (r *CoreReconciler) generateGateway(core *vanusv1alpha1.Core) *appsv1.Deplo
 			Labels:    labels,
 		},
 		Spec: appsv1.DeploymentSpec{
-			Replicas: &core.Spec.Replicas.Gateway,
+			Replicas: &cons.DefaultGatewayReplicas,
 			Selector: &metav1.LabelSelector{
 				MatchLabels: labels,
 			},
@@ -199,7 +199,7 @@ func (r *CoreReconciler) generateConfigMapForGateway(core *vanusv1alpha1.Core) *
 	value := bytes.Buffer{}
 	value.WriteString("port: 8080\n")
 	value.WriteString("controllers:\n")
-	for i := int32(0); i < core.Spec.Replicas.Controller; i++ {
+	for i := int32(0); i < cons.DefaultControllerReplicas; i++ {
 		value.WriteString(fmt.Sprintf("  - vanus-controller-%d.vanus-controller:2048\n", i))
 	}
 	data["gateway.yaml"] = value.String()

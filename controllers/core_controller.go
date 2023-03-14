@@ -81,6 +81,10 @@ func (r *CoreReconciler) Reconcile(ctx context.Context, req ctrl.Request) (ctrl.
 	if err != nil {
 		return result, err
 	}
+	result, err = r.handleRootController(ctx, logger, core)
+	if err != nil {
+		return result, err
+	}
 	result, err = r.handleController(ctx, logger, core)
 	if err != nil {
 		return result, err

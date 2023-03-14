@@ -54,7 +54,6 @@ paths:
           schema:
             type: "object"
             $ref: "#/definitions/Cluster_create"
-          description: "需要创建的Cluster信息"
       responses:
         '200':
           description: OK
@@ -337,39 +336,12 @@ definitions:
       version:
         type: "string"
         description: "cluster version"
-      controller_replicas:
-        type: "integer"
-        format: "int32"
-        default: 3
-        description: "controller replicas"
-      store_replicas:
-        type: "integer"
-        format: "int32"
-        default: 3
-        description: "store replicas"
-      trigger_replicas:
-        type: "integer"
-        format: "int32"
-        default: 1
-        description: "trigger replicas"
-      timer_replicas:
-        type: "integer"
-        format: "int32"
-        default: 2
-        description: "timer replicas"
-      gateway_replicas:
-        type: "integer"
-        format: "int32"
-        default: 1
-        description: "gateway replicas"
-      metadata_storage_size:
-        type: "string"
-        default: "10Gi"
-        description: "metadata storage size"
-      store_storage_size:
-        type: "string"
-        default: "10Gi"
-        description: "store storage size"
+      annotations:
+        type: object
+        required:
+          - default
+        additionalProperties:
+          type: string
 
   Cluster_patch:
     type: object
@@ -378,26 +350,12 @@ definitions:
       version:
         type: "string"
         description: "cluster version"
-      controller_replicas:
-        type: "integer"
-        format: "int32"
-        description: "controller replicas"
-      store_replicas:
-        type: "integer"
-        format: "int32"
-        description: "store replicas"
-      trigger_replicas:
-        type: "integer"
-        format: "int32"
-        description: "trigger replicas"
-      timer_replicas:
-        type: "integer"
-        format: "int32"
-        description: "timer replicas"
-      gateway_replicas:
-        type: "integer"
-        format: "int32"
-        description: "gateway replicas"
+      annotations:
+        type: object
+        required:
+          - default
+        additionalProperties:
+          type: string
 
   Cluster_delete:
     type: object

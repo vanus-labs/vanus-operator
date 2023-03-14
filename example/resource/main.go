@@ -40,26 +40,8 @@ func generateVanus() *vanusv1alpha1.Core {
 			Name:      "vanus-controller-jk",
 		},
 		Spec: vanusv1alpha1.CoreSpec{
-			Replicas: vanusv1alpha1.Replicas{
-				Controller: 3,
-				Store:      3,
-				Trigger:    1,
-				Timer:      2,
-				Gateway:    1,
-			},
 			ImagePullPolicy: corev1.PullIfNotPresent,
 			Resources:       corev1.ResourceRequirements{},
-			VolumeClaimTemplates: []corev1.PersistentVolumeClaim{{
-				ObjectMeta: metav1.ObjectMeta{
-					Name: "data",
-				},
-				Spec: corev1.PersistentVolumeClaimSpec{
-					AccessModes: []corev1.PersistentVolumeAccessMode{corev1.ReadWriteOnce},
-					Resources: corev1.ResourceRequirements{
-						Requests: requests,
-					},
-				},
-			}},
 		},
 	}
 	return vanus

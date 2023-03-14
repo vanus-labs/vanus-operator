@@ -19,13 +19,33 @@ const (
 	DefaultNamespace        = "vanus"
 	DefaultVanusClusterName = "vanus-cluster"
 
-	DefaultOperatorName   = "vanus-operator"
-	DefaultControllerName = "vanus-controller"
-	DefaultEtcdName       = "vanus-etcd"
-	DefaultStoreName      = "vanus-store"
-	DefaultTriggerName    = "vanus-trigger"
-	DefaultTimerName      = "vanus-timer"
-	DefaultGatewayName    = "vanus-gateway"
+	DefaultOperatorName       = "vanus-operator"
+	DefaultControllerName     = "vanus-controller"
+	DefaultRootControllerName = "vanus-root-controller"
+	DefaultEtcdName           = "vanus-etcd"
+	DefaultStoreName          = "vanus-store"
+	DefaultTriggerName        = "vanus-trigger"
+	DefaultTimerName          = "vanus-timer"
+	DefaultGatewayName        = "vanus-gateway"
+
+	DefaultEtcdStorageSize  = "10Gi"
+	DefaultStoreStorageSize = "10Gi"
+)
+
+const (
+	CoreComponentEtcdReplicasAnnotation       = "core.vanus.ai/etcd-replicas"
+	CoreComponentControllerReplicasAnnotation = "core.vanus.ai/controller-replicas"
+	CoreComponentStoreReplicasAnnotation      = "core.vanus.ai/store-replicas"
+	CoreComponentGatewayReplicasAnnotation    = "core.vanus.ai/gateway-replicas"
+	CoreComponentTriggerReplicasAnnotation    = "core.vanus.ai/trigger-replicas"
+	CoreComponentTimerReplicasAnnotation      = "core.vanus.ai/timer-replicas"
+	CoreComponentEtcdStorageSizeAnnotation    = "core.vanus.ai/etcd-storage-size"
+	CoreComponentEtcdStorageClassAnnotation   = "core.vanus.ai/etcd-storage-class"
+	CoreComponentStoreStorageSizeAnnotation   = "core.vanus.ai/store-storage-size"
+	CoreComponentStoreStorageClassAnnotation  = "core.vanus.ai/store-storage-class"
+	ConnectorServiceTypeAnnotation            = "connector.vanus.ai/service-type"
+	ConnectorServicePortAnnotation            = "connector.vanus.ai/service-port"
+	ConnectorNetworkHostDomainAnnotation      = "connector.vanus.ai/network-host-domain"
 )
 
 const (
@@ -37,6 +57,15 @@ const (
 
 	// ControllerConfigMapName is the name of Controller configmap
 	ControllerConfigMapName = "config-controller"
+
+	// RootControllerContainerName is the name of Controller container
+	RootControllerContainerName = "root-controller"
+
+	// ControllerImageName is the name of Controller container image
+	RootControllerImageName = "public.ecr.aws/vanus/root-controller"
+
+	// ControllerConfigMapName is the name of Controller configmap
+	RootControllerConfigMapName = "config-root-controller"
 
 	// EtcdInitContainerName is the name of init Controller container
 	EtcdInitContainerName = "init"
@@ -117,7 +146,7 @@ const (
 	VolumeName = "data"
 
 	// VolumeStorage is the directory of Store data files
-	VolumeStorage = "1Gi"
+	VolumeStorage = "10Gi"
 
 	// StorageModeStorageClass is the name of StorageClass storage mode
 	StorageModeStorageClass = "StorageClass"
@@ -150,10 +179,14 @@ const (
 	ContainerPortNameCloudevents = "cloudevents"
 	ContainerPortNameSinkProxy   = "sinkproxy"
 
-	ControllerPortGrpc       = 2048
-	ControllerPortEtcdClient = 2379
-	ControllerPortEtcdPeer   = 2380
-	ControllerPortMetrics    = 2112
+	ControllerPortGrpc    = 2048
+	ControllerPortMetrics = 2112
+
+	RootControllerPortGrpc    = 2021
+	RootControllerPortMetrics = 2112
+
+	EtcdPortClient = 2379
+	EtcdPortPeer   = 2380
 
 	StorePortGrpc              = 11811
 	TriggerPortGrpc            = 2148
@@ -190,7 +223,10 @@ var (
 )
 
 var (
-	DefaultControllerReplicas int32 = 3
+	DefaultControllerReplicas int32 = 2
 	DefaultEtcdReplicas       int32 = 3
 	DefaultStoreReplicas      int32 = 3
+	DefaultGatewayReplicas    int32 = 1
+	DefaultTriggerReplicas    int32 = 1
+	DefaultTimerReplicas      int32 = 2
 )

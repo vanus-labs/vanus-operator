@@ -35,7 +35,7 @@ type CreateClusterParams struct {
 	// HTTP Request Object
 	HTTPRequest *http.Request `json:"-"`
 
-	/*需要创建的Cluster信息
+	/*
 	  Required: true
 	  In: body
 	*/
