@@ -189,7 +189,7 @@ func getVolumesForStore(core *vanusv1alpha1.Core) []corev1.Volume {
 func getVolumeClaimTemplatesForStore(core *vanusv1alpha1.Core) []corev1.PersistentVolumeClaim {
 	labels := genLabels(cons.DefaultStoreName)
 	requests := make(map[corev1.ResourceName]resource.Quantity)
-	if val, ok := core.Annotations[cons.CoreComponentStoreStorageSizeAnnotation]; ok {
+	if val, ok := core.Annotations[cons.CoreComponentStoreStorageSizeAnnotation]; ok && val != "" {
 		requests[corev1.ResourceStorage] = resource.MustParse(val)
 	} else {
 		requests[corev1.ResourceStorage] = resource.MustParse(cons.DefaultStoreStorageSize)
@@ -217,7 +217,14 @@ func annotationsForStore() map[string]string {
 }
 
 func (r *CoreReconciler) generateConfigMapForStore(core *vanusv1alpha1.Core) *corev1.ConfigMap {
-	data := make(map[string]string)
+	var capacity int64
+	if val, ok := core.Annotations[cons.CoreComponentStoreStorageSizeAnnotation]; ok && val != "" {
+		quantity := resource.MustParse(val)
+		capacity = quantity.Value()
+	} else {
+		quantity := resource.MustParse(cons.DefaultStoreStorageSize)
+		capacity = quantity.Value()
+	}
 	value := bytes.Buffer{}
 	value.WriteString("port: 11811\n")
 	value.WriteString("ip: ${POD_IP}\n")
@@ -228,7 +235,7 @@ func (r *CoreReconciler) generateConfigMapForStore(core *vanusv1alpha1.Core) *co
 	value.WriteString("volume:\n")
 	value.WriteString("  id: ${VOLUME_ID}\n")
 	value.WriteString("  dir: /data\n")
-	value.WriteString("  capacity: 1073741824\n")
+	value.WriteString(fmt.Sprintf("  capacity: %d\n", capacity))
 	value.WriteString("meta_store:\n")
 	value.WriteString("  wal:\n")
 	value.WriteString("    io:\n")
@@ -241,6 +248,7 @@ func (r *CoreReconciler) generateConfigMapForStore(core *vanusv1alpha1.Core) *co
 	value.WriteString("  wal:\n")
 	value.WriteString("    io:\n")
 	value.WriteString("      engine: psync\n")
+	data := make(map[string]string)
 	data["store.yaml"] = value.String()
 	cm := &corev1.ConfigMap{
 		ObjectMeta: metav1.ObjectMeta{
