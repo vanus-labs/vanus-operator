@@ -62,7 +62,7 @@ func (r *CoreReconciler) handleTimer(ctx context.Context, logger logr.Logger, co
 			return ctrl.Result{}, nil
 		} else {
 			logger.Error(err, "Failed to get Timer Deployment.")
-			return ctrl.Result{RequeueAfter: time.Duration(cons.RequeueIntervalInSecond) * time.Second}, err
+			return ctrl.Result{RequeueAfter: time.Duration(cons.DefaultRequeueIntervalInSecond) * time.Second}, err
 		}
 	}
 
@@ -79,11 +79,11 @@ func (r *CoreReconciler) handleTimer(ctx context.Context, logger logr.Logger, co
 
 // returns a Timer Deployment object
 func (r *CoreReconciler) generateTimer(core *vanusv1alpha1.Core) *appsv1.Deployment {
-	labels := genLabels(cons.DefaultTimerName)
+	labels := genLabels(cons.DefaultTimerComponentName)
 	annotations := annotationsForTimer()
 	dep := &appsv1.Deployment{
 		ObjectMeta: metav1.ObjectMeta{
-			Name:      cons.DefaultTimerName,
+			Name:      cons.DefaultTimerComponentName,
 			Namespace: cons.DefaultNamespace,
 			Labels:    labels,
 		},
@@ -98,10 +98,10 @@ func (r *CoreReconciler) generateTimer(core *vanusv1alpha1.Core) *appsv1.Deploym
 					Annotations: annotations,
 				},
 				Spec: corev1.PodSpec{
-					ServiceAccountName: cons.ServiceAccountName,
+					ServiceAccountName: cons.OperatorServiceAccountName,
 					Containers: []corev1.Container{{
-						Name:            cons.TimerContainerName,
-						Image:           fmt.Sprintf("%s:%s", cons.TimerImageName, core.Spec.Version),
+						Name:            cons.DefaultTimerContainerName,
+						Image:           fmt.Sprintf("%s:%s", cons.DefaultTimerContainerImageName, core.Spec.Version),
 						ImagePullPolicy: core.Spec.ImagePullPolicy,
 						Resources:       core.Spec.Resources,
 						Env:             getEnvForTimer(core),
@@ -134,19 +134,19 @@ func getEnvForTimer(core *vanusv1alpha1.Core) []corev1.EnvVar {
 
 func getVolumeMountsForTimer(core *vanusv1alpha1.Core) []corev1.VolumeMount {
 	defaultVolumeMounts := []corev1.VolumeMount{{
-		MountPath: cons.ConfigMountPath,
-		Name:      cons.TimerConfigMapName,
+		MountPath: cons.DefaultConfigMountPath,
+		Name:      cons.DefaultTimerConfigMapName,
 	}}
 	return defaultVolumeMounts
 }
 
 func getVolumesForTimer(core *vanusv1alpha1.Core) []corev1.Volume {
 	defaultVolumes := []corev1.Volume{{
-		Name: cons.TimerConfigMapName,
+		Name: cons.DefaultTimerConfigMapName,
 		VolumeSource: corev1.VolumeSource{
 			ConfigMap: &corev1.ConfigMapVolumeSource{
 				LocalObjectReference: corev1.LocalObjectReference{
-					Name: cons.TimerConfigMapName,
+					Name: cons.DefaultTimerConfigMapName,
 				},
 			}},
 	}}
@@ -154,7 +154,7 @@ func getVolumesForTimer(core *vanusv1alpha1.Core) []corev1.Volume {
 }
 
 func annotationsForTimer() map[string]string {
-	return map[string]string{"vanus.dev/metrics.port": fmt.Sprintf("%d", cons.ControllerPortMetrics)}
+	return map[string]string{"vanus.dev/metrics.port": fmt.Sprintf("%d", cons.DefaultPortMetrics)}
 }
 
 func (r *CoreReconciler) generateConfigMapForTimer(core *vanusv1alpha1.Core) *corev1.ConfigMap {
@@ -164,23 +164,23 @@ func (r *CoreReconciler) generateConfigMapForTimer(core *vanusv1alpha1.Core) *co
 	value.WriteString("ip: ${POD_IP}\n")
 	value.WriteString("etcd:\n")
 	for i := int32(0); i < cons.DefaultEtcdReplicas; i++ {
-		value.WriteString(fmt.Sprintf("  - vanus-etcd-%d.vanus-etcd:2379\n", i))
+		value.WriteString(fmt.Sprintf("  - vanus-etcd-%d.vanus-etcd:%s\n", i, core.Annotations[cons.CoreComponentEtcdPortClientAnnotation]))
 	}
 	value.WriteString("controllers:\n")
 	for i := int32(0); i < cons.DefaultControllerReplicas; i++ {
-		value.WriteString(fmt.Sprintf("  - vanus-controller-%d.vanus-controller.vanus.svc:2048\n", i))
+		value.WriteString(fmt.Sprintf("  - vanus-controller-%d.vanus-controller.vanus.svc:%s\n", i, core.Annotations[cons.CoreComponentControllerSvcPortAnnotation]))
 	}
 	value.WriteString("leader_election:\n")
 	value.WriteString("  lease_duration: 15\n")
 	value.WriteString("timingwheel:\n")
-	value.WriteString("  tick: 1\n")
-	value.WriteString("  wheel_size: 32\n")
-	value.WriteString("  layers: 4\n")
+	value.WriteString(fmt.Sprintf("  tick: %s\n", core.Annotations[cons.CoreComponentTimerTimingWheelTickAnnotation]))
+	value.WriteString(fmt.Sprintf("  wheel_size: %s\n", core.Annotations[cons.CoreComponentTimerTimingWheelSizeAnnotation]))
+	value.WriteString(fmt.Sprintf("  layers: %s\n", core.Annotations[cons.CoreComponentTimerTimingWheelLayersAnnotation]))
 	data["timer.yaml"] = value.String()
 	cm := &corev1.ConfigMap{
 		ObjectMeta: metav1.ObjectMeta{
 			Namespace:  cons.DefaultNamespace,
-			Name:       cons.TimerConfigMapName,
+			Name:       cons.DefaultTimerConfigMapName,
 			Finalizers: []string{metav1.FinalizerOrphanDependents},
 		},
 		Data: data,

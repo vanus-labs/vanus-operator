@@ -68,7 +68,7 @@ func (a *Api) createClusterHandler(params cluster.CreateClusterParams) middlewar
 	defer func() {
 		if failedToExit {
 			if coreDeployed {
-				err = a.deleteCore(cons.DefaultVanusClusterName, cons.DefaultNamespace)
+				err = a.deleteCore(cons.DefaultVanusCoreName, cons.DefaultNamespace)
 				if err != nil {
 					log.Warningf("clear controller failed when failed to exit, err: %s\n", err.Error())
 				}
@@ -76,11 +76,11 @@ func (a *Api) createClusterHandler(params cluster.CreateClusterParams) middlewar
 		}
 	}()
 
-	log.Infof("Creating a new Core cluster, Core.Namespace: %s, Core.Name: %s\n", cons.DefaultNamespace, cons.DefaultVanusClusterName)
+	log.Infof("Creating a new Core cluster, Core.Namespace: %s, Core.Name: %s\n", cons.DefaultNamespace, cons.DefaultVanusCoreName)
 	core := generateCore(params.Create)
 	resultCore, err := a.createCore(core, cons.DefaultNamespace)
 	if err != nil {
-		log.Errorf("Failed to create new Core cluster, Core.Namespace: %s, Core.Name: %s, err: %s\n", cons.DefaultNamespace, cons.DefaultVanusClusterName, err.Error())
+		log.Errorf("Failed to create new Core cluster, Core.Namespace: %s, Core.Name: %s, err: %s\n", cons.DefaultNamespace, cons.DefaultVanusCoreName, err.Error())
 		failedToExit = true
 		return utils.Response(500, err)
 	}
@@ -107,7 +107,7 @@ func (a *Api) deleteClusterHandler(params cluster.DeleteClusterParams) middlewar
 		return utils.Response(400, errors.New("cluster not exist"))
 	}
 
-	err = a.deleteCore(cons.DefaultNamespace, cons.DefaultVanusClusterName)
+	err = a.deleteCore(cons.DefaultNamespace, cons.DefaultVanusCoreName)
 	if err != nil {
 		log.Errorf("delete vanus cluster failed, err: %s\n", err.Error())
 		return utils.Response(500, err)
@@ -125,7 +125,7 @@ func (a *Api) patchClusterHandler(params cluster.PatchClusterParams) middleware.
 	core := &vanusv1alpha1.Core{
 		ObjectMeta: metav1.ObjectMeta{
 			Namespace:   cons.DefaultNamespace,
-			Name:        cons.DefaultVanusClusterName,
+			Name:        cons.DefaultVanusCoreName,
 			Annotations: params.Patch.Annotations,
 		},
 		Spec: vanusv1alpha1.CoreSpec{
@@ -134,7 +134,7 @@ func (a *Api) patchClusterHandler(params cluster.PatchClusterParams) middleware.
 	}
 	resultCore, err := a.patchCore(core)
 	if err != nil {
-		log.Errorf("Failed to patch Core cluster, Core.Namespace: %s, Core.Name: %s, err: %s\n", cons.DefaultNamespace, cons.DefaultVanusClusterName, err.Error())
+		log.Errorf("Failed to patch Core cluster, Core.Namespace: %s, Core.Name: %s, err: %s\n", cons.DefaultNamespace, cons.DefaultVanusCoreName, err.Error())
 		return utils.Response(500, err)
 	}
 	log.Infof("Successfully patch Core cluster: %+v\n", resultCore)
@@ -147,9 +147,9 @@ func (a *Api) patchClusterHandler(params cluster.PatchClusterParams) middleware.
 }
 
 func (a *Api) getClusterHandler(params cluster.GetClusterParams) middleware.Responder {
-	vanus, err := a.getCore(cons.DefaultNamespace, cons.DefaultVanusClusterName, &metav1.GetOptions{})
+	vanus, err := a.getCore(cons.DefaultNamespace, cons.DefaultVanusCoreName, &metav1.GetOptions{})
 	if err != nil {
-		log.Error(err, "Failed to get Core cluster", "Core.Namespace: ", cons.DefaultNamespace, "Core.Name: ", cons.DefaultVanusClusterName)
+		log.Error(err, "Failed to get Core cluster", "Core.Namespace: ", cons.DefaultNamespace, "Core.Name: ", cons.DefaultVanusCoreName)
 		return utils.Response(500, err)
 	}
 	retcode := int32(200)
@@ -176,7 +176,7 @@ func (a *Api) checkParamsValid(cluster *models.ClusterCreate) (bool, error) {
 }
 
 func (a *Api) checkClusterExist() (bool, error) {
-	_, exist, err := a.existCore(cons.DefaultNamespace, cons.DefaultVanusClusterName, &metav1.GetOptions{})
+	_, exist, err := a.existCore(cons.DefaultNamespace, cons.DefaultVanusCoreName, &metav1.GetOptions{})
 	if err != nil {
 		log.Errorf("Failed to get Core cluster, err: %s\n", err.Error())
 		return false, err
@@ -188,7 +188,7 @@ func generateCore(cluster *models.ClusterCreate) *vanusv1alpha1.Core {
 	controller := &vanusv1alpha1.Core{
 		ObjectMeta: metav1.ObjectMeta{
 			Namespace:   cons.DefaultNamespace,
-			Name:        cons.DefaultVanusClusterName,
+			Name:        cons.DefaultVanusCoreName,
 			Annotations: cluster.Annotations,
 		},
 		Spec: vanusv1alpha1.CoreSpec{

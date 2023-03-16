@@ -81,7 +81,7 @@ func (r *ConnectorReconciler) Reconcile(ctx context.Context, req ctrl.Request) (
 		}
 		// Error reading the object - requeue the req.
 		logger.Error(err, "Failed to get Connector.")
-		return ctrl.Result{RequeueAfter: time.Duration(cons.RequeueIntervalInSecond) * time.Second}, err
+		return ctrl.Result{RequeueAfter: time.Duration(cons.DefaultRequeueIntervalInSecond) * time.Second}, err
 	}
 
 	// Create Connector Deployment
@@ -133,26 +133,26 @@ func (r *ConnectorReconciler) Reconcile(ctx context.Context, req ctrl.Request) (
 					}
 				} else {
 					logger.Error(err, "Failed to get Connector Service.")
-					return ctrl.Result{RequeueAfter: time.Duration(cons.RequeueIntervalInSecond) * time.Second}, err
+					return ctrl.Result{RequeueAfter: time.Duration(cons.DefaultRequeueIntervalInSecond) * time.Second}, err
 				}
 			}
 
 			// Update Ingress
 			if _, ok := connector.Annotations[cons.ConnectorNetworkHostDomainAnnotation]; ok {
 				ingress := &networkingv1.Ingress{}
-				err = r.Get(ctx, types.NamespacedName{Name: cons.DefaultOperatorName, Namespace: cons.DefaultNamespace}, ingress)
+				err = r.Get(ctx, types.NamespacedName{Name: cons.DefaultVanusOperatorName, Namespace: cons.DefaultNamespace}, ingress)
 				if err != nil {
 					if errors.IsNotFound(err) {
 						logger.Error(err, "Failed to get operator Ingress cause not found.")
-						return ctrl.Result{RequeueAfter: time.Duration(cons.RequeueIntervalInSecond) * time.Second}, err
+						return ctrl.Result{RequeueAfter: time.Duration(cons.DefaultRequeueIntervalInSecond) * time.Second}, err
 					}
 					logger.Error(err, "Failed to get operator Ingress.")
-					return ctrl.Result{RequeueAfter: time.Duration(cons.RequeueIntervalInSecond) * time.Second}, err
+					return ctrl.Result{RequeueAfter: time.Duration(cons.DefaultRequeueIntervalInSecond) * time.Second}, err
 				}
 				updateIngress, err := r.generateIngressForConnector(connector, ingress)
 				if err != nil {
 					logger.Error(err, "Failed to generate update Ingress.")
-					return ctrl.Result{RequeueAfter: time.Duration(cons.RequeueIntervalInSecond) * time.Second}, err
+					return ctrl.Result{RequeueAfter: time.Duration(cons.DefaultRequeueIntervalInSecond) * time.Second}, err
 				}
 				err = r.Update(ctx, updateIngress)
 				if err != nil {
@@ -166,7 +166,7 @@ func (r *ConnectorReconciler) Reconcile(ctx context.Context, req ctrl.Request) (
 			return ctrl.Result{}, nil
 		} else {
 			logger.Error(err, "Failed to get Connector Deployment.")
-			return ctrl.Result{RequeueAfter: time.Duration(cons.RequeueIntervalInSecond) * time.Second}, err
+			return ctrl.Result{RequeueAfter: time.Duration(cons.DefaultRequeueIntervalInSecond) * time.Second}, err
 		}
 	}
 
@@ -208,7 +208,7 @@ func (r *ConnectorReconciler) getDeploymentForConnector(connector *vanusv1alpha1
 				},
 				Spec: corev1.PodSpec{
 					Containers: []corev1.Container{{
-						Name:            cons.ConnectorContainerName,
+						Name:            cons.DefaultConnectorContainerName,
 						Image:           connector.Spec.Image,
 						ImagePullPolicy: connector.Spec.ImagePullPolicy,
 						Resources: corev1.ResourceRequirements{
@@ -239,15 +239,15 @@ func getEnvForConnector(connector *vanusv1alpha1.Connector) []corev1.EnvVar {
 
 func getVolumeMountsForConnector(connector *vanusv1alpha1.Connector) []corev1.VolumeMount {
 	defaultVolumeMounts := []corev1.VolumeMount{{
-		Name:      cons.VanceConfigMapName,
-		MountPath: cons.VanceConfigMountPath,
+		Name:      cons.DefaultConnectorConfigMapName,
+		MountPath: cons.DefaultConnectorConfigMountPath,
 	}}
 	return defaultVolumeMounts
 }
 
 func getVolumesForConnector(connector *vanusv1alpha1.Connector) []corev1.Volume {
 	defaultVolumes := []corev1.Volume{{
-		Name: cons.VanceConfigMapName,
+		Name: cons.DefaultConnectorConfigMapName,
 		VolumeSource: corev1.VolumeSource{
 			ConfigMap: &corev1.ConfigMapVolumeSource{
 				LocalObjectReference: corev1.LocalObjectReference{
