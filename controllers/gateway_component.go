@@ -198,6 +198,7 @@ func (r *CoreReconciler) generateConfigMapForGateway(core *vanusv1alpha1.Core) *
 	data := make(map[string]string)
 	value := bytes.Buffer{}
 	value.WriteString("port: 8080\n")
+	value.WriteString("sink_port: 8082\n")
 	value.WriteString("controllers:\n")
 	for i := int32(0); i < cons.DefaultControllerReplicas; i++ {
 		value.WriteString(fmt.Sprintf("  - vanus-controller-%d.vanus-controller:2048\n", i))
