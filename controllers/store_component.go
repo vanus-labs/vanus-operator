@@ -22,7 +22,7 @@ import (
 
 	"github.com/go-logr/logr"
 	cons "github.com/vanus-labs/vanus-operator/internal/constants"
-	"github.com/vanus-labs/vanus-operator/pkg/apiserver/handlers/convert"
+	"github.com/vanus-labs/vanus-operator/internal/convert"
 	appsv1 "k8s.io/api/apps/v1"
 	corev1 "k8s.io/api/core/v1"
 	"k8s.io/apimachinery/pkg/api/errors"
@@ -64,7 +64,7 @@ func (r *CoreReconciler) handleStore(ctx context.Context, logger logr.Logger, co
 			return ctrl.Result{}, nil
 		} else {
 			logger.Error(err, "Failed to get Store StatefulSet.")
-			return ctrl.Result{RequeueAfter: time.Duration(cons.RequeueIntervalInSecond) * time.Second}, err
+			return ctrl.Result{RequeueAfter: time.Duration(cons.DefaultRequeueIntervalInSecond) * time.Second}, err
 		}
 	}
 
@@ -82,23 +82,24 @@ func (r *CoreReconciler) handleStore(ctx context.Context, logger logr.Logger, co
 
 // returns a Store StatefulSet object
 func (r *CoreReconciler) generateStore(core *vanusv1alpha1.Core) *appsv1.StatefulSet {
-	labels := genLabels(cons.DefaultStoreName)
+	labels := genLabels(cons.DefaultStoreComponentName)
 	annotations := annotationsForStore()
+	replicas, _ := convert.StrToInt32(core.Annotations[cons.CoreComponentStoreReplicasAnnotation])
 	sts := &appsv1.StatefulSet{
 		ObjectMeta: metav1.ObjectMeta{
-			Name:      cons.DefaultStoreName,
+			Name:      cons.DefaultStoreComponentName,
 			Namespace: cons.DefaultNamespace,
 			Labels:    labels,
 		},
 		Spec: appsv1.StatefulSetSpec{
-			Replicas: &cons.DefaultStoreReplicas,
+			Replicas: &replicas,
 			Selector: &metav1.LabelSelector{
 				MatchLabels: labels,
 			},
 			UpdateStrategy: appsv1.StatefulSetUpdateStrategy{
 				Type: appsv1.RollingUpdateStatefulSetStrategyType,
 			},
-			ServiceName: cons.DefaultStoreName,
+			ServiceName: cons.DefaultStoreComponentName,
 			Template: corev1.PodTemplateSpec{
 				ObjectMeta: metav1.ObjectMeta{
 					Annotations: annotations,
@@ -106,8 +107,8 @@ func (r *CoreReconciler) generateStore(core *vanusv1alpha1.Core) *appsv1.Statefu
 				},
 				Spec: corev1.PodSpec{
 					Containers: []corev1.Container{{
-						Name:            cons.StoreContainerName,
-						Image:           fmt.Sprintf("%s:%s", cons.StoreImageName, core.Spec.Version),
+						Name:            cons.DefaultStoreContainerName,
+						Image:           fmt.Sprintf("%s:%s", cons.DefaultStoreContainerImageName, core.Spec.Version),
 						ImagePullPolicy: core.Spec.ImagePullPolicy,
 						Resources:       core.Spec.Resources,
 						Env:             getEnvForStore(core),
@@ -120,14 +121,6 @@ func (r *CoreReconciler) generateStore(core *vanusv1alpha1.Core) *appsv1.Statefu
 			},
 			VolumeClaimTemplates: getVolumeClaimTemplatesForStore(core),
 		},
-	}
-	if val, ok := core.Annotations[cons.CoreComponentStoreReplicasAnnotation]; ok && val != "" {
-		replicas, err := convert.StrToInt32(val)
-		if err == nil {
-			sts.Spec.Replicas = &replicas
-		} else {
-			sts.Spec.Replicas = &cons.DefaultStoreReplicas
-		}
 	}
 	// Set Store instance as the owner and controller
 	controllerutil.SetControllerReference(core, sts, r.Scheme)
@@ -152,18 +145,18 @@ func getEnvForStore(core *vanusv1alpha1.Core) []corev1.EnvVar {
 func getPortsForStore(core *vanusv1alpha1.Core) []corev1.ContainerPort {
 	defaultPorts := []corev1.ContainerPort{{
 		Name:          cons.ContainerPortNameGrpc,
-		ContainerPort: cons.StorePortGrpc,
+		ContainerPort: cons.DefaultStoreContainerPortGrpc,
 	}}
 	return defaultPorts
 }
 
 func getVolumeMountsForStore(core *vanusv1alpha1.Core) []corev1.VolumeMount {
 	defaultVolumeMounts := []corev1.VolumeMount{{
-		MountPath: cons.ConfigMountPath,
-		Name:      cons.StoreConfigMapName,
+		MountPath: cons.DefaultConfigMountPath,
+		Name:      cons.DefaultStoreConfigMapName,
 	}, {
-		MountPath: cons.VolumeMountPath,
-		Name:      cons.VolumeName,
+		MountPath: cons.DefaultVolumeMountPath,
+		Name:      cons.DefaultVolumeName,
 	}}
 	return defaultVolumeMounts
 }
@@ -175,11 +168,11 @@ func getCommandForStore(core *vanusv1alpha1.Core) []string {
 
 func getVolumesForStore(core *vanusv1alpha1.Core) []corev1.Volume {
 	defaultVolumes := []corev1.Volume{{
-		Name: cons.StoreConfigMapName,
+		Name: cons.DefaultStoreConfigMapName,
 		VolumeSource: corev1.VolumeSource{
 			ConfigMap: &corev1.ConfigMapVolumeSource{
 				LocalObjectReference: corev1.LocalObjectReference{
-					Name: cons.StoreConfigMapName,
+					Name: cons.DefaultStoreConfigMapName,
 				},
 			}},
 	}}
@@ -187,17 +180,13 @@ func getVolumesForStore(core *vanusv1alpha1.Core) []corev1.Volume {
 }
 
 func getVolumeClaimTemplatesForStore(core *vanusv1alpha1.Core) []corev1.PersistentVolumeClaim {
-	labels := genLabels(cons.DefaultStoreName)
+	labels := genLabels(cons.DefaultStoreComponentName)
 	requests := make(map[corev1.ResourceName]resource.Quantity)
-	if val, ok := core.Annotations[cons.CoreComponentStoreStorageSizeAnnotation]; ok && val != "" {
-		requests[corev1.ResourceStorage] = resource.MustParse(val)
-	} else {
-		requests[corev1.ResourceStorage] = resource.MustParse(cons.DefaultStoreStorageSize)
-	}
+	requests[corev1.ResourceStorage] = resource.MustParse(core.Annotations[cons.CoreComponentStoreStorageSizeAnnotation])
 	defaultPersistentVolumeClaims := []corev1.PersistentVolumeClaim{{
 		ObjectMeta: metav1.ObjectMeta{
 			Labels: labels,
-			Name:   cons.VolumeName,
+			Name:   cons.DefaultVolumeName,
 		},
 		Spec: corev1.PersistentVolumeClaimSpec{
 			AccessModes: []corev1.PersistentVolumeAccessMode{corev1.ReadWriteOnce},
@@ -213,29 +202,22 @@ func getVolumeClaimTemplatesForStore(core *vanusv1alpha1.Core) []corev1.Persiste
 }
 
 func annotationsForStore() map[string]string {
-	return map[string]string{"vanus.dev/metrics.port": fmt.Sprintf("%d", cons.ControllerPortMetrics)}
+	return map[string]string{"vanus.dev/metrics.port": fmt.Sprintf("%d", cons.DefaultPortMetrics)}
 }
 
 func (r *CoreReconciler) generateConfigMapForStore(core *vanusv1alpha1.Core) *corev1.ConfigMap {
-	var capacity int64
-	if val, ok := core.Annotations[cons.CoreComponentStoreStorageSizeAnnotation]; ok && val != "" {
-		quantity := resource.MustParse(val)
-		capacity = quantity.Value()
-	} else {
-		quantity := resource.MustParse(cons.DefaultStoreStorageSize)
-		capacity = quantity.Value()
-	}
 	value := bytes.Buffer{}
-	value.WriteString("port: 11811\n")
+	value.WriteString(fmt.Sprintf("port: %d\n", cons.DefaultStoreContainerPortGrpc))
 	value.WriteString("ip: ${POD_IP}\n")
 	value.WriteString("controllers:\n")
 	for i := int32(0); i < cons.DefaultControllerReplicas; i++ {
-		value.WriteString(fmt.Sprintf("  - vanus-controller-%d.vanus-controller:2048\n", i))
+		value.WriteString(fmt.Sprintf("  - vanus-controller-%d.vanus-controller:%s\n", i, core.Annotations[cons.CoreComponentControllerSvcPortAnnotation]))
 	}
 	value.WriteString("volume:\n")
 	value.WriteString("  id: ${VOLUME_ID}\n")
 	value.WriteString("  dir: /data\n")
-	value.WriteString(fmt.Sprintf("  capacity: %d\n", capacity))
+	quantity := resource.MustParse(core.Annotations[cons.CoreComponentStoreStorageSizeAnnotation])
+	value.WriteString(fmt.Sprintf("  capacity: %d\n", quantity.Value()))
 	value.WriteString("meta_store:\n")
 	value.WriteString("  wal:\n")
 	value.WriteString("    io:\n")
@@ -253,7 +235,7 @@ func (r *CoreReconciler) generateConfigMapForStore(core *vanusv1alpha1.Core) *co
 	cm := &corev1.ConfigMap{
 		ObjectMeta: metav1.ObjectMeta{
 			Namespace:  cons.DefaultNamespace,
-			Name:       cons.StoreConfigMapName,
+			Name:       cons.DefaultStoreConfigMapName,
 			Finalizers: []string{metav1.FinalizerOrphanDependents},
 		},
 		Data: data,

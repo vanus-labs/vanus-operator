@@ -23,6 +23,7 @@ import (
 
 	"github.com/go-logr/logr"
 	cons "github.com/vanus-labs/vanus-operator/internal/constants"
+	"github.com/vanus-labs/vanus-operator/internal/convert"
 	appsv1 "k8s.io/api/apps/v1"
 	corev1 "k8s.io/api/core/v1"
 	"k8s.io/apimachinery/pkg/api/errors"
@@ -39,7 +40,7 @@ func (r *CoreReconciler) handleRootController(ctx context.Context, logger logr.L
 	rootController := r.generateRootController(core)
 	// Check if the statefulSet already exists, if not create a new one
 	sts := &appsv1.StatefulSet{}
-	err := r.Get(ctx, types.NamespacedName{Name: cons.DefaultRootControllerName, Namespace: cons.DefaultNamespace}, sts)
+	err := r.Get(ctx, types.NamespacedName{Name: cons.DefaultRootControllerComponentName, Namespace: cons.DefaultNamespace}, sts)
 	if err != nil {
 		if errors.IsNotFound(err) {
 			// Create rootController ConfigMap
@@ -78,13 +79,13 @@ func (r *CoreReconciler) handleRootController(ctx context.Context, logger logr.L
 					}
 				} else {
 					logger.Error(err, "Failed to get rootController Service.")
-					return ctrl.Result{RequeueAfter: time.Duration(cons.RequeueIntervalInSecond) * time.Second}, err
+					return ctrl.Result{RequeueAfter: time.Duration(cons.DefaultRequeueIntervalInSecond) * time.Second}, err
 				}
 			}
 			return ctrl.Result{}, nil
 		} else {
 			logger.Error(err, "Failed to get rootController StatefulSet.")
-			return ctrl.Result{RequeueAfter: time.Duration(cons.RequeueIntervalInSecond) * time.Second}, err
+			return ctrl.Result{RequeueAfter: time.Duration(cons.DefaultRequeueIntervalInSecond) * time.Second}, err
 		}
 	}
 
@@ -106,14 +107,14 @@ func (r *CoreReconciler) handleRootController(ctx context.Context, logger logr.L
 		ready, err := r.waitRootControllerIsReady(ctx, core)
 		if err != nil {
 			logger.Error(err, "Wait for rootController is ready but got error")
-			return ctrl.Result{RequeueAfter: time.Duration(cons.RequeueIntervalInSecond) * time.Second}, err
+			return ctrl.Result{RequeueAfter: time.Duration(cons.DefaultRequeueIntervalInSecond) * time.Second}, err
 		}
 		if ready {
 			break
 		}
 		select {
 		case <-t.C:
-			return ctrl.Result{RequeueAfter: time.Duration(cons.RequeueIntervalInSecond) * time.Second}, stderr.New("root-controller isn't ready")
+			return ctrl.Result{RequeueAfter: time.Duration(cons.DefaultRequeueIntervalInSecond) * time.Second}, stderr.New("root-controller isn't ready")
 		default:
 			time.Sleep(time.Second)
 		}
@@ -125,11 +126,11 @@ func (r *CoreReconciler) handleRootController(ctx context.Context, logger logr.L
 
 // returns a rootController StatefulSet object
 func (r *CoreReconciler) generateRootController(core *vanusv1alpha1.Core) *appsv1.StatefulSet {
-	labels := genLabels(cons.DefaultRootControllerName)
+	labels := genLabels(cons.DefaultRootControllerComponentName)
 	annotations := annotationsForRootController()
 	sts := &appsv1.StatefulSet{
 		ObjectMeta: metav1.ObjectMeta{
-			Name:      cons.DefaultRootControllerName,
+			Name:      cons.DefaultRootControllerComponentName,
 			Namespace: cons.DefaultNamespace,
 			Labels:    labels,
 		},
@@ -141,7 +142,7 @@ func (r *CoreReconciler) generateRootController(core *vanusv1alpha1.Core) *appsv
 			UpdateStrategy: appsv1.StatefulSetUpdateStrategy{
 				Type: appsv1.RollingUpdateStatefulSetStrategyType,
 			},
-			ServiceName: cons.DefaultRootControllerName,
+			ServiceName: cons.DefaultRootControllerComponentName,
 			Template: corev1.PodTemplateSpec{
 				ObjectMeta: metav1.ObjectMeta{
 					Annotations: annotations,
@@ -149,8 +150,8 @@ func (r *CoreReconciler) generateRootController(core *vanusv1alpha1.Core) *appsv
 				},
 				Spec: corev1.PodSpec{
 					Containers: []corev1.Container{{
-						Name:            cons.RootControllerContainerName,
-						Image:           fmt.Sprintf("%s:%s", cons.RootControllerImageName, core.Spec.Version),
+						Name:            cons.DefaultRootControllerContainerName,
+						Image:           fmt.Sprintf("%s:%s", cons.DefaultRootControllerContainerImageName, core.Spec.Version),
 						ImagePullPolicy: core.Spec.ImagePullPolicy,
 						Resources:       core.Spec.Resources,
 						Env:             getEnvForRootController(core),
@@ -171,7 +172,7 @@ func (r *CoreReconciler) generateRootController(core *vanusv1alpha1.Core) *appsv
 
 func (r *CoreReconciler) waitRootControllerIsReady(ctx context.Context, core *vanusv1alpha1.Core) (bool, error) {
 	sts := &appsv1.StatefulSet{}
-	err := r.Get(ctx, types.NamespacedName{Name: cons.DefaultRootControllerName, Namespace: cons.DefaultNamespace}, sts)
+	err := r.Get(ctx, types.NamespacedName{Name: cons.DefaultRootControllerComponentName, Namespace: cons.DefaultNamespace}, sts)
 	if err != nil {
 		return false, err
 	}
@@ -196,20 +197,21 @@ func getEnvForRootController(core *vanusv1alpha1.Core) []corev1.EnvVar {
 }
 
 func getPortsForRootController(core *vanusv1alpha1.Core) []corev1.ContainerPort {
+	port, _ := convert.StrToInt32(core.Annotations[cons.CoreComponentRootControllerSvcPortAnnotation])
 	defaultPorts := []corev1.ContainerPort{{
 		Name:          cons.ContainerPortNameGrpc,
-		ContainerPort: cons.RootControllerPortGrpc,
+		ContainerPort: port,
 	}, {
 		Name:          cons.ContainerPortNameMetrics,
-		ContainerPort: cons.RootControllerPortMetrics,
+		ContainerPort: cons.DefaultPortMetrics,
 	}}
 	return defaultPorts
 }
 
 func getVolumeMountsForRootController(core *vanusv1alpha1.Core) []corev1.VolumeMount {
 	defaultVolumeMounts := []corev1.VolumeMount{{
-		MountPath: cons.ConfigMountPath,
-		Name:      cons.RootControllerConfigMapName,
+		MountPath: cons.DefaultConfigMountPath,
+		Name:      cons.DefaultRootControllerConfigMapName,
 	}}
 	return defaultVolumeMounts
 }
@@ -221,11 +223,11 @@ func getCommandForRootController(core *vanusv1alpha1.Core) []string {
 
 func getVolumesForRootController(core *vanusv1alpha1.Core) []corev1.Volume {
 	defaultVolumes := []corev1.Volume{{
-		Name: cons.RootControllerConfigMapName,
+		Name: cons.DefaultRootControllerConfigMapName,
 		VolumeSource: corev1.VolumeSource{
 			ConfigMap: &corev1.ConfigMapVolumeSource{
 				LocalObjectReference: corev1.LocalObjectReference{
-					Name: cons.RootControllerConfigMapName,
+					Name: cons.DefaultRootControllerConfigMapName,
 				},
 			}},
 	}}
@@ -233,7 +235,7 @@ func getVolumesForRootController(core *vanusv1alpha1.Core) []corev1.Volume {
 }
 
 func annotationsForRootController() map[string]string {
-	return map[string]string{"vanus.dev/metrics.port": fmt.Sprintf("%d", cons.RootControllerPortMetrics)}
+	return map[string]string{"vanus.dev/metrics.port": fmt.Sprintf("%d", cons.DefaultPortMetrics)}
 }
 
 func (r *CoreReconciler) generateConfigMapForRootController(core *vanusv1alpha1.Core) *corev1.ConfigMap {
@@ -242,7 +244,7 @@ func (r *CoreReconciler) generateConfigMapForRootController(core *vanusv1alpha1.
 	value.WriteString("node_id: ${NODE_ID}\n")
 	value.WriteString("name: ${POD_NAME}\n")
 	value.WriteString("ip: ${POD_IP}\n")
-	value.WriteString(fmt.Sprintf("port: %d\n", cons.RootControllerPortGrpc))
+	value.WriteString(fmt.Sprintf("port: %s\n", core.Annotations[cons.CoreComponentRootControllerSvcPortAnnotation]))
 	value.WriteString("observability:\n")
 	value.WriteString("  metrics:\n")
 	value.WriteString("    enable: true\n")
@@ -255,18 +257,18 @@ func (r *CoreReconciler) generateConfigMapForRootController(core *vanusv1alpha1.
 	value.WriteString("  component_name: root-controller\n")
 	value.WriteString("  lease_duration_in_sec: 15\n")
 	value.WriteString("  etcd:\n")
-	for i := int32(0); i < 3; i++ {
-		value.WriteString(fmt.Sprintf("    - vanus-etcd-%d.vanus-etcd:%d\n", i, cons.EtcdPortClient))
+	for i := int32(0); i < cons.DefaultEtcdReplicas; i++ {
+		value.WriteString(fmt.Sprintf("    - vanus-etcd-%d.vanus-etcd:%s\n", i, core.Annotations[cons.CoreComponentEtcdPortClientAnnotation]))
 	}
 	value.WriteString("  topology:\n")
 	for i := int32(0); i < cons.DefaultControllerReplicas; i++ {
-		value.WriteString(fmt.Sprintf("    vanus-root-controller-%d: vanus-root-controller-%d.vanus-root-controller.vanus.svc:%d\n", i, i, cons.RootControllerPortGrpc))
+		value.WriteString(fmt.Sprintf("    vanus-root-controller-%d: vanus-root-controller-%d.vanus-root-controller.vanus.svc:%s\n", i, i, core.Annotations[cons.CoreComponentRootControllerSvcPortAnnotation]))
 	}
 	data["root.yaml"] = value.String()
 	cm := &corev1.ConfigMap{
 		ObjectMeta: metav1.ObjectMeta{
 			Namespace:  cons.DefaultNamespace,
-			Name:       cons.RootControllerConfigMapName,
+			Name:       cons.DefaultRootControllerConfigMapName,
 			Finalizers: []string{metav1.FinalizerOrphanDependents},
 		},
 		Data: data,
@@ -277,23 +279,24 @@ func (r *CoreReconciler) generateConfigMapForRootController(core *vanusv1alpha1.
 }
 
 func (r *CoreReconciler) generateSvcForRootController(core *vanusv1alpha1.Core) *corev1.Service {
-	labels := genLabels(cons.DefaultRootControllerName)
+	port, _ := convert.StrToInt32(core.Annotations[cons.CoreComponentRootControllerSvcPortAnnotation])
+	labels := genLabels(cons.DefaultRootControllerComponentName)
 	svc := &corev1.Service{
 		ObjectMeta: metav1.ObjectMeta{
 			Namespace:  cons.DefaultNamespace,
-			Name:       cons.DefaultRootControllerName,
+			Name:       cons.DefaultRootControllerComponentName,
 			Labels:     labels,
 			Finalizers: []string{metav1.FinalizerOrphanDependents},
 		},
 		Spec: corev1.ServiceSpec{
-			ClusterIP: cons.HeadlessService,
+			ClusterIP: cons.HeadlessServiceClusterIP,
 			Selector:  labels,
 			Ports: []corev1.ServicePort{
 				{
-					Name:       cons.DefaultRootControllerName,
-					Port:       cons.RootControllerPortGrpc,
+					Name:       cons.DefaultRootControllerComponentName,
+					Port:       port,
 					Protocol:   corev1.ProtocolTCP,
-					TargetPort: intstr.FromInt(cons.RootControllerPortGrpc),
+					TargetPort: intstr.FromInt(int(port)),
 				},
 			},
 		},

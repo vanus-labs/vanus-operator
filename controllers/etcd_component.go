@@ -17,10 +17,12 @@ package controllers
 import (
 	"context"
 	stderr "errors"
+	"fmt"
 	"time"
 
 	"github.com/go-logr/logr"
 	cons "github.com/vanus-labs/vanus-operator/internal/constants"
+	"github.com/vanus-labs/vanus-operator/internal/convert"
 	appsv1 "k8s.io/api/apps/v1"
 	corev1 "k8s.io/api/core/v1"
 	"k8s.io/apimachinery/pkg/api/errors"
@@ -38,7 +40,7 @@ func (r *CoreReconciler) handleEtcd(ctx context.Context, logger logr.Logger, cor
 	// Create Etcd StatefulSet
 	// Check if the statefulSet already exists, if not create a new one
 	sts := &appsv1.StatefulSet{}
-	err := r.Get(ctx, types.NamespacedName{Name: cons.DefaultEtcdName, Namespace: cons.DefaultNamespace}, sts)
+	err := r.Get(ctx, types.NamespacedName{Name: cons.DefaultEtcdComponentName, Namespace: cons.DefaultNamespace}, sts)
 	if err != nil {
 		if errors.IsNotFound(err) {
 			// Create Etcd Service
@@ -68,7 +70,7 @@ func (r *CoreReconciler) handleEtcd(ctx context.Context, logger logr.Logger, cor
 					}
 				} else {
 					logger.Error(err, "Failed to get Etcd Service.")
-					return ctrl.Result{RequeueAfter: time.Duration(cons.RequeueIntervalInSecond) * time.Second}, err
+					return ctrl.Result{RequeueAfter: time.Duration(cons.DefaultRequeueIntervalInSecond) * time.Second}, err
 				}
 			}
 
@@ -81,14 +83,14 @@ func (r *CoreReconciler) handleEtcd(ctx context.Context, logger logr.Logger, cor
 				ready, err := r.waitEtcdIsReady(ctx)
 				if err != nil {
 					logger.Error(err, "Wait for Etcd install is ready but got error")
-					return ctrl.Result{RequeueAfter: time.Duration(cons.RequeueIntervalInSecond) * time.Second}, err
+					return ctrl.Result{RequeueAfter: time.Duration(cons.DefaultRequeueIntervalInSecond) * time.Second}, err
 				}
 				if ready {
 					break
 				}
 				select {
 				case <-ticker.C:
-					return ctrl.Result{RequeueAfter: time.Duration(cons.RequeueIntervalInSecond) * time.Second}, stderr.New("etcd cluster isn't ready")
+					return ctrl.Result{RequeueAfter: time.Duration(cons.DefaultRequeueIntervalInSecond) * time.Second}, stderr.New("etcd cluster isn't ready")
 				default:
 					time.Sleep(time.Second)
 				}
@@ -97,7 +99,7 @@ func (r *CoreReconciler) handleEtcd(ctx context.Context, logger logr.Logger, cor
 			return ctrl.Result{}, nil
 		} else {
 			logger.Error(err, "Failed to get Etcd StatefulSet.")
-			return ctrl.Result{RequeueAfter: time.Duration(cons.RequeueIntervalInSecond) * time.Second}, err
+			return ctrl.Result{RequeueAfter: time.Duration(cons.DefaultRequeueIntervalInSecond) * time.Second}, err
 		}
 	}
 
@@ -108,7 +110,7 @@ func (r *CoreReconciler) handleEtcd(ctx context.Context, logger logr.Logger, cor
 
 func (r *CoreReconciler) waitEtcdIsReady(ctx context.Context) (bool, error) {
 	sts := &appsv1.StatefulSet{}
-	err := r.Get(ctx, types.NamespacedName{Name: cons.DefaultEtcdName, Namespace: cons.DefaultNamespace}, sts)
+	err := r.Get(ctx, types.NamespacedName{Name: cons.DefaultEtcdComponentName, Namespace: cons.DefaultNamespace}, sts)
 	if err != nil {
 		return false, err
 	}
@@ -126,10 +128,10 @@ func (r *CoreReconciler) generateEtcd(core *vanusv1alpha1.Core) *appsv1.Stateful
 		runAsUser                = int64(1001)
 		fsGroup                  = int64(1001)
 	)
-	labels := genLabels(cons.DefaultEtcdName)
+	labels := genLabels(cons.DefaultEtcdComponentName)
 	sts := &appsv1.StatefulSet{
 		ObjectMeta: metav1.ObjectMeta{
-			Name:      cons.DefaultEtcdName,
+			Name:      cons.DefaultEtcdComponentName,
 			Namespace: cons.DefaultNamespace,
 			Labels:    labels,
 		},
@@ -142,15 +144,15 @@ func (r *CoreReconciler) generateEtcd(core *vanusv1alpha1.Core) *appsv1.Stateful
 			UpdateStrategy: appsv1.StatefulSetUpdateStrategy{
 				Type: appsv1.RollingUpdateStatefulSetStrategyType,
 			},
-			ServiceName: cons.DefaultEtcdName,
+			ServiceName: cons.DefaultEtcdComponentName,
 			Template: corev1.PodTemplateSpec{
 				ObjectMeta: metav1.ObjectMeta{
 					Labels: labels,
 				},
 				Spec: corev1.PodSpec{
 					Containers: []corev1.Container{{
-						Name:            cons.EtcdContainerName,
-						Image:           cons.EtcdImageName,
+						Name:            cons.DefaultEtcdContainerName,
+						Image:           cons.DefaultEtcdContainerImageName,
 						ImagePullPolicy: core.Spec.ImagePullPolicy,
 						Resources:       core.Spec.Resources,
 						Env:             getEnvForEtcd(core),
@@ -198,7 +200,6 @@ func (r *CoreReconciler) generateEtcd(core *vanusv1alpha1.Core) *appsv1.Stateful
 					SecurityContext: &corev1.PodSecurityContext{
 						FSGroup: &fsGroup,
 					},
-					// Volumes: getVolumesForEtcd(core),
 				},
 			},
 			VolumeClaimTemplates: getVolumeClaimTemplatesForEtcd(core),
@@ -250,22 +251,22 @@ func getEnvForEtcd(core *vanusv1alpha1.Core) []corev1.EnvVar {
 		Value: "yes",
 	}, {
 		Name:  "ETCD_ADVERTISE_CLIENT_URLS",
-		Value: "http://$(MY_POD_NAME).vanus-etcd.vanus.svc.cluster.local:2379,http://vanus-etcd.vanus.svc.cluster.local:2379",
+		Value: fmt.Sprintf("http://$(MY_POD_NAME).vanus-etcd.vanus.svc.cluster.local:%s,http://vanus-etcd.vanus.svc.cluster.local:%s", core.Annotations[cons.CoreComponentEtcdPortClientAnnotation], core.Annotations[cons.CoreComponentEtcdPortClientAnnotation]),
 	}, {
 		Name:  "ETCD_LISTEN_CLIENT_URLS",
-		Value: "http://0.0.0.0:2379",
+		Value: fmt.Sprintf("http://0.0.0.0:%s", core.Annotations[cons.CoreComponentEtcdPortClientAnnotation]),
 	}, {
 		Name:  "ETCD_INITIAL_ADVERTISE_PEER_URLS",
-		Value: "http://$(MY_POD_NAME).vanus-etcd.vanus.svc.cluster.local:2380",
+		Value: fmt.Sprintf("http://$(MY_POD_NAME).vanus-etcd.vanus.svc.cluster.local:%s", core.Annotations[cons.CoreComponentEtcdPortPeerAnnotation]),
 	}, {
 		Name:  "ETCD_LISTEN_PEER_URLS",
-		Value: "http://0.0.0.0:2380",
+		Value: fmt.Sprintf("http://0.0.0.0:%s", core.Annotations[cons.CoreComponentEtcdPortPeerAnnotation]),
 	}, {
 		Name:  "ETCD_INITIAL_CLUSTER_STATE",
 		Value: "new",
 	}, {
 		Name:  "ETCD_INITIAL_CLUSTER",
-		Value: "vanus-etcd-0=http://vanus-etcd-0.vanus-etcd.vanus.svc.cluster.local:2380,vanus-etcd-1=http://vanus-etcd-1.vanus-etcd.vanus.svc.cluster.local:2380,vanus-etcd-2=http://vanus-etcd-2.vanus-etcd.vanus.svc.cluster.local:2380",
+		Value: fmt.Sprintf("vanus-etcd-0=http://vanus-etcd-0.vanus-etcd.vanus.svc.cluster.local:%s,vanus-etcd-1=http://vanus-etcd-1.vanus-etcd.vanus.svc.cluster.local:%s,vanus-etcd-2=http://vanus-etcd-2.vanus-etcd.vanus.svc.cluster.local:%s", core.Annotations[cons.CoreComponentEtcdPortPeerAnnotation], core.Annotations[cons.CoreComponentEtcdPortPeerAnnotation], core.Annotations[cons.CoreComponentEtcdPortPeerAnnotation]),
 	}, {
 		Name:  "ETCD_CLUSTER_DOMAIN",
 		Value: "vanus-etcd.vanus.svc.cluster.local",
@@ -275,36 +276,34 @@ func getEnvForEtcd(core *vanusv1alpha1.Core) []corev1.EnvVar {
 }
 
 func getPortsForEtcd(core *vanusv1alpha1.Core) []corev1.ContainerPort {
+	portClient, _ := convert.StrToInt32(core.Annotations[cons.CoreComponentEtcdPortClientAnnotation])
+	portPeer, _ := convert.StrToInt32(core.Annotations[cons.CoreComponentEtcdPortPeerAnnotation])
 	defaultPorts := []corev1.ContainerPort{{
-		Name:          cons.ContainerPortNameEtcdClient,
-		ContainerPort: cons.EtcdPortClient,
+		Name:          cons.ContainerPortNameClient,
+		ContainerPort: portClient,
 	}, {
-		Name:          cons.ContainerPortNameEtcdPeer,
-		ContainerPort: cons.EtcdPortPeer,
+		Name:          cons.ContainerPortNamePeer,
+		ContainerPort: portPeer,
 	}}
 	return defaultPorts
 }
 
 func getVolumeMountsForEtcd(core *vanusv1alpha1.Core) []corev1.VolumeMount {
 	defaultVolumeMounts := []corev1.VolumeMount{{
-		MountPath: cons.EtcdVolumeMountPath,
-		Name:      cons.VolumeName,
+		MountPath: cons.DefaultEtcdVolumeMountPath,
+		Name:      cons.DefaultVolumeName,
 	}}
 	return defaultVolumeMounts
 }
 
 func getVolumeClaimTemplatesForEtcd(core *vanusv1alpha1.Core) []corev1.PersistentVolumeClaim {
-	labels := genLabels(cons.DefaultEtcdName)
+	labels := genLabels(cons.DefaultEtcdComponentName)
 	requests := make(map[corev1.ResourceName]resource.Quantity)
-	if val, ok := core.Annotations[cons.CoreComponentEtcdStorageSizeAnnotation]; ok {
-		requests[corev1.ResourceStorage] = resource.MustParse(val)
-	} else {
-		requests[corev1.ResourceStorage] = resource.MustParse(cons.DefaultEtcdStorageSize)
-	}
+	requests[corev1.ResourceStorage] = resource.MustParse(core.Annotations[cons.CoreComponentEtcdStorageSizeAnnotation])
 	defaultPersistentVolumeClaims := []corev1.PersistentVolumeClaim{{
 		ObjectMeta: metav1.ObjectMeta{
 			Labels: labels,
-			Name:   cons.VolumeName,
+			Name:   cons.DefaultVolumeName,
 		},
 		Spec: corev1.PersistentVolumeClaimSpec{
 			AccessModes: []corev1.PersistentVolumeAccessMode{corev1.ReadWriteOnce},
@@ -320,28 +319,30 @@ func getVolumeClaimTemplatesForEtcd(core *vanusv1alpha1.Core) []corev1.Persisten
 }
 
 func (r *CoreReconciler) generateSvcForEtcd(core *vanusv1alpha1.Core) *corev1.Service {
-	labels := genLabels(cons.DefaultEtcdName)
+	portClient, _ := convert.StrToInt32(core.Annotations[cons.CoreComponentEtcdPortClientAnnotation])
+	portPeer, _ := convert.StrToInt32(core.Annotations[cons.CoreComponentEtcdPortPeerAnnotation])
+	labels := genLabels(cons.DefaultEtcdComponentName)
 	svc := &corev1.Service{
 		ObjectMeta: metav1.ObjectMeta{
 			Namespace:  cons.DefaultNamespace,
-			Name:       cons.DefaultEtcdName,
+			Name:       cons.DefaultEtcdComponentName,
 			Labels:     labels,
 			Finalizers: []string{metav1.FinalizerOrphanDependents},
 		},
 		Spec: corev1.ServiceSpec{
-			ClusterIP: cons.HeadlessService,
+			ClusterIP: cons.HeadlessServiceClusterIP,
 			Selector:  labels,
 			Ports: []corev1.ServicePort{
 				{
-					Name:       cons.ContainerPortNameEtcdClient,
-					Port:       cons.EtcdPortClient,
+					Name:       cons.ContainerPortNameClient,
+					Port:       portClient,
 					Protocol:   corev1.ProtocolTCP,
-					TargetPort: intstr.FromInt(cons.EtcdPortClient),
+					TargetPort: intstr.FromInt(int(portClient)),
 				}, {
-					Name:       cons.ContainerPortNameEtcdPeer,
-					Port:       cons.EtcdPortPeer,
+					Name:       cons.ContainerPortNamePeer,
+					Port:       portPeer,
 					Protocol:   corev1.ProtocolTCP,
-					TargetPort: intstr.FromInt(cons.EtcdPortPeer),
+					TargetPort: intstr.FromInt(int(portPeer)),
 				}},
 			PublishNotReadyAddresses: true,
 		},

@@ -22,7 +22,7 @@ import (
 
 	"github.com/go-logr/logr"
 	cons "github.com/vanus-labs/vanus-operator/internal/constants"
-	"github.com/vanus-labs/vanus-operator/pkg/apiserver/handlers/convert"
+	"github.com/vanus-labs/vanus-operator/internal/convert"
 	appsv1 "k8s.io/api/apps/v1"
 	corev1 "k8s.io/api/core/v1"
 	"k8s.io/apimachinery/pkg/api/errors"
@@ -63,7 +63,7 @@ func (r *CoreReconciler) handleTrigger(ctx context.Context, logger logr.Logger, 
 			return ctrl.Result{}, nil
 		} else {
 			logger.Error(err, "Failed to get Trigger Deployment.")
-			return ctrl.Result{RequeueAfter: time.Duration(cons.RequeueIntervalInSecond) * time.Second}, err
+			return ctrl.Result{RequeueAfter: time.Duration(cons.DefaultRequeueIntervalInSecond) * time.Second}, err
 		}
 	}
 
@@ -80,16 +80,17 @@ func (r *CoreReconciler) handleTrigger(ctx context.Context, logger logr.Logger, 
 
 // returns a Trigger Deployment object
 func (r *CoreReconciler) generateTrigger(core *vanusv1alpha1.Core) *appsv1.Deployment {
-	labels := genLabels(cons.DefaultTriggerName)
+	labels := genLabels(cons.DefaultTriggerComponentName)
 	annotations := annotationsForTrigger()
+	replicas, _ := convert.StrToInt32(core.Annotations[cons.CoreComponentTriggerReplicasAnnotation])
 	dep := &appsv1.Deployment{
 		ObjectMeta: metav1.ObjectMeta{
-			Name:      cons.DefaultTriggerName,
+			Name:      cons.DefaultTriggerComponentName,
 			Namespace: cons.DefaultNamespace,
 			Labels:    labels,
 		},
 		Spec: appsv1.DeploymentSpec{
-			Replicas: &cons.DefaultTriggerReplicas,
+			Replicas: &replicas,
 			Selector: &metav1.LabelSelector{
 				MatchLabels: labels,
 			},
@@ -99,10 +100,10 @@ func (r *CoreReconciler) generateTrigger(core *vanusv1alpha1.Core) *appsv1.Deplo
 					Annotations: annotations,
 				},
 				Spec: corev1.PodSpec{
-					ServiceAccountName: cons.ServiceAccountName,
+					ServiceAccountName: cons.OperatorServiceAccountName,
 					Containers: []corev1.Container{{
-						Name:            cons.TriggerContainerName,
-						Image:           fmt.Sprintf("%s:%s", cons.TriggerImageName, core.Spec.Version),
+						Name:            cons.DefaultTriggerContainerName,
+						Image:           fmt.Sprintf("%s:%s", cons.DefaultTriggerContainerImageName, core.Spec.Version),
 						ImagePullPolicy: core.Spec.ImagePullPolicy,
 						Resources:       core.Spec.Resources,
 						Env:             getEnvForTrigger(core),
@@ -113,14 +114,6 @@ func (r *CoreReconciler) generateTrigger(core *vanusv1alpha1.Core) *appsv1.Deplo
 				},
 			},
 		},
-	}
-	if val, ok := core.Annotations[cons.CoreComponentTriggerReplicasAnnotation]; ok && val != "" {
-		replicas, err := convert.StrToInt32(val)
-		if err == nil {
-			dep.Spec.Replicas = &replicas
-		} else {
-			dep.Spec.Replicas = &cons.DefaultTriggerReplicas
-		}
 	}
 	// Set Trigger instance as the owner and controller
 	controllerutil.SetControllerReference(core, dep, r.Scheme)
@@ -145,26 +138,26 @@ func getEnvForTrigger(core *vanusv1alpha1.Core) []corev1.EnvVar {
 func getPortsForTrigger(core *vanusv1alpha1.Core) []corev1.ContainerPort {
 	defaultPorts := []corev1.ContainerPort{{
 		Name:          cons.ContainerPortNameGrpc,
-		ContainerPort: cons.TriggerPortGrpc,
+		ContainerPort: cons.DefaultTriggerContainerPortGrpc,
 	}}
 	return defaultPorts
 }
 
 func getVolumeMountsForTrigger(core *vanusv1alpha1.Core) []corev1.VolumeMount {
 	defaultVolumeMounts := []corev1.VolumeMount{{
-		MountPath: cons.ConfigMountPath,
-		Name:      cons.TriggerConfigMapName,
+		MountPath: cons.DefaultConfigMountPath,
+		Name:      cons.DefaultTriggerConfigMapName,
 	}}
 	return defaultVolumeMounts
 }
 
 func getVolumesForTrigger(core *vanusv1alpha1.Core) []corev1.Volume {
 	defaultVolumes := []corev1.Volume{{
-		Name: cons.TriggerConfigMapName,
+		Name: cons.DefaultTriggerConfigMapName,
 		VolumeSource: corev1.VolumeSource{
 			ConfigMap: &corev1.ConfigMapVolumeSource{
 				LocalObjectReference: corev1.LocalObjectReference{
-					Name: cons.TriggerConfigMapName,
+					Name: cons.DefaultTriggerConfigMapName,
 				},
 			}},
 	}}
@@ -172,23 +165,23 @@ func getVolumesForTrigger(core *vanusv1alpha1.Core) []corev1.Volume {
 }
 
 func annotationsForTrigger() map[string]string {
-	return map[string]string{"vanus.dev/metrics.port": fmt.Sprintf("%d", cons.ControllerPortMetrics)}
+	return map[string]string{"vanus.dev/metrics.port": fmt.Sprintf("%d", cons.DefaultPortMetrics)}
 }
 
 func (r *CoreReconciler) generateConfigMapForTrigger(core *vanusv1alpha1.Core) *corev1.ConfigMap {
 	data := make(map[string]string)
 	value := bytes.Buffer{}
-	value.WriteString("port: 2148\n")
+	value.WriteString(fmt.Sprintf("port: %d\n", cons.DefaultTriggerContainerPortGrpc))
 	value.WriteString("ip: ${POD_IP}\n")
 	value.WriteString("controllers:\n")
 	for i := int32(0); i < cons.DefaultControllerReplicas; i++ {
-		value.WriteString(fmt.Sprintf("  - vanus-controller-%d.vanus-controller.vanus.svc:2048\n", i))
+		value.WriteString(fmt.Sprintf("  - vanus-controller-%d.vanus-controller.vanus.svc:%s\n", i, core.Annotations[cons.CoreComponentControllerSvcPortAnnotation]))
 	}
 	data["trigger.yaml"] = value.String()
 	cm := &corev1.ConfigMap{
 		ObjectMeta: metav1.ObjectMeta{
 			Namespace:  cons.DefaultNamespace,
-			Name:       cons.TriggerConfigMapName,
+			Name:       cons.DefaultTriggerConfigMapName,
 			Finalizers: []string{metav1.FinalizerOrphanDependents},
 		},
 		Data: data,

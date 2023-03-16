@@ -254,7 +254,7 @@ func (a *Api) existConnector(namespace string, name string, opts *metav1.GetOpti
 }
 
 func (a *Api) updateIngress(connector *vanusv1alpha1.Connector) error {
-	ingress, err := a.ctrl.K8SClientSet().NetworkingV1().Ingresses(cons.DefaultNamespace).Get(context.TODO(), cons.DefaultOperatorName, metav1.GetOptions{})
+	ingress, err := a.ctrl.K8SClientSet().NetworkingV1().Ingresses(cons.DefaultNamespace).Get(context.TODO(), cons.DefaultVanusOperatorName, metav1.GetOptions{})
 	if err != nil {
 		return err
 	}

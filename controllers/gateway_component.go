@@ -22,6 +22,7 @@ import (
 
 	"github.com/go-logr/logr"
 	cons "github.com/vanus-labs/vanus-operator/internal/constants"
+	"github.com/vanus-labs/vanus-operator/internal/convert"
 	appsv1 "k8s.io/api/apps/v1"
 	corev1 "k8s.io/api/core/v1"
 	"k8s.io/apimachinery/pkg/api/errors"
@@ -77,13 +78,13 @@ func (r *CoreReconciler) handleGateway(ctx context.Context, logger logr.Logger, 
 					}
 				} else {
 					logger.Error(err, "Failed to get Gateway Service.")
-					return ctrl.Result{RequeueAfter: time.Duration(cons.RequeueIntervalInSecond) * time.Second}, err
+					return ctrl.Result{RequeueAfter: time.Duration(cons.DefaultRequeueIntervalInSecond) * time.Second}, err
 				}
 			}
 			return ctrl.Result{}, nil
 		} else {
 			logger.Error(err, "Failed to get Gateway Deployment.")
-			return ctrl.Result{RequeueAfter: time.Duration(cons.RequeueIntervalInSecond) * time.Second}, err
+			return ctrl.Result{RequeueAfter: time.Duration(cons.DefaultRequeueIntervalInSecond) * time.Second}, err
 		}
 	}
 
@@ -101,11 +102,11 @@ func (r *CoreReconciler) handleGateway(ctx context.Context, logger logr.Logger, 
 
 // returns a Gateway Deployment object
 func (r *CoreReconciler) generateGateway(core *vanusv1alpha1.Core) *appsv1.Deployment {
-	labels := genLabels(cons.DefaultGatewayName)
+	labels := genLabels(cons.DefaultGatewayComponentName)
 	annotations := annotationsForGateway()
 	dep := &appsv1.Deployment{
 		ObjectMeta: metav1.ObjectMeta{
-			Name:      cons.DefaultGatewayName,
+			Name:      cons.DefaultGatewayComponentName,
 			Namespace: cons.DefaultNamespace,
 			Labels:    labels,
 		},
@@ -120,10 +121,10 @@ func (r *CoreReconciler) generateGateway(core *vanusv1alpha1.Core) *appsv1.Deplo
 					Annotations: annotations,
 				},
 				Spec: corev1.PodSpec{
-					ServiceAccountName: cons.ServiceAccountName,
+					ServiceAccountName: cons.OperatorServiceAccountName,
 					Containers: []corev1.Container{{
-						Name:            cons.GatewayContainerName,
-						Image:           fmt.Sprintf("%s:%s", cons.GatewayImageName, core.Spec.Version),
+						Name:            cons.DefaultGatewayContainerName,
+						Image:           fmt.Sprintf("%s:%s", cons.DefaultGatewayContainerImageName, core.Spec.Version),
 						ImagePullPolicy: core.Spec.ImagePullPolicy,
 						Resources:       core.Spec.Resources,
 						Env:             getEnvForGateway(core),
@@ -156,34 +157,38 @@ func getEnvForGateway(core *vanusv1alpha1.Core) []corev1.EnvVar {
 }
 
 func getPortsForGateway(core *vanusv1alpha1.Core) []corev1.ContainerPort {
+	portProxy, _ := convert.StrToInt32(core.Annotations[cons.CoreComponentGatewayPortProxyAnnotation])
+	// TODO(jiangkai): Currently, the port of CloudEvents configuration is not supported, default is portProxy+1.
+	// portCloudEvents, _ := convert.StrToInt32(core.Annotations[cons.CoreComponentGatewayPortCloudEventsAnnotation])
+	portCloudEvents := portProxy + 1
 	defaultPorts := []corev1.ContainerPort{{
 		Name:          cons.ContainerPortNameProxy,
-		ContainerPort: cons.GatewayPortProxy,
+		ContainerPort: portProxy,
 	}, {
 		Name:          cons.ContainerPortNameCloudevents,
-		ContainerPort: cons.GatewayPortCloudevents,
+		ContainerPort: portCloudEvents,
 	}, {
 		Name:          cons.ContainerPortNameSinkProxy,
-		ContainerPort: cons.GatewayPortSinkProxy,
+		ContainerPort: cons.DefaultGatewayContainerPortSinkProxy,
 	}}
 	return defaultPorts
 }
 
 func getVolumeMountsForGateway(core *vanusv1alpha1.Core) []corev1.VolumeMount {
 	defaultVolumeMounts := []corev1.VolumeMount{{
-		MountPath: cons.ConfigMountPath,
-		Name:      cons.GatewayConfigMapName,
+		MountPath: cons.DefaultConfigMountPath,
+		Name:      cons.DefaultGatewayConfigMapName,
 	}}
 	return defaultVolumeMounts
 }
 
 func getVolumesForGateway(core *vanusv1alpha1.Core) []corev1.Volume {
 	defaultVolumes := []corev1.Volume{{
-		Name: cons.GatewayConfigMapName,
+		Name: cons.DefaultGatewayConfigMapName,
 		VolumeSource: corev1.VolumeSource{
 			ConfigMap: &corev1.ConfigMapVolumeSource{
 				LocalObjectReference: corev1.LocalObjectReference{
-					Name: cons.GatewayConfigMapName,
+					Name: cons.DefaultGatewayConfigMapName,
 				},
 			}},
 	}}
@@ -191,23 +196,23 @@ func getVolumesForGateway(core *vanusv1alpha1.Core) []corev1.Volume {
 }
 
 func annotationsForGateway() map[string]string {
-	return map[string]string{"vanus.dev/metrics.port": fmt.Sprintf("%d", cons.ControllerPortMetrics)}
+	return map[string]string{"vanus.dev/metrics.port": fmt.Sprintf("%d", cons.DefaultPortMetrics)}
 }
 
 func (r *CoreReconciler) generateConfigMapForGateway(core *vanusv1alpha1.Core) *corev1.ConfigMap {
-	data := make(map[string]string)
 	value := bytes.Buffer{}
-	value.WriteString("port: 8080\n")
-	value.WriteString("sink_port: 8082\n")
+	value.WriteString(fmt.Sprintf("port: %s\n", core.Annotations[cons.CoreComponentGatewayPortProxyAnnotation]))
+	value.WriteString(fmt.Sprintf("sink_port: %d\n", cons.DefaultGatewayContainerPortSinkProxy))
 	value.WriteString("controllers:\n")
 	for i := int32(0); i < cons.DefaultControllerReplicas; i++ {
-		value.WriteString(fmt.Sprintf("  - vanus-controller-%d.vanus-controller:2048\n", i))
+		value.WriteString(fmt.Sprintf("  - vanus-controller-%d.vanus-controller:%s\n", i, core.Annotations[cons.CoreComponentControllerSvcPortAnnotation]))
 	}
+	data := make(map[string]string)
 	data["gateway.yaml"] = value.String()
 	cm := &corev1.ConfigMap{
 		ObjectMeta: metav1.ObjectMeta{
 			Namespace:  cons.DefaultNamespace,
-			Name:       cons.GatewayConfigMapName,
+			Name:       cons.DefaultGatewayConfigMapName,
 			Finalizers: []string{metav1.FinalizerOrphanDependents},
 		},
 		Data: data,
@@ -218,11 +223,17 @@ func (r *CoreReconciler) generateConfigMapForGateway(core *vanusv1alpha1.Core) *
 }
 
 func (r *CoreReconciler) generateSvcForGateway(core *vanusv1alpha1.Core) *corev1.Service {
-	labels := genLabels(cons.DefaultGatewayName)
+	portProxy, _ := convert.StrToInt32(core.Annotations[cons.CoreComponentGatewayPortProxyAnnotation])
+	// TODO(jiangkai): Currently, the port of CloudEvents configuration is not supported, default is portProxy+1.
+	// portCloudEvents, _ := convert.StrToInt32(core.Annotations[cons.CoreComponentGatewayPortCloudEventsAnnotation])
+	portCloudEvents := portProxy + 1
+	nodePortProxy, _ := convert.StrToInt32(core.Annotations[cons.CoreComponentGatewayNodePortProxyAnnotation])
+	nodeportCloudEvents, _ := convert.StrToInt32(core.Annotations[cons.CoreComponentGatewayNodePortCloudEventsAnnotation])
+	labels := genLabels(cons.DefaultGatewayComponentName)
 	svc := &corev1.Service{
 		ObjectMeta: metav1.ObjectMeta{
 			Namespace:  cons.DefaultNamespace,
-			Name:       cons.DefaultGatewayName,
+			Name:       cons.DefaultGatewayComponentName,
 			Labels:     labels,
 			Finalizers: []string{metav1.FinalizerOrphanDependents},
 		},
@@ -231,17 +242,17 @@ func (r *CoreReconciler) generateSvcForGateway(core *vanusv1alpha1.Core) *corev1
 			Ports: []corev1.ServicePort{
 				{
 					Name:       "proxy",
-					NodePort:   cons.GatewayNodePortProxy,
-					Port:       cons.GatewayPortProxy,
+					NodePort:   nodePortProxy,
+					Port:       portProxy,
 					Protocol:   corev1.ProtocolTCP,
-					TargetPort: intstr.FromInt(cons.GatewayPortProxy),
+					TargetPort: intstr.FromInt(int(portProxy)),
 				},
 				{
 					Name:       "cloudevents",
-					NodePort:   cons.GatewayNodePortCloudevents,
-					Port:       cons.GatewayPortCloudevents,
+					NodePort:   nodeportCloudEvents,
+					Port:       portCloudEvents,
 					Protocol:   corev1.ProtocolTCP,
-					TargetPort: intstr.FromInt(cons.GatewayPortCloudevents),
+					TargetPort: intstr.FromInt(int(portCloudEvents)),
 				},
 			},
 			Type: corev1.ServiceTypeNodePort,
