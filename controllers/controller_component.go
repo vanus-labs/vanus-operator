@@ -248,7 +248,8 @@ func (r *CoreReconciler) generateConfigMapForController(core *vanusv1alpha1.Core
 	value.WriteString("ip: ${POD_IP}\n")
 	value.WriteString(fmt.Sprintf("port: %d\n", cons.ControllerPortGrpc))
 	value.WriteString(fmt.Sprintf("replicas: %d\n", cons.DefaultControllerReplicas))
-	value.WriteString("segment_capacity: 4194304\n")
+	value.WriteString("segment_capacity: 67108864\n")
+	value.WriteString("secret_encryption_salt: encryption_salt\n")
 	value.WriteString("root_controllers:\n")
 	for i := int32(0); i < cons.DefaultControllerReplicas; i++ {
 		value.WriteString(fmt.Sprintf("  - vanus-root-controller-%d.vanus-root-controller:%d\n", i, cons.RootControllerPortGrpc))

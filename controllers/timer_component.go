@@ -170,7 +170,7 @@ func (r *CoreReconciler) generateConfigMapForTimer(core *vanusv1alpha1.Core) *co
 	for i := int32(0); i < cons.DefaultControllerReplicas; i++ {
 		value.WriteString(fmt.Sprintf("  - vanus-controller-%d.vanus-controller.vanus.svc:2048\n", i))
 	}
-	value.WriteString("leaderelection:\n")
+	value.WriteString("leader_election:\n")
 	value.WriteString("  lease_duration: 15\n")
 	value.WriteString("timingwheel:\n")
 	value.WriteString("  tick: 1\n")
