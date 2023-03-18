@@ -79,7 +79,7 @@ func (r *CoreReconciler) Reconcile(ctx context.Context, req ctrl.Request) (ctrl.
 	}
 
 	// explicitly all supported annotations
-	ExplicitAnnotations(core)
+	ExplicitCoreAnnotations(core)
 
 	result, err := r.handleEtcd(ctx, logger, core)
 	if err != nil {
@@ -120,31 +120,29 @@ func (r *CoreReconciler) SetupWithManager(mgr ctrl.Manager) error {
 		Complete(r)
 }
 
-func ExplicitAnnotations(core *vanusv1alpha1.Core) {
-	newAnnotations := make(map[string]string)
-	newAnnotations[cons.CoreComponentEtcdPortClientAnnotation] = GetAnnotationWithDefaultValue(core, cons.CoreComponentEtcdPortClientAnnotation, fmt.Sprintf("%d", cons.DefaultEtcdPortClient))
-	newAnnotations[cons.CoreComponentEtcdPortPeerAnnotation] = GetAnnotationWithDefaultValue(core, cons.CoreComponentEtcdPortPeerAnnotation, fmt.Sprintf("%d", cons.DefaultEtcdPortPeer))
-	newAnnotations[cons.CoreComponentEtcdStorageSizeAnnotation] = GetAnnotationWithDefaultValue(core, cons.CoreComponentEtcdStorageSizeAnnotation, cons.DefaultEtcdStorageSize)
-	newAnnotations[cons.CoreComponentControllerSvcPortAnnotation] = GetAnnotationWithDefaultValue(core, cons.CoreComponentControllerSvcPortAnnotation, fmt.Sprintf("%d", cons.DefaultControllerPortGrpc))
-	newAnnotations[cons.CoreComponentControllerSegmentCapacityAnnotation] = GetAnnotationWithDefaultValue(core, cons.CoreComponentControllerSegmentCapacityAnnotation, cons.DefaultControllerSegmentCapacity)
-	newAnnotations[cons.CoreComponentRootControllerSvcPortAnnotation] = GetAnnotationWithDefaultValue(core, cons.CoreComponentRootControllerSvcPortAnnotation, fmt.Sprintf("%d", cons.DefaultRootControllerPortGrpc))
-	newAnnotations[cons.CoreComponentStoreReplicasAnnotation] = GetAnnotationWithDefaultValue(core, cons.CoreComponentStoreReplicasAnnotation, fmt.Sprintf("%d", cons.DefaultStoreReplicas))
-	newAnnotations[cons.CoreComponentStoreStorageSizeAnnotation] = GetAnnotationWithDefaultValue(core, cons.CoreComponentStoreStorageSizeAnnotation, cons.DefaultStoreStorageSize)
-	newAnnotations[cons.CoreComponentGatewayPortProxyAnnotation] = GetAnnotationWithDefaultValue(core, cons.CoreComponentGatewayPortProxyAnnotation, fmt.Sprintf("%d", cons.DefaultGatewayContainerPortProxy))
-	newAnnotations[cons.CoreComponentGatewayPortCloudEventsAnnotation] = GetAnnotationWithDefaultValue(core, cons.CoreComponentGatewayPortCloudEventsAnnotation, fmt.Sprintf("%d", cons.DefaultGatewayContainerPortCloudevents))
-	newAnnotations[cons.CoreComponentGatewayNodePortProxyAnnotation] = GetAnnotationWithDefaultValue(core, cons.CoreComponentGatewayNodePortProxyAnnotation, fmt.Sprintf("%d", cons.DefaultGatewayServiceNodePortProxy))
-	newAnnotations[cons.CoreComponentGatewayNodePortCloudEventsAnnotation] = GetAnnotationWithDefaultValue(core, cons.CoreComponentGatewayNodePortCloudEventsAnnotation, fmt.Sprintf("%d", cons.DefaultGatewayServiceNodePortCloudevents))
-	newAnnotations[cons.CoreComponentTriggerReplicasAnnotation] = GetAnnotationWithDefaultValue(core, cons.CoreComponentTriggerReplicasAnnotation, fmt.Sprintf("%d", cons.DefaultTriggerReplicas))
-	newAnnotations[cons.CoreComponentTimerTimingWheelTickAnnotation] = GetAnnotationWithDefaultValue(core, cons.CoreComponentTimerTimingWheelTickAnnotation, fmt.Sprintf("%d", cons.DefaultTimerTimingWheelTick))
-	newAnnotations[cons.CoreComponentTimerTimingWheelSizeAnnotation] = GetAnnotationWithDefaultValue(core, cons.CoreComponentTimerTimingWheelSizeAnnotation, fmt.Sprintf("%d", cons.DefaultTimerTimingWheelSize))
-	newAnnotations[cons.CoreComponentTimerTimingWheelLayersAnnotation] = GetAnnotationWithDefaultValue(core, cons.CoreComponentTimerTimingWheelLayersAnnotation, fmt.Sprintf("%d", cons.DefaultTimerTimingWheelLayers))
-	core.Annotations = newAnnotations
+func ExplicitCoreAnnotations(core *vanusv1alpha1.Core) {
+	ExplicitCoreAnnotationWithDefaultValue(core, cons.CoreComponentEtcdPortClientAnnotation, fmt.Sprintf("%d", cons.DefaultEtcdPortClient))
+	ExplicitCoreAnnotationWithDefaultValue(core, cons.CoreComponentEtcdPortPeerAnnotation, fmt.Sprintf("%d", cons.DefaultEtcdPortPeer))
+	ExplicitCoreAnnotationWithDefaultValue(core, cons.CoreComponentEtcdStorageSizeAnnotation, cons.DefaultEtcdStorageSize)
+	ExplicitCoreAnnotationWithDefaultValue(core, cons.CoreComponentControllerSvcPortAnnotation, fmt.Sprintf("%d", cons.DefaultControllerPortGrpc))
+	ExplicitCoreAnnotationWithDefaultValue(core, cons.CoreComponentControllerSegmentCapacityAnnotation, cons.DefaultControllerSegmentCapacity)
+	ExplicitCoreAnnotationWithDefaultValue(core, cons.CoreComponentRootControllerSvcPortAnnotation, fmt.Sprintf("%d", cons.DefaultRootControllerPortGrpc))
+	ExplicitCoreAnnotationWithDefaultValue(core, cons.CoreComponentStoreReplicasAnnotation, fmt.Sprintf("%d", cons.DefaultStoreReplicas))
+	ExplicitCoreAnnotationWithDefaultValue(core, cons.CoreComponentStoreStorageSizeAnnotation, cons.DefaultStoreStorageSize)
+	ExplicitCoreAnnotationWithDefaultValue(core, cons.CoreComponentGatewayPortProxyAnnotation, fmt.Sprintf("%d", cons.DefaultGatewayContainerPortProxy))
+	ExplicitCoreAnnotationWithDefaultValue(core, cons.CoreComponentGatewayPortCloudEventsAnnotation, fmt.Sprintf("%d", cons.DefaultGatewayContainerPortCloudevents))
+	ExplicitCoreAnnotationWithDefaultValue(core, cons.CoreComponentGatewayNodePortProxyAnnotation, fmt.Sprintf("%d", cons.DefaultGatewayServiceNodePortProxy))
+	ExplicitCoreAnnotationWithDefaultValue(core, cons.CoreComponentGatewayNodePortCloudEventsAnnotation, fmt.Sprintf("%d", cons.DefaultGatewayServiceNodePortCloudevents))
+	ExplicitCoreAnnotationWithDefaultValue(core, cons.CoreComponentTriggerReplicasAnnotation, fmt.Sprintf("%d", cons.DefaultTriggerReplicas))
+	ExplicitCoreAnnotationWithDefaultValue(core, cons.CoreComponentTimerTimingWheelTickAnnotation, fmt.Sprintf("%d", cons.DefaultTimerTimingWheelTick))
+	ExplicitCoreAnnotationWithDefaultValue(core, cons.CoreComponentTimerTimingWheelSizeAnnotation, fmt.Sprintf("%d", cons.DefaultTimerTimingWheelSize))
+	ExplicitCoreAnnotationWithDefaultValue(core, cons.CoreComponentTimerTimingWheelLayersAnnotation, fmt.Sprintf("%d", cons.DefaultTimerTimingWheelLayers))
 }
 
-func GetAnnotationWithDefaultValue(core *vanusv1alpha1.Core, key, defaultValue string) string {
+func ExplicitCoreAnnotationWithDefaultValue(core *vanusv1alpha1.Core, key, defaultValue string) {
 	if val, ok := core.Annotations[key]; ok && val != "" {
-		return val
+		return
 	} else {
-		return defaultValue
+		core.Annotations[key] = defaultValue
 	}
 }

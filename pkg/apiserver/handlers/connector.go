@@ -183,7 +183,7 @@ func (a *Api) patchConnectorHandler(params connector.PatchConnectorParams) middl
 		log.Errorf("patch Connector %s/%s failed, err: %s\n", cons.DefaultNamespace, params.Connector.Name, err.Error())
 		return utils.Response(500, err)
 	}
-	log.Infof("Successfully create Connector %s\n", params.Name)
+	log.Infof("Successfully patch Connector %s\n", params.Name)
 
 	return connector.NewPatchConnectorOK().WithPayload(&connector.PatchConnectorOKBody{
 		Code: convert.PtrInt32(200),

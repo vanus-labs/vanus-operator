@@ -85,6 +85,8 @@ const (
 	DefaultConnectorContainerName   = "connector"
 	DefaultConnectorConfigMountPath = "/vanus-connect/config"
 	DefaultConnectorConfigMapName   = "config"
+	DefaultConnectorServiceType     = "ClusterIP"
+	DefaultConnectorServicePort     = 80
 )
 
 const (
@@ -115,6 +117,7 @@ var (
 	DefaultGatewayReplicas    int32 = 1
 	DefaultTriggerReplicas    int32 = 1
 	DefaultTimerReplicas      int32 = 2
+	DefaultConnectorReplicas  int32 = 1
 )
 
 // Annotations supported by Core
@@ -152,7 +155,8 @@ const (
 
 // Annotations supported by Connector
 const (
-	ConnectorServiceTypeAnnotation       = "connector.vanus.ai/service-type"
-	ConnectorServicePortAnnotation       = "connector.vanus.ai/service-port"
-	ConnectorNetworkHostDomainAnnotation = "connector.vanus.ai/network-host-domain"
+	ConnectorDeploymentReplicasAnnotation = "connector.vanus.ai/deployment-replicas"
+	ConnectorServiceTypeAnnotation        = "connector.vanus.ai/service-type"
+	ConnectorServicePortAnnotation        = "connector.vanus.ai/service-port"
+	ConnectorNetworkHostDomainAnnotation  = "connector.vanus.ai/network-host-domain"
 )
