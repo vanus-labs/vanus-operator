@@ -89,13 +89,6 @@ func (a *Api) createConnectorHandler(params connector.CreateConnectorParams) mid
 		return utils.Response(500, errors.New("connector already exist"))
 	}
 
-	defer func() {
-		err = a.deleteConnector(c.name, c.namespace)
-		if err != nil {
-			log.Warningf("clear connector failed when failed to exit, err: %s\n", err.Error())
-		}
-	}()
-
 	log.Infof("Creating a new Connector, Connector.Namespace: %s, Connector.Name: %s\n", c.namespace, c.name)
 	newConnector := generateConnector(c)
 	resultConnector, err := a.createConnector(newConnector, c.namespace)
