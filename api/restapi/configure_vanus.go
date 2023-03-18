@@ -85,6 +85,16 @@ func configureAPI(api *operations.VanusAPI) http.Handler {
 			return middleware.NotImplemented("operation cluster.PatchCluster has not yet been implemented")
 		})
 	}
+	if api.ConnectorPatchConnectorHandler == nil {
+		api.ConnectorPatchConnectorHandler = connector.PatchConnectorHandlerFunc(func(params connector.PatchConnectorParams) middleware.Responder {
+			return middleware.NotImplemented("operation connector.PatchConnector has not yet been implemented")
+		})
+	}
+	if api.ConnectorPatchConnectorsHandler == nil {
+		api.ConnectorPatchConnectorsHandler = connector.PatchConnectorsHandlerFunc(func(params connector.PatchConnectorsParams) middleware.Responder {
+			return middleware.NotImplemented("operation connector.PatchConnectors has not yet been implemented")
+		})
+	}
 
 	api.PreServerShutdown = func() {}
 

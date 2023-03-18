@@ -79,7 +79,7 @@ func (r *CoreReconciler) Reconcile(ctx context.Context, req ctrl.Request) (ctrl.
 	}
 
 	// explicitly all supported annotations
-	ExplicitAnnotations(core)
+	ExplicitCoreAnnotations(core)
 
 	result, err := r.handleEtcd(ctx, logger, core)
 	if err != nil {
@@ -120,26 +120,26 @@ func (r *CoreReconciler) SetupWithManager(mgr ctrl.Manager) error {
 		Complete(r)
 }
 
-func ExplicitAnnotations(core *vanusv1alpha1.Core) {
-	ExplicitAnnotationWithDefaultValue(core, cons.CoreComponentEtcdPortClientAnnotation, fmt.Sprintf("%d", cons.DefaultEtcdPortClient))
-	ExplicitAnnotationWithDefaultValue(core, cons.CoreComponentEtcdPortPeerAnnotation, fmt.Sprintf("%d", cons.DefaultEtcdPortPeer))
-	ExplicitAnnotationWithDefaultValue(core, cons.CoreComponentEtcdStorageSizeAnnotation, cons.DefaultEtcdStorageSize)
-	ExplicitAnnotationWithDefaultValue(core, cons.CoreComponentControllerSvcPortAnnotation, fmt.Sprintf("%d", cons.DefaultControllerPortGrpc))
-	ExplicitAnnotationWithDefaultValue(core, cons.CoreComponentControllerSegmentCapacityAnnotation, cons.DefaultControllerSegmentCapacity)
-	ExplicitAnnotationWithDefaultValue(core, cons.CoreComponentRootControllerSvcPortAnnotation, fmt.Sprintf("%d", cons.DefaultRootControllerPortGrpc))
-	ExplicitAnnotationWithDefaultValue(core, cons.CoreComponentStoreReplicasAnnotation, fmt.Sprintf("%d", cons.DefaultStoreReplicas))
-	ExplicitAnnotationWithDefaultValue(core, cons.CoreComponentStoreStorageSizeAnnotation, cons.DefaultStoreStorageSize)
-	ExplicitAnnotationWithDefaultValue(core, cons.CoreComponentGatewayPortProxyAnnotation, fmt.Sprintf("%d", cons.DefaultGatewayContainerPortProxy))
-	ExplicitAnnotationWithDefaultValue(core, cons.CoreComponentGatewayPortCloudEventsAnnotation, fmt.Sprintf("%d", cons.DefaultGatewayContainerPortCloudevents))
-	ExplicitAnnotationWithDefaultValue(core, cons.CoreComponentGatewayNodePortProxyAnnotation, fmt.Sprintf("%d", cons.DefaultGatewayServiceNodePortProxy))
-	ExplicitAnnotationWithDefaultValue(core, cons.CoreComponentGatewayNodePortCloudEventsAnnotation, fmt.Sprintf("%d", cons.DefaultGatewayServiceNodePortCloudevents))
-	ExplicitAnnotationWithDefaultValue(core, cons.CoreComponentTriggerReplicasAnnotation, fmt.Sprintf("%d", cons.DefaultTriggerReplicas))
-	ExplicitAnnotationWithDefaultValue(core, cons.CoreComponentTimerTimingWheelTickAnnotation, fmt.Sprintf("%d", cons.DefaultTimerTimingWheelTick))
-	ExplicitAnnotationWithDefaultValue(core, cons.CoreComponentTimerTimingWheelSizeAnnotation, fmt.Sprintf("%d", cons.DefaultTimerTimingWheelSize))
-	ExplicitAnnotationWithDefaultValue(core, cons.CoreComponentTimerTimingWheelLayersAnnotation, fmt.Sprintf("%d", cons.DefaultTimerTimingWheelLayers))
+func ExplicitCoreAnnotations(core *vanusv1alpha1.Core) {
+	ExplicitCoreAnnotationWithDefaultValue(core, cons.CoreComponentEtcdPortClientAnnotation, fmt.Sprintf("%d", cons.DefaultEtcdPortClient))
+	ExplicitCoreAnnotationWithDefaultValue(core, cons.CoreComponentEtcdPortPeerAnnotation, fmt.Sprintf("%d", cons.DefaultEtcdPortPeer))
+	ExplicitCoreAnnotationWithDefaultValue(core, cons.CoreComponentEtcdStorageSizeAnnotation, cons.DefaultEtcdStorageSize)
+	ExplicitCoreAnnotationWithDefaultValue(core, cons.CoreComponentControllerSvcPortAnnotation, fmt.Sprintf("%d", cons.DefaultControllerPortGrpc))
+	ExplicitCoreAnnotationWithDefaultValue(core, cons.CoreComponentControllerSegmentCapacityAnnotation, cons.DefaultControllerSegmentCapacity)
+	ExplicitCoreAnnotationWithDefaultValue(core, cons.CoreComponentRootControllerSvcPortAnnotation, fmt.Sprintf("%d", cons.DefaultRootControllerPortGrpc))
+	ExplicitCoreAnnotationWithDefaultValue(core, cons.CoreComponentStoreReplicasAnnotation, fmt.Sprintf("%d", cons.DefaultStoreReplicas))
+	ExplicitCoreAnnotationWithDefaultValue(core, cons.CoreComponentStoreStorageSizeAnnotation, cons.DefaultStoreStorageSize)
+	ExplicitCoreAnnotationWithDefaultValue(core, cons.CoreComponentGatewayPortProxyAnnotation, fmt.Sprintf("%d", cons.DefaultGatewayContainerPortProxy))
+	ExplicitCoreAnnotationWithDefaultValue(core, cons.CoreComponentGatewayPortCloudEventsAnnotation, fmt.Sprintf("%d", cons.DefaultGatewayContainerPortCloudevents))
+	ExplicitCoreAnnotationWithDefaultValue(core, cons.CoreComponentGatewayNodePortProxyAnnotation, fmt.Sprintf("%d", cons.DefaultGatewayServiceNodePortProxy))
+	ExplicitCoreAnnotationWithDefaultValue(core, cons.CoreComponentGatewayNodePortCloudEventsAnnotation, fmt.Sprintf("%d", cons.DefaultGatewayServiceNodePortCloudevents))
+	ExplicitCoreAnnotationWithDefaultValue(core, cons.CoreComponentTriggerReplicasAnnotation, fmt.Sprintf("%d", cons.DefaultTriggerReplicas))
+	ExplicitCoreAnnotationWithDefaultValue(core, cons.CoreComponentTimerTimingWheelTickAnnotation, fmt.Sprintf("%d", cons.DefaultTimerTimingWheelTick))
+	ExplicitCoreAnnotationWithDefaultValue(core, cons.CoreComponentTimerTimingWheelSizeAnnotation, fmt.Sprintf("%d", cons.DefaultTimerTimingWheelSize))
+	ExplicitCoreAnnotationWithDefaultValue(core, cons.CoreComponentTimerTimingWheelLayersAnnotation, fmt.Sprintf("%d", cons.DefaultTimerTimingWheelLayers))
 }
 
-func ExplicitAnnotationWithDefaultValue(core *vanusv1alpha1.Core, key, defaultValue string) {
+func ExplicitCoreAnnotationWithDefaultValue(core *vanusv1alpha1.Core, key, defaultValue string) {
 	if val, ok := core.Annotations[key]; ok && val != "" {
 		return
 	} else {

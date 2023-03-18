@@ -206,18 +206,89 @@ paths:
                 type: "string"
                 default: "success"
 
+    patch:
+      tags:
+        - "connector"
+      description: "patch Connectors"
+      operationId: "patchConnectors"
+      parameters:
+        - name: "connector"
+          in: "body"
+          schema:
+            type: "array"
+            items:
+              type: "object"
+              $ref: "#/definitions/Connector_patch"
+          required: true
+          description: "patch info"
+      responses:
+        '200':
+          description: OK
+          schema:
+            type: object
+            required:
+              - "code"
+              - "data"
+              - "message"
+            properties:
+              code:
+                type: "integer"
+                format: "int32"
+                default: 200
+              data:
+                type: object
+                $ref: "#/definitions/ListOkErr"
+              message:
+                type: "string"
+                default: "success"
+
   /connectors/{name}:
+    parameters:
+      - name: name
+        in: path
+        type: string
+        required: true
+        description: "connector name"
     get:
       tags:
         - "connector"
       description: "get Connector"
       operationId: "getConnector"
+      responses:
+        '200':
+          description: OK
+          schema:
+            type: object
+            required:
+              - "code"
+              - "data"
+              - "message"
+            properties:
+              code:
+                type: "integer"
+                format: "int32"
+                default: 200
+              data:
+                type: object
+                $ref: "#/definitions/Connector_info"
+              message:
+                type: "string"
+                default: "success"
+
+    patch:
+      tags:
+        - "connector"
+      description: "patch Connector"
+      operationId: "patchConnector"
       parameters:
-        - name: name
-          in: path
-          type: string
+      parameters:
+        - name: "connector"
+          in: "body"
           required: true
-          description: "connector name"
+          schema:
+            type: "object"
+            $ref: "#/definitions/Connector_patch"
+          description: "Connector info"
       responses:
         '200':
           description: OK
@@ -310,6 +381,23 @@ definitions:
       message:
         type: "string"
 
+  ListOkErr:
+    type: "object"
+    properties:
+      successed:
+        type: "array"
+        items:
+          type: "string"
+      failed:
+        type: "array"
+        items:
+          type: "object"
+          properties:
+            name:
+              type: "string"
+            reason:
+              type: "string"
+
   Health_info:
     type: "object"
     description: "operator info"
@@ -379,6 +467,29 @@ definitions:
       type:
         type: "string"
         description: "connector type"
+      version:
+        type: "string"
+        description: "connector version"
+      config:
+        type: object
+        required:
+          - default
+        additionalProperties:
+          type: object
+      annotations:
+        type: object
+        required:
+          - default
+        additionalProperties:
+          type: string
+
+  Connector_patch:
+    type: "object"
+    description: "Connector patch params"
+    properties:
+      name:
+        type: "string"
+        description: "connector name"
       version:
         type: "string"
         description: "connector version"
