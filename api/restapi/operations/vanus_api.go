@@ -73,6 +73,12 @@ func NewVanusAPI(spec *loads.Document) *VanusAPI {
 		ClusterPatchClusterHandler: cluster.PatchClusterHandlerFunc(func(params cluster.PatchClusterParams) middleware.Responder {
 			return middleware.NotImplemented("operation cluster.PatchCluster has not yet been implemented")
 		}),
+		ConnectorPatchConnectorHandler: connector.PatchConnectorHandlerFunc(func(params connector.PatchConnectorParams) middleware.Responder {
+			return middleware.NotImplemented("operation connector.PatchConnector has not yet been implemented")
+		}),
+		ConnectorPatchConnectorsHandler: connector.PatchConnectorsHandlerFunc(func(params connector.PatchConnectorsParams) middleware.Responder {
+			return middleware.NotImplemented("operation connector.PatchConnectors has not yet been implemented")
+		}),
 	}
 }
 
@@ -128,6 +134,10 @@ type VanusAPI struct {
 	ConnectorListConnectorHandler connector.ListConnectorHandler
 	// ClusterPatchClusterHandler sets the operation handler for the patch cluster operation
 	ClusterPatchClusterHandler cluster.PatchClusterHandler
+	// ConnectorPatchConnectorHandler sets the operation handler for the patch connector operation
+	ConnectorPatchConnectorHandler connector.PatchConnectorHandler
+	// ConnectorPatchConnectorsHandler sets the operation handler for the patch connectors operation
+	ConnectorPatchConnectorsHandler connector.PatchConnectorsHandler
 
 	// ServeError is called when an error is received, there is a default handler
 	// but you can set your own with this
@@ -231,6 +241,12 @@ func (o *VanusAPI) Validate() error {
 	}
 	if o.ClusterPatchClusterHandler == nil {
 		unregistered = append(unregistered, "cluster.PatchClusterHandler")
+	}
+	if o.ConnectorPatchConnectorHandler == nil {
+		unregistered = append(unregistered, "connector.PatchConnectorHandler")
+	}
+	if o.ConnectorPatchConnectorsHandler == nil {
+		unregistered = append(unregistered, "connector.PatchConnectorsHandler")
 	}
 
 	if len(unregistered) > 0 {
@@ -356,6 +372,14 @@ func (o *VanusAPI) initHandlerCache() {
 		o.handlers["PATCH"] = make(map[string]http.Handler)
 	}
 	o.handlers["PATCH"]["/cluster"] = cluster.NewPatchCluster(o.context, o.ClusterPatchClusterHandler)
+	if o.handlers["PATCH"] == nil {
+		o.handlers["PATCH"] = make(map[string]http.Handler)
+	}
+	o.handlers["PATCH"]["/connectors/{name}"] = connector.NewPatchConnector(o.context, o.ConnectorPatchConnectorHandler)
+	if o.handlers["PATCH"] == nil {
+		o.handlers["PATCH"] = make(map[string]http.Handler)
+	}
+	o.handlers["PATCH"]["/connectors"] = connector.NewPatchConnectors(o.context, o.ConnectorPatchConnectorsHandler)
 }
 
 // Serve creates a http handler to serve the API over HTTP

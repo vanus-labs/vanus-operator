@@ -86,8 +86,8 @@ func (r *ConnectorReconciler) Reconcile(ctx context.Context, req ctrl.Request) (
 
 	// Create Connector Deployment
 	// Check if the Deployment already exists, if not create a new one
-	sts := &appsv1.Deployment{}
-	err = r.Get(ctx, types.NamespacedName{Name: connector.Name, Namespace: connector.Namespace}, sts)
+	dep := &appsv1.Deployment{}
+	err = r.Get(ctx, types.NamespacedName{Name: connector.Name, Namespace: connector.Namespace}, dep)
 	if err != nil {
 		if errors.IsNotFound(err) {
 			// Create Connector ConfigMap
@@ -171,6 +171,31 @@ func (r *ConnectorReconciler) Reconcile(ctx context.Context, req ctrl.Request) (
 	}
 
 	// TODO(jiangkai): Update Connector Deployment
+	// Update Connector Configmap
+	connectorConfigMap, err := r.generateConfigMapForConnector(connector)
+	if err != nil {
+		logger.Error(err, "Failed to generate patch Connector ConfigMap")
+		return ctrl.Result{}, err
+	}
+	logger.Info("Updating Connector ConfigMap.", "ConfigMap.Namespace", connectorConfigMap.Namespace, "ConfigMap.Name", connectorConfigMap.Name)
+	err = r.Update(ctx, connectorConfigMap)
+	if err != nil {
+		logger.Error(err, "Failed to update Connector ConfigMap", "ConfigMap.Namespace", connectorConfigMap.Namespace, "ConfigMap.Name", connectorConfigMap.Name)
+		return ctrl.Result{}, err
+	} else {
+		logger.Info("Successfully update Connector ConfigMap")
+	}
+
+	// Update Connector Deployment
+	connectorDeployment := r.getDeploymentForConnector(connector)
+	logger.Info("Updating Connector Deployment.", "Namespace", connectorDeployment.Namespace, "Name", connectorDeployment.Name)
+	err = r.Update(ctx, connectorDeployment)
+	if err != nil {
+		logger.Error(err, "Failed to update Connector Deployment", "Namespace", connectorDeployment.Namespace, "Name", connectorDeployment.Name)
+		return ctrl.Result{}, err
+	}
+	logger.Info("Successfully update Connector Deployment")
+
 	return ctrl.Result{}, nil
 }
 

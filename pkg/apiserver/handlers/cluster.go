@@ -23,6 +23,7 @@ import (
 	"github.com/vanus-labs/vanus-operator/api/restapi/operations/cluster"
 	vanusv1alpha1 "github.com/vanus-labs/vanus-operator/api/v1alpha1"
 	cons "github.com/vanus-labs/vanus-operator/internal/constants"
+	"github.com/vanus-labs/vanus-operator/internal/convert"
 	"github.com/vanus-labs/vanus-operator/pkg/apiserver/utils"
 	corev1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
@@ -41,13 +42,7 @@ func RegistClusterHandler(a *Api) {
 }
 
 func (a *Api) createClusterHandler(params cluster.CreateClusterParams) middleware.Responder {
-	var (
-		failedToExit = false
-		coreDeployed = false
-	)
-
 	log.Infof("show cluster create params, version: %s, annotations: %+v\n", params.Create.Version, params.Create.Annotations)
-
 	isVaild, err := a.checkParamsValid(params.Create)
 	if !isVaild {
 		log.Errorf("cluster params invalid, err: %s\n", err.Error())
@@ -65,33 +60,18 @@ func (a *Api) createClusterHandler(params cluster.CreateClusterParams) middlewar
 		return utils.Response(400, errors.New("cluster already exist"))
 	}
 
-	defer func() {
-		if failedToExit {
-			if coreDeployed {
-				err = a.deleteCore(cons.DefaultVanusCoreName, cons.DefaultNamespace)
-				if err != nil {
-					log.Warningf("clear controller failed when failed to exit, err: %s\n", err.Error())
-				}
-			}
-		}
-	}()
-
-	log.Infof("Creating a new Core cluster, Core.Namespace: %s, Core.Name: %s\n", cons.DefaultNamespace, cons.DefaultVanusCoreName)
+	log.Infof("Creating a new cluster %s/%s\n", cons.DefaultNamespace, cons.DefaultVanusCoreName)
 	core := generateCore(params.Create)
 	resultCore, err := a.createCore(core, cons.DefaultNamespace)
 	if err != nil {
-		log.Errorf("Failed to create new Core cluster, Core.Namespace: %s, Core.Name: %s, err: %s\n", cons.DefaultNamespace, cons.DefaultVanusCoreName, err.Error())
-		failedToExit = true
+		log.Errorf("Failed to create new cluster %s/%s, err: %s\n", cons.DefaultNamespace, cons.DefaultVanusCoreName, err.Error())
 		return utils.Response(500, err)
 	}
-	coreDeployed = true
-	log.Infof("Successfully create Core cluster: %+v\n", resultCore)
+	log.Infof("Successfully create cluster: %+v\n", resultCore)
 
-	retcode := int32(200)
-	msg := "success"
 	return cluster.NewCreateClusterOK().WithPayload(&cluster.CreateClusterOKBody{
-		Code:    &retcode,
-		Message: &msg,
+		Code:    convert.PtrInt32(200),
+		Message: convert.PtrS("success"),
 	})
 }
 
@@ -109,15 +89,13 @@ func (a *Api) deleteClusterHandler(params cluster.DeleteClusterParams) middlewar
 
 	err = a.deleteCore(cons.DefaultNamespace, cons.DefaultVanusCoreName)
 	if err != nil {
-		log.Errorf("delete vanus cluster failed, err: %s\n", err.Error())
+		log.Errorf("delete cluster failed, err: %s\n", err.Error())
 		return utils.Response(500, err)
 	}
 
-	retcode := int32(200)
-	msg := "success"
 	return cluster.NewDeleteClusterOK().WithPayload(&cluster.DeleteClusterOKBody{
-		Code:    &retcode,
-		Message: &msg,
+		Code:    convert.PtrInt32(200),
+		Message: convert.PtrS("success"),
 	})
 }
 
@@ -134,33 +112,29 @@ func (a *Api) patchClusterHandler(params cluster.PatchClusterParams) middleware.
 	}
 	resultCore, err := a.patchCore(core)
 	if err != nil {
-		log.Errorf("Failed to patch Core cluster, Core.Namespace: %s, Core.Name: %s, err: %s\n", cons.DefaultNamespace, cons.DefaultVanusCoreName, err.Error())
+		log.Errorf("Failed to patch cluster %s/%s, err: %s\n", cons.DefaultNamespace, cons.DefaultVanusCoreName, err.Error())
 		return utils.Response(500, err)
 	}
-	log.Infof("Successfully patch Core cluster: %+v\n", resultCore)
-	retcode := int32(200)
-	msg := "success"
+	log.Infof("Successfully patch cluster: %+v\n", resultCore)
 	return cluster.NewPatchClusterOK().WithPayload(&cluster.PatchClusterOKBody{
-		Code:    &retcode,
-		Message: &msg,
+		Code:    convert.PtrInt32(200),
+		Message: convert.PtrS("success"),
 	})
 }
 
 func (a *Api) getClusterHandler(params cluster.GetClusterParams) middleware.Responder {
 	vanus, err := a.getCore(cons.DefaultNamespace, cons.DefaultVanusCoreName, &metav1.GetOptions{})
 	if err != nil {
-		log.Error(err, "Failed to get Core cluster", "Core.Namespace: ", cons.DefaultNamespace, "Core.Name: ", cons.DefaultVanusCoreName)
+		log.Errorf("Failed to get cluster %s/%s, err: %s\n", cons.DefaultNamespace, cons.DefaultVanusCoreName, err.Error())
 		return utils.Response(500, err)
 	}
-	retcode := int32(200)
-	msg := "success"
 	return cluster.NewGetClusterOK().WithPayload(&cluster.GetClusterOKBody{
-		Code: &retcode,
+		Code: convert.PtrInt32(200),
 		Data: &models.ClusterInfo{
 			Version: vanus.Spec.Version,
 			Status:  "Running",
 		},
-		Message: &msg,
+		Message: convert.PtrS("success"),
 	})
 }
 
@@ -178,7 +152,7 @@ func (a *Api) checkParamsValid(cluster *models.ClusterCreate) (bool, error) {
 func (a *Api) checkClusterExist() (bool, error) {
 	_, exist, err := a.existCore(cons.DefaultNamespace, cons.DefaultVanusCoreName, &metav1.GetOptions{})
 	if err != nil {
-		log.Errorf("Failed to get Core cluster, err: %s\n", err.Error())
+		log.Errorf("Failed to get cluster, err: %s\n", err.Error())
 		return false, err
 	}
 	return exist, err

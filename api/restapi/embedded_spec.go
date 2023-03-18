@@ -297,6 +297,56 @@ func init() {
             }
           }
         }
+      },
+      "patch": {
+        "description": "patch Connectors",
+        "tags": [
+          "connector"
+        ],
+        "operationId": "patchConnectors",
+        "parameters": [
+          {
+            "description": "patch info",
+            "name": "connector",
+            "in": "body",
+            "required": true,
+            "schema": {
+              "type": "array",
+              "items": {
+                "type": "object",
+                "$ref": "#/definitions/Connector_patch"
+              }
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "schema": {
+              "type": "object",
+              "required": [
+                "code",
+                "data",
+                "message"
+              ],
+              "properties": {
+                "code": {
+                  "type": "integer",
+                  "format": "int32",
+                  "default": 200
+                },
+                "data": {
+                  "type": "object",
+                  "$ref": "#/definitions/ListOkErr"
+                },
+                "message": {
+                  "type": "string",
+                  "default": "success"
+                }
+              }
+            }
+          }
+        }
       }
     },
     "/connectors/{name}": {
@@ -306,15 +356,6 @@ func init() {
           "connector"
         ],
         "operationId": "getConnector",
-        "parameters": [
-          {
-            "type": "string",
-            "description": "connector name",
-            "name": "name",
-            "in": "path",
-            "required": true
-          }
-        ],
         "responses": {
           "200": {
             "description": "OK",
@@ -387,7 +428,63 @@ func init() {
             }
           }
         }
-      }
+      },
+      "patch": {
+        "description": "patch Connector",
+        "tags": [
+          "connector"
+        ],
+        "operationId": "patchConnector",
+        "parameters": [
+          {
+            "description": "Connector info",
+            "name": "connector",
+            "in": "body",
+            "required": true,
+            "schema": {
+              "type": "object",
+              "$ref": "#/definitions/Connector_patch"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "schema": {
+              "type": "object",
+              "required": [
+                "code",
+                "data",
+                "message"
+              ],
+              "properties": {
+                "code": {
+                  "type": "integer",
+                  "format": "int32",
+                  "default": 200
+                },
+                "data": {
+                  "type": "object",
+                  "$ref": "#/definitions/Connector_info"
+                },
+                "message": {
+                  "type": "string",
+                  "default": "success"
+                }
+              }
+            }
+          }
+        }
+      },
+      "parameters": [
+        {
+          "type": "string",
+          "description": "connector name",
+          "name": "name",
+          "in": "path",
+          "required": true
+        }
+      ]
     },
     "/healthz/": {
       "get": {
@@ -594,6 +691,38 @@ func init() {
         }
       }
     },
+    "Connector_patch": {
+      "description": "Connector patch params",
+      "type": "object",
+      "properties": {
+        "annotations": {
+          "type": "object",
+          "required": [
+            "default"
+          ],
+          "additionalProperties": {
+            "type": "string"
+          }
+        },
+        "config": {
+          "type": "object",
+          "required": [
+            "default"
+          ],
+          "additionalProperties": {
+            "type": "object"
+          }
+        },
+        "name": {
+          "description": "connector name",
+          "type": "string"
+        },
+        "version": {
+          "description": "connector version",
+          "type": "string"
+        }
+      }
+    },
     "Health_info": {
       "description": "operator info",
       "type": "object",
@@ -601,6 +730,31 @@ func init() {
         "status": {
           "description": "operator status",
           "type": "string"
+        }
+      }
+    },
+    "ListOkErr": {
+      "type": "object",
+      "properties": {
+        "failed": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "properties": {
+              "name": {
+                "type": "string"
+              },
+              "reason": {
+                "type": "string"
+              }
+            }
+          }
+        },
+        "successed": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          }
         }
       }
     }
@@ -886,6 +1040,56 @@ func init() {
             }
           }
         }
+      },
+      "patch": {
+        "description": "patch Connectors",
+        "tags": [
+          "connector"
+        ],
+        "operationId": "patchConnectors",
+        "parameters": [
+          {
+            "description": "patch info",
+            "name": "connector",
+            "in": "body",
+            "required": true,
+            "schema": {
+              "type": "array",
+              "items": {
+                "type": "object",
+                "$ref": "#/definitions/Connector_patch"
+              }
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "schema": {
+              "type": "object",
+              "required": [
+                "code",
+                "data",
+                "message"
+              ],
+              "properties": {
+                "code": {
+                  "type": "integer",
+                  "format": "int32",
+                  "default": 200
+                },
+                "data": {
+                  "type": "object",
+                  "$ref": "#/definitions/ListOkErr"
+                },
+                "message": {
+                  "type": "string",
+                  "default": "success"
+                }
+              }
+            }
+          }
+        }
       }
     },
     "/connectors/{name}": {
@@ -895,15 +1099,6 @@ func init() {
           "connector"
         ],
         "operationId": "getConnector",
-        "parameters": [
-          {
-            "type": "string",
-            "description": "connector name",
-            "name": "name",
-            "in": "path",
-            "required": true
-          }
-        ],
         "responses": {
           "200": {
             "description": "OK",
@@ -976,7 +1171,63 @@ func init() {
             }
           }
         }
-      }
+      },
+      "patch": {
+        "description": "patch Connector",
+        "tags": [
+          "connector"
+        ],
+        "operationId": "patchConnector",
+        "parameters": [
+          {
+            "description": "Connector info",
+            "name": "connector",
+            "in": "body",
+            "required": true,
+            "schema": {
+              "type": "object",
+              "$ref": "#/definitions/Connector_patch"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "schema": {
+              "type": "object",
+              "required": [
+                "code",
+                "data",
+                "message"
+              ],
+              "properties": {
+                "code": {
+                  "type": "integer",
+                  "format": "int32",
+                  "default": 200
+                },
+                "data": {
+                  "type": "object",
+                  "$ref": "#/definitions/Connector_info"
+                },
+                "message": {
+                  "type": "string",
+                  "default": "success"
+                }
+              }
+            }
+          }
+        }
+      },
+      "parameters": [
+        {
+          "type": "string",
+          "description": "connector name",
+          "name": "name",
+          "in": "path",
+          "required": true
+        }
+      ]
     },
     "/healthz/": {
       "get": {
@@ -1183,12 +1434,72 @@ func init() {
         }
       }
     },
+    "Connector_patch": {
+      "description": "Connector patch params",
+      "type": "object",
+      "properties": {
+        "annotations": {
+          "type": "object",
+          "required": [
+            "default"
+          ],
+          "additionalProperties": {
+            "type": "string"
+          }
+        },
+        "config": {
+          "type": "object",
+          "required": [
+            "default"
+          ],
+          "additionalProperties": {
+            "type": "object"
+          }
+        },
+        "name": {
+          "description": "connector name",
+          "type": "string"
+        },
+        "version": {
+          "description": "connector version",
+          "type": "string"
+        }
+      }
+    },
     "Health_info": {
       "description": "operator info",
       "type": "object",
       "properties": {
         "status": {
           "description": "operator status",
+          "type": "string"
+        }
+      }
+    },
+    "ListOkErr": {
+      "type": "object",
+      "properties": {
+        "failed": {
+          "type": "array",
+          "items": {
+            "$ref": "#/definitions/ListOkErrFailedItems0"
+          }
+        },
+        "successed": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          }
+        }
+      }
+    },
+    "ListOkErrFailedItems0": {
+      "type": "object",
+      "properties": {
+        "name": {
+          "type": "string"
+        },
+        "reason": {
           "type": "string"
         }
       }
