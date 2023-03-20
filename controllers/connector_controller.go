@@ -363,6 +363,9 @@ func (r *ConnectorReconciler) generateIngressForConnector(connector *vanusv1alph
 }
 
 func ExplicitConnectorAnnotations(connector *vanusv1alpha1.Connector) {
+	if connector.Annotations == nil {
+		connector.Annotations = make(map[string]string)
+	}
 	ExplicitConectorAnnotationWithDefaultValue(connector, cons.ConnectorDeploymentReplicasAnnotation, fmt.Sprintf("%d", cons.DefaultConnectorReplicas))
 	ExplicitConectorAnnotationWithDefaultValue(connector, cons.ConnectorServiceTypeAnnotation, cons.DefaultConnectorServiceType)
 	ExplicitConectorAnnotationWithDefaultValue(connector, cons.ConnectorServicePortAnnotation, fmt.Sprintf("%d", cons.DefaultConnectorServicePort))
