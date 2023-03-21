@@ -15,14 +15,19 @@
 package main
 
 import (
+	"context"
 	"flag"
 	"os"
 	"path/filepath"
+	"time"
 
 	"github.com/gin-gonic/gin"
 	"github.com/go-kit/log"
 	"github.com/vanus-labs/vanus-operator/pkg/apiserver/controller"
 	"github.com/vanus-labs/vanus-operator/pkg/apiserver/handlers"
+	"github.com/vanus-labs/vanus-operator/pkg/controller/ingress"
+	"k8s.io/client-go/informers"
+	"k8s.io/controller-manager/pkg/clientbuilder"
 	"k8s.io/klog/v2"
 )
 
@@ -62,6 +67,26 @@ func main() {
 	engine.NoMethod(func(c *gin.Context) {
 		a.Handler().ServeHTTP(c.Writer, c.Request)
 	})
+
+	ctx := context.Background()
+	rootClientBuilder := clientbuilder.SimpleControllerClientBuilder{
+		ClientConfig: config,
+	}
+	clientBuilder := rootClientBuilder
+
+	versionedClient := rootClientBuilder.ClientOrDie("shared-informers")
+	sharedInformers := informers.NewSharedInformerFactory(versionedClient, 10*time.Minute)
+
+	inc, err := ingress.NewIngressController(
+		ctx,
+		sharedInformers.Networking().V1().Ingresses(),
+		clientBuilder.ClientOrDie("ingress-controller"),
+	)
+	if err != nil {
+		klog.Errorf("creating Ingresses controller failed, err: %s", err.Error())
+		panic(err)
+	}
+	go inc.Run(ctx, int(1))
 
 	err = engine.Run(*addr)
 	if err != nil {
