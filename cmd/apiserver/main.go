@@ -19,16 +19,17 @@ import (
 	"flag"
 	"os"
 	"path/filepath"
-	"time"
 
 	"github.com/gin-gonic/gin"
 	"github.com/go-kit/log"
 	"github.com/vanus-labs/vanus-operator/pkg/apiserver/controller"
 	"github.com/vanus-labs/vanus-operator/pkg/apiserver/handlers"
 	"github.com/vanus-labs/vanus-operator/pkg/controller/ingress"
-	"k8s.io/client-go/informers"
-	"k8s.io/controller-manager/pkg/clientbuilder"
 	"k8s.io/klog/v2"
+)
+
+var (
+	defaultIngressControllerWorker int = 1
 )
 
 func main() {
@@ -69,24 +70,12 @@ func main() {
 	})
 
 	ctx := context.Background()
-	rootClientBuilder := clientbuilder.SimpleControllerClientBuilder{
-		ClientConfig: config,
-	}
-	clientBuilder := rootClientBuilder
-
-	versionedClient := rootClientBuilder.ClientOrDie("shared-informers")
-	sharedInformers := informers.NewSharedInformerFactory(versionedClient, 10*time.Minute)
-
-	inc, err := ingress.NewIngressController(
-		ctx,
-		sharedInformers.Networking().V1().Ingresses(),
-		clientBuilder.ClientOrDie("ingress-controller"),
-	)
+	inc, err := ingress.NewIngressController(ctx, control)
 	if err != nil {
-		klog.Errorf("creating Ingresses controller failed, err: %s", err.Error())
+		klog.Errorf("new ingress controller failed, err: %s", err.Error())
 		panic(err)
 	}
-	go inc.Run(ctx, int(1))
+	go inc.Run(ctx, defaultIngressControllerWorker)
 
 	err = engine.Run(*addr)
 	if err != nil {
