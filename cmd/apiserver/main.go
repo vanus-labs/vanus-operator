@@ -15,6 +15,7 @@
 package main
 
 import (
+	"context"
 	"flag"
 	"os"
 	"path/filepath"
@@ -23,7 +24,12 @@ import (
 	"github.com/go-kit/log"
 	"github.com/vanus-labs/vanus-operator/pkg/apiserver/controller"
 	"github.com/vanus-labs/vanus-operator/pkg/apiserver/handlers"
+	"github.com/vanus-labs/vanus-operator/pkg/controller/ingress"
 	"k8s.io/klog/v2"
+)
+
+var (
+	defaultIngressControllerWorker int = 1
 )
 
 func main() {
@@ -62,6 +68,14 @@ func main() {
 	engine.NoMethod(func(c *gin.Context) {
 		a.Handler().ServeHTTP(c.Writer, c.Request)
 	})
+
+	ctx := context.Background()
+	inc, err := ingress.NewIngressController(ctx, control)
+	if err != nil {
+		klog.Errorf("new ingress controller failed, err: %s", err.Error())
+		panic(err)
+	}
+	go inc.Run(ctx, defaultIngressControllerWorker)
 
 	err = engine.Run(*addr)
 	if err != nil {

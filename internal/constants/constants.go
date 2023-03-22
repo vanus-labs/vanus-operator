@@ -19,13 +19,17 @@ const (
 	DefaultNamespace         = "vanus"
 	DefaultVanusCoreName     = "vanus-cluster"
 	DefaultVanusOperatorName = "vanus-operator"
+	DefaultVanusOperatorHost = "vanus-operator.com"
 	DefaultConfigMountPath   = "/vanus/config"
 	DefaultVolumeMountPath   = "/data"
 	DefaultVolumeName        = "data"
 
 	// DefaultRequeueIntervalInSecond is an universal interval of the reconcile function
-	DefaultRequeueIntervalInSecond = 6
-	DefaultPortMetrics             = 2112
+	DefaultRequeueIntervalInSecond     = 6
+	DefaultPortMetrics                 = 2112
+	DefaultOperatorContainerPortApi    = 8089
+	DefaultIngressClassAnnotationKey   = "kubernetes.io/ingress.class"
+	DefaultIngressClassAnnotationValue = "alb"
 )
 
 const (
