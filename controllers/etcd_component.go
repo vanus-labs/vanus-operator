@@ -153,8 +153,7 @@ func (r *CoreReconciler) generateEtcd(core *vanusv1alpha1.Core) *appsv1.Stateful
 					Containers: []corev1.Container{{
 						Name:            cons.DefaultEtcdContainerName,
 						Image:           cons.DefaultEtcdContainerImageName,
-						ImagePullPolicy: core.Spec.ImagePullPolicy,
-						Resources:       core.Spec.Resources,
+						ImagePullPolicy: corev1.PullPolicy(core.Annotations[cons.CoreComponentImagePullPolicyAnnotation]),
 						Env:             getEnvForEtcd(core),
 						Lifecycle: &corev1.Lifecycle{
 							PreStop: &corev1.LifecycleHandler{
@@ -194,6 +193,7 @@ func (r *CoreReconciler) generateEtcd(core *vanusv1alpha1.Core) *appsv1.Stateful
 						},
 						TerminationMessagePath:   "/dev/termination-log",
 						TerminationMessagePolicy: corev1.TerminationMessageReadFile,
+						Resources:                getResourcesForEtcd(core),
 						Ports:                    getPortsForEtcd(core),
 						VolumeMounts:             getVolumeMountsForEtcd(core),
 					}},
@@ -273,6 +273,20 @@ func getEnvForEtcd(core *vanusv1alpha1.Core) []corev1.EnvVar {
 	}}
 
 	return defaultEnvs
+}
+
+func getResourcesForEtcd(core *vanusv1alpha1.Core) corev1.ResourceRequirements {
+	limits := make(map[corev1.ResourceName]resource.Quantity)
+	if val, ok := core.Annotations[cons.CoreComponentEtcdResourceLimitsCpuAnnotation]; ok && val != "" {
+		limits[corev1.ResourceCPU] = resource.MustParse(core.Annotations[cons.CoreComponentEtcdResourceLimitsCpuAnnotation])
+	}
+	if val, ok := core.Annotations[cons.CoreComponentEtcdResourceLimitsMemAnnotation]; ok && val != "" {
+		limits[corev1.ResourceMemory] = resource.MustParse(core.Annotations[cons.CoreComponentEtcdResourceLimitsMemAnnotation])
+	}
+	defaultResources := corev1.ResourceRequirements{
+		Limits: limits,
+	}
+	return defaultResources
 }
 
 func getPortsForEtcd(core *vanusv1alpha1.Core) []corev1.ContainerPort {

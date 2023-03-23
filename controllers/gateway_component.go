@@ -26,6 +26,7 @@ import (
 	appsv1 "k8s.io/api/apps/v1"
 	corev1 "k8s.io/api/core/v1"
 	"k8s.io/apimachinery/pkg/api/errors"
+	"k8s.io/apimachinery/pkg/api/resource"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/types"
 	"k8s.io/apimachinery/pkg/util/intstr"
@@ -125,8 +126,8 @@ func (r *CoreReconciler) generateGateway(core *vanusv1alpha1.Core) *appsv1.Deplo
 					Containers: []corev1.Container{{
 						Name:            cons.DefaultGatewayContainerName,
 						Image:           fmt.Sprintf("%s:%s", cons.DefaultGatewayContainerImageName, core.Spec.Version),
-						ImagePullPolicy: core.Spec.ImagePullPolicy,
-						Resources:       core.Spec.Resources,
+						ImagePullPolicy: corev1.PullPolicy(core.Annotations[cons.CoreComponentImagePullPolicyAnnotation]),
+						Resources:       getResourcesForGateway(core),
 						Env:             getEnvForGateway(core),
 						Ports:           getPortsForGateway(core),
 						VolumeMounts:    getVolumeMountsForGateway(core),
@@ -138,8 +139,21 @@ func (r *CoreReconciler) generateGateway(core *vanusv1alpha1.Core) *appsv1.Deplo
 	}
 	// Set trigger instance as the owner and controller
 	controllerutil.SetControllerReference(core, dep, r.Scheme)
-
 	return dep
+}
+
+func getResourcesForGateway(core *vanusv1alpha1.Core) corev1.ResourceRequirements {
+	limits := make(map[corev1.ResourceName]resource.Quantity)
+	if val, ok := core.Annotations[cons.CoreComponentGatewayResourceLimitsCpuAnnotation]; ok && val != "" {
+		limits[corev1.ResourceCPU] = resource.MustParse(core.Annotations[cons.CoreComponentGatewayResourceLimitsCpuAnnotation])
+	}
+	if val, ok := core.Annotations[cons.CoreComponentGatewayResourceLimitsMemAnnotation]; ok && val != "" {
+		limits[corev1.ResourceMemory] = resource.MustParse(core.Annotations[cons.CoreComponentGatewayResourceLimitsMemAnnotation])
+	}
+	defaultResources := corev1.ResourceRequirements{
+		Limits: limits,
+	}
+	return defaultResources
 }
 
 func getEnvForGateway(core *vanusv1alpha1.Core) []corev1.EnvVar {

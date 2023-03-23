@@ -17,7 +17,6 @@ limitations under the License.
 package v1alpha1
 
 import (
-	corev1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
 
@@ -31,11 +30,6 @@ type CoreSpec struct {
 
 	// Replicas is the Vanus cluster version. All components remain the same version.
 	Version string `json:"version,omitempty"`
-	// ImagePullPolicy defines how the image is pulled
-	ImagePullPolicy corev1.PullPolicy `json:"imagePullPolicy,omitempty"`
-	// The desired compute resource requirements of Pods in the cluster.
-	// +kubebuilder:default:={limits: {cpu: "500m", memory: "1024Mi"}, requests: {cpu: "250m", memory: "512Mi"}}
-	Resources corev1.ResourceRequirements `json:"resources,omitempty"`
 }
 
 // CoreStatus defines the observed state of Core

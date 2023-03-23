@@ -26,6 +26,7 @@ import (
 	appsv1 "k8s.io/api/apps/v1"
 	corev1 "k8s.io/api/core/v1"
 	"k8s.io/apimachinery/pkg/api/errors"
+	"k8s.io/apimachinery/pkg/api/resource"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/types"
 	ctrl "sigs.k8s.io/controller-runtime"
@@ -104,8 +105,8 @@ func (r *CoreReconciler) generateTrigger(core *vanusv1alpha1.Core) *appsv1.Deplo
 					Containers: []corev1.Container{{
 						Name:            cons.DefaultTriggerContainerName,
 						Image:           fmt.Sprintf("%s:%s", cons.DefaultTriggerContainerImageName, core.Spec.Version),
-						ImagePullPolicy: core.Spec.ImagePullPolicy,
-						Resources:       core.Spec.Resources,
+						ImagePullPolicy: corev1.PullPolicy(core.Annotations[cons.CoreComponentImagePullPolicyAnnotation]),
+						Resources:       getResourcesForTrigger(core),
 						Env:             getEnvForTrigger(core),
 						Ports:           getPortsForTrigger(core),
 						VolumeMounts:    getVolumeMountsForTrigger(core),
@@ -117,8 +118,21 @@ func (r *CoreReconciler) generateTrigger(core *vanusv1alpha1.Core) *appsv1.Deplo
 	}
 	// Set Trigger instance as the owner and controller
 	controllerutil.SetControllerReference(core, dep, r.Scheme)
-
 	return dep
+}
+
+func getResourcesForTrigger(core *vanusv1alpha1.Core) corev1.ResourceRequirements {
+	limits := make(map[corev1.ResourceName]resource.Quantity)
+	if val, ok := core.Annotations[cons.CoreComponentTriggerResourceLimitsCpuAnnotation]; ok && val != "" {
+		limits[corev1.ResourceCPU] = resource.MustParse(core.Annotations[cons.CoreComponentTriggerResourceLimitsCpuAnnotation])
+	}
+	if val, ok := core.Annotations[cons.CoreComponentTriggerResourceLimitsMemAnnotation]; ok && val != "" {
+		limits[corev1.ResourceMemory] = resource.MustParse(core.Annotations[cons.CoreComponentTriggerResourceLimitsMemAnnotation])
+	}
+	defaultResources := corev1.ResourceRequirements{
+		Limits: limits,
+	}
+	return defaultResources
 }
 
 func getEnvForTrigger(core *vanusv1alpha1.Core) []corev1.EnvVar {

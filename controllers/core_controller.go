@@ -124,6 +124,7 @@ func ExplicitCoreAnnotations(core *vanusv1alpha1.Core) {
 	if core.Annotations == nil {
 		core.Annotations = make(map[string]string)
 	}
+	ExplicitCoreAnnotationWithDefaultValue(core, cons.CoreComponentImagePullPolicyAnnotation, cons.DefaultImagePullPolicy)
 	ExplicitCoreAnnotationWithDefaultValue(core, cons.CoreComponentEtcdPortClientAnnotation, fmt.Sprintf("%d", cons.DefaultEtcdPortClient))
 	ExplicitCoreAnnotationWithDefaultValue(core, cons.CoreComponentEtcdPortPeerAnnotation, fmt.Sprintf("%d", cons.DefaultEtcdPortPeer))
 	ExplicitCoreAnnotationWithDefaultValue(core, cons.CoreComponentEtcdStorageSizeAnnotation, cons.DefaultEtcdStorageSize)

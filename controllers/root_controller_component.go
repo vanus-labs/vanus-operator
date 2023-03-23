@@ -152,8 +152,8 @@ func (r *CoreReconciler) generateRootController(core *vanusv1alpha1.Core) *appsv
 					Containers: []corev1.Container{{
 						Name:            cons.DefaultRootControllerContainerName,
 						Image:           fmt.Sprintf("%s:%s", cons.DefaultRootControllerContainerImageName, core.Spec.Version),
-						ImagePullPolicy: core.Spec.ImagePullPolicy,
-						Resources:       core.Spec.Resources,
+						ImagePullPolicy: corev1.PullPolicy(core.Annotations[cons.CoreComponentImagePullPolicyAnnotation]),
+						Resources:       getResourcesForController(core),
 						Env:             getEnvForRootController(core),
 						Ports:           getPortsForRootController(core),
 						VolumeMounts:    getVolumeMountsForRootController(core),
@@ -166,7 +166,6 @@ func (r *CoreReconciler) generateRootController(core *vanusv1alpha1.Core) *appsv
 	}
 	// Set rootController instance as the owner and root-controller
 	controllerutil.SetControllerReference(core, sts, r.Scheme)
-
 	return sts
 }
 

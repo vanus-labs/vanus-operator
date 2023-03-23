@@ -25,7 +25,6 @@ import (
 	cons "github.com/vanus-labs/vanus-operator/internal/constants"
 	"github.com/vanus-labs/vanus-operator/internal/convert"
 	"github.com/vanus-labs/vanus-operator/pkg/apiserver/utils"
-	corev1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	log "k8s.io/klog/v2"
 )
@@ -166,9 +165,7 @@ func generateCore(cluster *models.ClusterCreate) *vanusv1alpha1.Core {
 			Annotations: cluster.Annotations,
 		},
 		Spec: vanusv1alpha1.CoreSpec{
-			Version:         cluster.Version,
-			ImagePullPolicy: corev1.PullIfNotPresent,
-			Resources:       corev1.ResourceRequirements{},
+			Version: cluster.Version,
 		},
 	}
 	return controller
