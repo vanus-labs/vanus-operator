@@ -153,8 +153,8 @@ func (r *CoreReconciler) generateController(core *vanusv1alpha1.Core) *appsv1.St
 					Containers: []corev1.Container{{
 						Name:            cons.DefaultControllerContainerName,
 						Image:           fmt.Sprintf("%s:%s", cons.DefaultControllerContainerImageName, core.Spec.Version),
-						ImagePullPolicy: core.Spec.ImagePullPolicy,
-						Resources:       core.Spec.Resources,
+						ImagePullPolicy: corev1.PullPolicy(core.Annotations[cons.CoreComponentImagePullPolicyAnnotation]),
+						Resources:       getResourcesForController(core),
 						Env:             getEnvForController(core),
 						Ports:           getPortsForController(core),
 						VolumeMounts:    getVolumeMountsForController(core),
@@ -167,7 +167,6 @@ func (r *CoreReconciler) generateController(core *vanusv1alpha1.Core) *appsv1.St
 	}
 	// Set Controller instance as the owner and controller
 	controllerutil.SetControllerReference(core, sts, r.Scheme)
-
 	return sts
 }
 
@@ -181,6 +180,20 @@ func (r *CoreReconciler) waitControllerIsReady(ctx context.Context, core *vanusv
 		return true, nil
 	}
 	return false, nil
+}
+
+func getResourcesForController(core *vanusv1alpha1.Core) corev1.ResourceRequirements {
+	limits := make(map[corev1.ResourceName]resource.Quantity)
+	if val, ok := core.Annotations[cons.CoreComponentControllerResourceLimitsCpuAnnotation]; ok && val != "" {
+		limits[corev1.ResourceCPU] = resource.MustParse(core.Annotations[cons.CoreComponentControllerResourceLimitsCpuAnnotation])
+	}
+	if val, ok := core.Annotations[cons.CoreComponentControllerResourceLimitsMemAnnotation]; ok && val != "" {
+		limits[corev1.ResourceMemory] = resource.MustParse(core.Annotations[cons.CoreComponentControllerResourceLimitsMemAnnotation])
+	}
+	defaultResources := corev1.ResourceRequirements{
+		Limits: limits,
+	}
+	return defaultResources
 }
 
 func getEnvForController(core *vanusv1alpha1.Core) []corev1.EnvVar {

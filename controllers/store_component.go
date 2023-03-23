@@ -109,8 +109,8 @@ func (r *CoreReconciler) generateStore(core *vanusv1alpha1.Core) *appsv1.Statefu
 					Containers: []corev1.Container{{
 						Name:            cons.DefaultStoreContainerName,
 						Image:           fmt.Sprintf("%s:%s", cons.DefaultStoreContainerImageName, core.Spec.Version),
-						ImagePullPolicy: core.Spec.ImagePullPolicy,
-						Resources:       core.Spec.Resources,
+						ImagePullPolicy: corev1.PullPolicy(core.Annotations[cons.CoreComponentImagePullPolicyAnnotation]),
+						Resources:       getResourcesForStore(core),
 						Env:             getEnvForStore(core),
 						Ports:           getPortsForStore(core),
 						VolumeMounts:    getVolumeMountsForStore(core),
@@ -124,8 +124,21 @@ func (r *CoreReconciler) generateStore(core *vanusv1alpha1.Core) *appsv1.Statefu
 	}
 	// Set Store instance as the owner and controller
 	controllerutil.SetControllerReference(core, sts, r.Scheme)
-
 	return sts
+}
+
+func getResourcesForStore(core *vanusv1alpha1.Core) corev1.ResourceRequirements {
+	limits := make(map[corev1.ResourceName]resource.Quantity)
+	if val, ok := core.Annotations[cons.CoreComponentStoreResourceLimitsCpuAnnotation]; ok && val != "" {
+		limits[corev1.ResourceCPU] = resource.MustParse(core.Annotations[cons.CoreComponentStoreResourceLimitsCpuAnnotation])
+	}
+	if val, ok := core.Annotations[cons.CoreComponentStoreResourceLimitsMemAnnotation]; ok && val != "" {
+		limits[corev1.ResourceMemory] = resource.MustParse(core.Annotations[cons.CoreComponentStoreResourceLimitsMemAnnotation])
+	}
+	defaultResources := corev1.ResourceRequirements{
+		Limits: limits,
+	}
+	return defaultResources
 }
 
 func getEnvForStore(core *vanusv1alpha1.Core) []corev1.EnvVar {

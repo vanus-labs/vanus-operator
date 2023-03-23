@@ -40,8 +40,7 @@ func generateVanus() *vanusv1alpha1.Core {
 			Name:      "vanus-controller-jk",
 		},
 		Spec: vanusv1alpha1.CoreSpec{
-			ImagePullPolicy: corev1.PullIfNotPresent,
-			Resources:       corev1.ResourceRequirements{},
+			Version: "v0.7.0",
 		},
 	}
 	return vanus
