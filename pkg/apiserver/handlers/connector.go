@@ -170,8 +170,12 @@ func (a *Api) patchConnectorHandler(params connector.PatchConnectorParams) middl
 		params.Connector.Annotations)
 
 	// Check if the connector exists, if not exist, return error
-	oriConnector, err := a.getConnector(cons.DefaultNamespace, params.Connector.Name, &metav1.GetOptions{})
+	oriConnector, err := a.getConnector(cons.DefaultNamespace, params.Name, &metav1.GetOptions{})
 	if err != nil {
+		if errors.IsNotFound(err) {
+			log.Errorf("Connector %s/%s not found, err: %s\n", cons.DefaultNamespace, params.Connector.Name, err.Error())
+			return utils.Response(404, err)
+		}
 		log.Errorf("get Connector %s/%s failed, err: %s\n", cons.DefaultNamespace, params.Connector.Name, err.Error())
 		return utils.Response(500, err)
 	}
@@ -199,19 +203,12 @@ func (a *Api) patchConnectorHandler(params connector.PatchConnectorParams) middl
 }
 
 func (a *Api) deleteConnectorHandler(params connector.DeleteConnectorParams) middleware.Responder {
-	// Check if the connector already exists
-	exist, err := a.checkConnectorExist(params.Name)
-	if err != nil {
-		log.Errorf("check connector exist failed, err: %s\n", err.Error())
-		return utils.Response(500, err)
-	}
-	if !exist {
-		log.Warning("Connector not exist")
-		return utils.Response(400, stderr.New("connector not exist"))
-	}
-
 	c, err := a.getConnector(cons.DefaultNamespace, params.Name, &metav1.GetOptions{})
 	if err != nil {
+		if errors.IsNotFound(err) {
+			log.Errorf("Connector %s/%s not found, err: %s\n", cons.DefaultNamespace, params.Name, err.Error())
+			return utils.Response(404, err)
+		}
 		log.Errorf("get connector failed, err: %s\n", err.Error())
 		return utils.Response(500, err)
 	}
@@ -267,6 +264,10 @@ func (a *Api) listConnectorHandler(params connector.ListConnectorParams) middlew
 func (a *Api) getConnectorHandler(params connector.GetConnectorParams) middleware.Responder {
 	c, err := a.getConnector(cons.DefaultNamespace, params.Name, &metav1.GetOptions{})
 	if err != nil {
+		if errors.IsNotFound(err) {
+			log.Errorf("Connector %s/%s not found, err: %s\n", cons.DefaultNamespace, params.Name, err.Error())
+			return utils.Response(404, err)
+		}
 		log.Errorf("Failed to get Connector %s/%s, err: %+v\n", cons.DefaultNamespace, params.Name, err.Error())
 		return utils.Response(500, err)
 	}
@@ -292,7 +293,6 @@ func (a *Api) getConnectorHandler(params connector.GetConnectorParams) middlewar
 }
 
 func (a *Api) checkConnectorExist(name string) (bool, error) {
-	// TODO(jiangkai): need to check other components
 	_, exist, err := a.existConnector(cons.DefaultNamespace, name, &metav1.GetOptions{})
 	if err != nil {
 		log.Errorf("Failed to get Connector, name: %s, err: %s\n", name, err.Error())

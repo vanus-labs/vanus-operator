@@ -15,7 +15,7 @@
 package handlers
 
 import (
-	"errors"
+	stderr "errors"
 	"strings"
 
 	"github.com/go-openapi/runtime/middleware"
@@ -25,6 +25,7 @@ import (
 	cons "github.com/vanus-labs/vanus-operator/internal/constants"
 	"github.com/vanus-labs/vanus-operator/internal/convert"
 	"github.com/vanus-labs/vanus-operator/pkg/apiserver/utils"
+	"k8s.io/apimachinery/pkg/api/errors"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	log "k8s.io/klog/v2"
 )
@@ -56,7 +57,7 @@ func (a *Api) createClusterHandler(params cluster.CreateClusterParams) middlewar
 	}
 	if exist {
 		log.Warning("Cluster already exist")
-		return utils.Response(400, errors.New("cluster already exist"))
+		return utils.Response(400, stderr.New("cluster already exist"))
 	}
 
 	log.Infof("Creating a new cluster %s/%s\n", cons.DefaultNamespace, cons.DefaultVanusCoreName)
@@ -75,15 +76,14 @@ func (a *Api) createClusterHandler(params cluster.CreateClusterParams) middlewar
 }
 
 func (a *Api) deleteClusterHandler(params cluster.DeleteClusterParams) middleware.Responder {
-	// Check if the cluster already exists
-	exist, err := a.checkClusterExist()
+	_, err := a.getCore(cons.DefaultNamespace, cons.DefaultVanusCoreName, &metav1.GetOptions{})
 	if err != nil {
-		log.Errorf("check cluster exist failed, err: %s\n", err.Error())
+		if errors.IsNotFound(err) {
+			log.Errorf("Cluster %s/%s not found, err: %s\n", cons.DefaultNamespace, cons.DefaultVanusCoreName, err.Error())
+			return utils.Response(404, err)
+		}
+		log.Errorf("Failed to get cluster %s/%s, err: %s\n", cons.DefaultNamespace, cons.DefaultVanusCoreName, err.Error())
 		return utils.Response(500, err)
-	}
-	if !exist {
-		log.Warning("Cluster not exist")
-		return utils.Response(400, errors.New("cluster not exist"))
 	}
 
 	err = a.deleteCore(cons.DefaultNamespace, cons.DefaultVanusCoreName)
@@ -99,6 +99,15 @@ func (a *Api) deleteClusterHandler(params cluster.DeleteClusterParams) middlewar
 }
 
 func (a *Api) patchClusterHandler(params cluster.PatchClusterParams) middleware.Responder {
+	_, err := a.getCore(cons.DefaultNamespace, cons.DefaultVanusCoreName, &metav1.GetOptions{})
+	if err != nil {
+		if errors.IsNotFound(err) {
+			log.Errorf("Cluster %s/%s not found, err: %s\n", cons.DefaultNamespace, cons.DefaultVanusCoreName, err.Error())
+			return utils.Response(404, err)
+		}
+		log.Errorf("Failed to get cluster %s/%s, err: %s\n", cons.DefaultNamespace, cons.DefaultVanusCoreName, err.Error())
+		return utils.Response(500, err)
+	}
 	core := &vanusv1alpha1.Core{
 		ObjectMeta: metav1.ObjectMeta{
 			Namespace:   cons.DefaultNamespace,
@@ -124,6 +133,10 @@ func (a *Api) patchClusterHandler(params cluster.PatchClusterParams) middleware.
 func (a *Api) getClusterHandler(params cluster.GetClusterParams) middleware.Responder {
 	vanus, err := a.getCore(cons.DefaultNamespace, cons.DefaultVanusCoreName, &metav1.GetOptions{})
 	if err != nil {
+		if errors.IsNotFound(err) {
+			log.Errorf("Cluster %s/%s not found, err: %s\n", cons.DefaultNamespace, cons.DefaultVanusCoreName, err.Error())
+			return utils.Response(404, err)
+		}
 		log.Errorf("Failed to get cluster %s/%s, err: %s\n", cons.DefaultNamespace, cons.DefaultVanusCoreName, err.Error())
 		return utils.Response(500, err)
 	}
@@ -139,11 +152,11 @@ func (a *Api) getClusterHandler(params cluster.GetClusterParams) middleware.Resp
 
 func (a *Api) checkParamsValid(cluster *models.ClusterCreate) (bool, error) {
 	if cluster.Version == "" {
-		return false, errors.New("cluster version is required parameters")
+		return false, stderr.New("cluster version is required parameters")
 	}
 	if strings.Compare(cluster.Version, DefaultInitialVersion) < 0 {
 		log.Errorf("Only supports %s and later version.\n", DefaultInitialVersion)
-		return false, errors.New("unsupported version")
+		return false, stderr.New("unsupported version")
 	}
 	return true, nil
 }
