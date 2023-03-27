@@ -168,6 +168,16 @@ func (r *ConnectorReconciler) Reconcile(ctx context.Context, req ctrl.Request) (
 		}
 	}
 
+	// Get ori Connector Configmap
+	oriConfigMap := &corev1.ConfigMap{}
+	err = r.Get(ctx, types.NamespacedName{Name: connector.Name, Namespace: connector.Namespace}, oriConfigMap)
+	if err != nil {
+		if errors.IsNotFound(err) {
+			logger.Error(err, "Failed to Get ori Connector ConfigMap")
+			return ctrl.Result{}, err
+		}
+	}
+
 	// Update Connector Configmap
 	connectorConfigMap, err := r.generateConfigMapForConnector(connector)
 	if err != nil {
@@ -183,8 +193,29 @@ func (r *ConnectorReconciler) Reconcile(ctx context.Context, req ctrl.Request) (
 		logger.Info("Successfully update Connector ConfigMap")
 	}
 
+	// Get new Connector Configmap
+	newConfigMap := &corev1.ConfigMap{}
+	err = r.Get(ctx, types.NamespacedName{Name: connector.Name, Namespace: connector.Namespace}, newConfigMap)
+	if err != nil {
+		if errors.IsNotFound(err) {
+			logger.Error(err, "Failed to Get new Connector ConfigMap")
+			return ctrl.Result{}, err
+		}
+	}
+
 	// Update Connector Deployment
 	connectorDeployment := r.getDeploymentForConnector(connector)
+	if oriConfigMap.ResourceVersion != newConfigMap.ResourceVersion {
+		pauseConnectorDeployment := connectorDeployment.DeepCopy()
+		pauseConnectorDeployment.Spec.Replicas = convert.PtrInt32(0)
+		logger.Info("Pause Connector Deployment.", "Namespace", pauseConnectorDeployment.Namespace, "Name", pauseConnectorDeployment.Name, "Replicas", *pauseConnectorDeployment.Spec.Replicas)
+		err = r.Update(ctx, pauseConnectorDeployment)
+		if err != nil {
+			logger.Error(err, "Failed to update Connector Deployment", "Namespace", pauseConnectorDeployment.Namespace, "Name", pauseConnectorDeployment.Name)
+			return ctrl.Result{}, err
+		}
+		return ctrl.Result{RequeueAfter: time.Second}, nil
+	}
 	logger.Info("Updating Connector Deployment.", "Namespace", connectorDeployment.Namespace, "Name", connectorDeployment.Name)
 	err = r.Update(ctx, connectorDeployment)
 	if err != nil {
@@ -192,7 +223,6 @@ func (r *ConnectorReconciler) Reconcile(ctx context.Context, req ctrl.Request) (
 		return ctrl.Result{}, err
 	}
 	logger.Info("Successfully update Connector Deployment")
-
 	return ctrl.Result{}, nil
 }
 
