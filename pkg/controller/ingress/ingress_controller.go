@@ -103,9 +103,12 @@ func (inc *IngressController) Run(ctx context.Context, workers int) {
 }
 
 func (inc *IngressController) addIngress(obj interface{}) {
-	ins := obj.(*networkingv1.Ingress)
-	log.Infof("Adding ingress: %+v\n", log.KObj(ins))
-	inc.enqueueIngress(ins)
+	ingress := obj.(*networkingv1.Ingress)
+	if !isOperatorIngress(ingress.Namespace, ingress.Name) {
+		return
+	}
+	log.Infof("Adding ingress: %+v\n", log.KObj(ingress))
+	inc.enqueueIngress(ingress)
 }
 
 func (inc *IngressController) updateIngress(cur, old interface{}) {}
@@ -124,6 +127,9 @@ func (inc *IngressController) deleteIngress(obj interface{}) {
 			return
 		}
 	}
+	if !isOperatorIngress(ingress.Namespace, ingress.Name) {
+		return
+	}
 	log.Infof("Deleting ingress: %+v\n", ingress)
 
 	// generate new ingress
@@ -140,6 +146,9 @@ func (inc *IngressController) syncIngress(ctx context.Context, key string) error
 	namespace, name, err := cache.SplitMetaNamespaceKey(key)
 	if err != nil {
 		return err
+	}
+	if !isOperatorIngress(namespace, name) {
+		return nil
 	}
 	ins, err := inc.inLister.Ingresses(namespace).Get(name)
 	if err != nil {
@@ -362,4 +371,8 @@ func defaultIngressRule() networkingv1.IngressRule {
 		},
 	}
 	return rule
+}
+
+func isOperatorIngress(namespace, name string) bool {
+	return (namespace == cons.DefaultNamespace && name == cons.DefaultVanusOperatorName)
 }
