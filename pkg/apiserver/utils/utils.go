@@ -95,7 +95,7 @@ func Response(code int32, err error) middleware.Responder {
 	}
 	respData, _ := json.Marshal(resp)
 	return middleware.ResponderFunc(func(resp http.ResponseWriter, _ runtime.Producer) {
-		resp.WriteHeader(http.StatusOK)
+		resp.WriteHeader(int(code))
 		resp.Write(respData) //nolint
 	})
 }
