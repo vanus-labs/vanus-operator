@@ -111,8 +111,7 @@ const (
 	EnvPodName  = "POD_NAME"
 	EnvLogLevel = "VANUS_LOG_LEVEL"
 
-	// RequeueIntervalInSecond is an universal interval of the reconcile function
-	// RequeueIntervalInSecond = 6
+	AnnotationBuildInIngress = "vanus.ai/build-in-ingress"
 )
 
 var (
@@ -177,4 +176,5 @@ const (
 	ConnectorServiceTypeAnnotation        = "connector.vanus.ai/service-type"
 	ConnectorServicePortAnnotation        = "connector.vanus.ai/service-port"
 	ConnectorNetworkHostDomainAnnotation  = "connector.vanus.ai/network-host-domain"
+	ConnectorIngressNameAnnotation        = "connector.vanus.ai/ingress-name"
 )

@@ -212,7 +212,7 @@ paths:
       description: "patch Connectors"
       operationId: "patchConnectors"
       parameters:
-        - name: "connector"
+        - name: "connectors"
           in: "body"
           schema:
             type: "array"

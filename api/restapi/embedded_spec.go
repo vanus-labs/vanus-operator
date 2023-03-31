@@ -307,7 +307,7 @@ func init() {
         "parameters": [
           {
             "description": "patch info",
-            "name": "connector",
+            "name": "connectors",
             "in": "body",
             "required": true,
             "schema": {
@@ -1050,7 +1050,7 @@ func init() {
         "parameters": [
           {
             "description": "patch info",
-            "name": "connector",
+            "name": "connectors",
             "in": "body",
             "required": true,
             "schema": {
