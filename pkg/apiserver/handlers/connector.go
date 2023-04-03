@@ -78,12 +78,6 @@ func RegistConnectorHandler(a *Api) {
 }
 
 func (a *Api) createConnectorHandler(params connector.CreateConnectorParams) middleware.Responder {
-	// Check connector params
-	if err := checkCreateConnectorParamsValid(params.Connector); err != nil {
-		log.Errorf("create connector params invalid, err: %s\n", err.Error())
-		return utils.Response(400, err)
-	}
-
 	log.Infof("show create connector params, name: %s, kind: %s, type: %s, version: %s, config: %+v, annotations: %+v\n",
 		params.Connector.Name,
 		params.Connector.Kind,
@@ -91,6 +85,12 @@ func (a *Api) createConnectorHandler(params connector.CreateConnectorParams) mid
 		params.Connector.Version,
 		params.Connector.Config,
 		params.Connector.Annotations)
+
+	// Check connector params
+	if err := checkCreateConnectorParamsValid(params.Connector); err != nil {
+		log.Errorf("create connector params invalid, err: %s\n", err.Error())
+		return utils.Response(400, err)
+	}
 
 	// Check if the connector already exists, if exist, return error
 	exist, err := a.checkConnectorExist(params.Connector.Name)
@@ -120,25 +120,32 @@ func (a *Api) createConnectorHandler(params connector.CreateConnectorParams) mid
 
 func (a *Api) patchConnectorsHandler(params connector.PatchConnectorsParams) middleware.Responder {
 	result := &models.ListOkErr{}
-	for _, connector := range params.Connector {
+	for _, connector := range params.Connectors {
 		log.Infof("parse patch connector params finish, name: %s, version: %s, config: %+v, annotations: %+v\n",
 			connector.Name,
 			connector.Version,
 			connector.Config,
 			connector.Annotations)
 
+		// Check connector params
+		if err := checkPatchConnectorParamsValid(connector); err != nil {
+			log.Errorf("patch connector params invalid, err: %s\n", err.Error())
+			result.Failed = append(result.Failed, &models.ListOkErrFailedItems0{
+				Name:   connector.Name,
+				Reason: err.Error(),
+			})
+			continue
+		}
+
 		// Check if the connector exists, if not exist, return error
 		oriConnector, err := a.getConnector(cons.DefaultNamespace, connector.Name, &metav1.GetOptions{})
 		if err != nil {
-			if errors.IsNotFound(err) {
-				result.Failed = append(result.Failed, &models.ListOkErrFailedItems0{
-					Name:   connector.Name,
-					Reason: err.Error(),
-				})
-				continue
-			}
 			log.Errorf("get Connector %s/%s failed, err: %s\n", cons.DefaultNamespace, connector.Name, err.Error())
-			return utils.Response(500, err)
+			result.Failed = append(result.Failed, &models.ListOkErrFailedItems0{
+				Name:   connector.Name,
+				Reason: err.Error(),
+			})
+			continue
 		}
 
 		log.Infof("Updating Connector %s/%s\n", cons.DefaultNamespace, connector.Name)
@@ -168,6 +175,12 @@ func (a *Api) patchConnectorHandler(params connector.PatchConnectorParams) middl
 		params.Connector.Version,
 		params.Connector.Config,
 		params.Connector.Annotations)
+
+	// Check connector params
+	if err := checkPatchConnectorParamsValid(params.Connector); err != nil {
+		log.Errorf("patch connector params invalid, err: %s\n", err.Error())
+		return utils.Response(400, err)
+	}
 
 	// Check if the connector exists, if not exist, return error
 	oriConnector, err := a.getConnector(cons.DefaultNamespace, params.Name, &metav1.GetOptions{})
@@ -308,15 +321,32 @@ func checkCreateConnectorParamsValid(connector *models.ConnectorCreate) error {
 	if connector.Kind != SourceConnector && connector.Kind != SinkConnector {
 		return stderr.New("create connector kind params invalid")
 	}
+	if _, ok := connector.Annotations[cons.ConnectorNetworkHostDomainAnnotation]; ok {
+		if _, ok := connector.Annotations[cons.ConnectorIngressNameAnnotation]; !ok {
+			return stderr.New("the annotation of ingress-name not set")
+		}
+	}
 	return nil
 }
 
-func labelsForConnector(name string) map[string]string {
-	return map[string]string{"app": name}
+func checkPatchConnectorParamsValid(connector *models.ConnectorPatch) error {
+	if _, ok := connector.Annotations[cons.ConnectorNetworkHostDomainAnnotation]; ok {
+		if _, ok := connector.Annotations[cons.ConnectorIngressNameAnnotation]; !ok {
+			return stderr.New("the annotation of ingress-name not set")
+		}
+	}
+	return nil
+}
+
+func labelsForConnector(c *models.ConnectorCreate) map[string]string {
+	labels := make(map[string]string)
+	labels["app"] = c.Name
+	labels[cons.ConnectorNetworkHostDomainAnnotation] = c.Annotations[cons.ConnectorNetworkHostDomainAnnotation]
+	return labels
 }
 
 func generateConnector(c *models.ConnectorCreate) *vanusv1alpha1.Connector {
-	labels := labelsForConnector(c.Name)
+	labels := labelsForConnector(c)
 	config, _ := yaml.Marshal(c.Config)
 	version := defaultConnectorImageTag
 	if c.Version != "" {

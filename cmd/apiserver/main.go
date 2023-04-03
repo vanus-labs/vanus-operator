@@ -22,14 +22,10 @@ import (
 
 	"github.com/gin-gonic/gin"
 	"github.com/go-kit/log"
-	"github.com/vanus-labs/vanus-operator/pkg/apiserver/controller"
+	apictrl "github.com/vanus-labs/vanus-operator/pkg/apiserver/controller"
 	"github.com/vanus-labs/vanus-operator/pkg/apiserver/handlers"
-	"github.com/vanus-labs/vanus-operator/pkg/controller/ingress"
+	"github.com/vanus-labs/vanus-operator/pkg/controller"
 	"k8s.io/klog/v2"
-)
-
-var (
-	defaultIngressControllerWorker int = 1
 )
 
 func main() {
@@ -43,16 +39,16 @@ func main() {
 	flag.Parse()
 
 	logger := log.NewLogfmtLogger(os.Stdout)
-	kubeconfig := controller.GetKubeConfigFromEnv()
+	kubeconfig := apictrl.GetKubeConfigFromEnv()
 	if *k8scfg != "" {
 		kubeconfig = *k8scfg
 	}
 	klog.Infof("create kubernetes client, kubeconfig path: %v", kubeconfig)
-	config, err := controller.GetInClusterOrKubeConfig(kubeconfig)
+	config, err := apictrl.GetInClusterOrKubeConfig(kubeconfig)
 	if err != nil {
 		panic(err)
 	}
-	control := controller.New(config)
+	control := apictrl.New(config)
 	bpath := filepath.Clean(*basepath)
 	klog.Infof("baseurl is: %v", bpath)
 	//api init, include wrap handler
@@ -70,12 +66,12 @@ func main() {
 	})
 
 	ctx := context.Background()
-	inc, err := ingress.NewIngressController(ctx, control)
+	c, err := controller.NewController(ctx, control)
 	if err != nil {
-		klog.Errorf("new ingress controller failed, err: %s", err.Error())
+		klog.Errorf("new controller manager failed, err: %s", err.Error())
 		panic(err)
 	}
-	go inc.Run(ctx, defaultIngressControllerWorker)
+	go c.Run(ctx)
 
 	err = engine.Run(*addr)
 	if err != nil {

@@ -12,11 +12,12 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-package ingress
+package controller
 
 import (
 	"context"
 	"fmt"
+	"reflect"
 	"time"
 
 	networkingv1 "k8s.io/api/networking/v1"
@@ -34,7 +35,6 @@ import (
 
 	vanusv1alpha1 "github.com/vanus-labs/vanus-operator/api/v1alpha1"
 	cons "github.com/vanus-labs/vanus-operator/internal/constants"
-	"github.com/vanus-labs/vanus-operator/internal/convert"
 	"github.com/vanus-labs/vanus-operator/pkg/apiserver/controller"
 )
 
@@ -51,8 +51,7 @@ type IngressController struct {
 }
 
 // NewIngressController creates a new IngressController
-func NewIngressController(ctx context.Context, ctrl *controller.Controller) (*IngressController, error) {
-	sharedInformers := informers.NewSharedInformerFactory(ctrl.K8SClientSet(), time.Minute)
+func NewIngressController(ctx context.Context, sharedInformers informers.SharedInformerFactory, ctrl *controller.Controller) (*IngressController, error) {
 	ingressInformer := sharedInformers.Networking().V1().Ingresses()
 	inc := &IngressController{
 		ctrl:     ctrl,
@@ -104,14 +103,26 @@ func (inc *IngressController) Run(ctx context.Context, workers int) {
 
 func (inc *IngressController) addIngress(obj interface{}) {
 	ingress := obj.(*networkingv1.Ingress)
-	if !isOperatorIngress(ingress.Namespace, ingress.Name) {
+	if !isBuiltInIngress(ingress) {
 		return
 	}
 	log.Infof("Adding ingress: %+v\n", log.KObj(ingress))
 	inc.enqueueIngress(ingress)
 }
 
-func (inc *IngressController) updateIngress(cur, old interface{}) {}
+func (inc *IngressController) updateIngress(old, new interface{}) {
+	oldIngress := old.(*networkingv1.Ingress)
+	newIngress := new.(*networkingv1.Ingress)
+	if !isBuiltInIngress(newIngress) {
+		return
+	}
+	if reflect.DeepEqual(old, new) {
+		// log.Infof("No changes on ingress. Skipping update, ingress: %+v\n", log.KObj(newIngress))
+		return
+	}
+	log.Infof("Updating ingress, old: %+v, new: %+v\n", oldIngress, newIngress)
+	inc.syncIngress(context.Background(), fmt.Sprintf("%s/%s", newIngress.Namespace, newIngress.Name))
+}
 
 func (inc *IngressController) deleteIngress(obj interface{}) {
 	ingress, ok := obj.(*networkingv1.Ingress)
@@ -127,11 +138,10 @@ func (inc *IngressController) deleteIngress(obj interface{}) {
 			return
 		}
 	}
-	if !isOperatorIngress(ingress.Namespace, ingress.Name) {
+	if !isBuiltInIngress(ingress) {
 		return
 	}
-	log.Infof("Deleting ingress: %+v\n", ingress)
-
+	log.Infof("Deleting ingress: %+v\n", log.KObj(ingress))
 	// generate new ingress
 	newIngress := rebuildIngress(ingress)
 	_, err := inc.ctrl.K8SClientSet().NetworkingV1().Ingresses(ingress.Namespace).Create(context.Background(), newIngress, metav1.CreateOptions{})
@@ -147,18 +157,16 @@ func (inc *IngressController) syncIngress(ctx context.Context, key string) error
 	if err != nil {
 		return err
 	}
-	if !isOperatorIngress(namespace, name) {
+	ingress, err := inc.inLister.Ingresses(namespace).Get(name)
+	if err != nil {
+		log.Errorf("failed to get ingress %s, err: %s\n", key, err.Error())
+		return err
+	}
+	if !isBuiltInIngress(ingress) {
 		return nil
 	}
-	ins, err := inc.inLister.Ingresses(namespace).Get(name)
-	if err != nil {
-		if apierrors.IsNotFound(err) {
-			log.Infof("Ingress has been deleted, key: %s\n", key)
-			return nil
-		}
-		return fmt.Errorf("unable to retrieve ingress %s from store, err: %+v", key, err)
-	}
-	return inc.diffAndUpdate(ins)
+	log.Infof("Sync ingress: %+v\n", log.KObj(ingress))
+	return inc.diffAndUpdate(ingress)
 }
 
 func (inc *IngressController) enqueue(in *networkingv1.Ingress) {
@@ -186,27 +194,11 @@ func (inc *IngressController) processNextWorkItem(ctx context.Context) bool {
 
 	err := inc.syncHandler(ctx, insKey.(string))
 	if err != nil {
-		// check whether the ingress exists, if not, create a new ingress
-		namespace, name, err := cache.SplitMetaNamespaceKey(insKey.(string))
-		if err != nil {
-			inc.queue.AddAfter(insKey, time.Minute)
+		if apierrors.IsNotFound(err) {
+			log.Infof("Ingress not found. Ignoring since object must be deleted., key: %s\n", insKey)
 			return true
 		}
-		_, err = inc.ctrl.K8SClientSet().NetworkingV1().Ingresses(namespace).Get(ctx, name, metav1.GetOptions{})
-		if err != nil {
-			if apierrors.IsNotFound(err) {
-				newIngress := newIngress()
-				_, err := inc.ctrl.K8SClientSet().NetworkingV1().Ingresses(newIngress.Namespace).Create(context.Background(), newIngress, metav1.CreateOptions{})
-				if err != nil {
-					log.Errorf("create new ingress failed, err: %s\n", err.Error())
-					inc.queue.AddAfter(insKey, time.Minute)
-					return true
-				}
-				log.Infof("create new ingress success, key: %s\n", insKey)
-				inc.queue.Add(insKey)
-				return true
-			}
-		}
+		log.Warningf("Sync handler failed, rejoin delay queue, key: %s\n", insKey)
 		inc.queue.AddAfter(insKey, time.Minute)
 		return true
 	}
@@ -215,87 +207,42 @@ func (inc *IngressController) processNextWorkItem(ctx context.Context) bool {
 	return true
 }
 
-func (inc *IngressController) diffAndUpdate(ins *networkingv1.Ingress) error {
-	// 1. list connectors
-	result := &vanusv1alpha1.ConnectorList{}
-	controller.AddToScheme(scheme.Scheme)
-	err := inc.ctrl.ClientSet().
-		Get().
-		Resource("connectors").
-		Namespace(cons.DefaultNamespace).
-		VersionedParams(&metav1.ListOptions{}, scheme.ParameterCodec).
-		Do(context.TODO()).
-		Into(result)
-	if err != nil {
-		log.Errorf("list connectors failed, err: %s\n", err.Error())
-		return fmt.Errorf("unable to list connectors, err: %s", err)
-	}
-
-	// 2. generate connector network host map, format: map[host]networkingv1.IngressBackend
-	connectorMap := make(map[string]networkingv1.IngressBackend)
-	for _, connector := range result.Items {
-		if host, ok := connector.Annotations[cons.ConnectorNetworkHostDomainAnnotation]; ok {
-			var svcPort int32
-			if _, ok := connector.Annotations[cons.ConnectorServicePortAnnotation]; ok {
-				svcPort, _ = convert.StrToInt32(connector.Annotations[cons.ConnectorServicePortAnnotation])
-			} else {
-				svcPort = int32(cons.DefaultConnectorServicePort)
-			}
-			backend := networkingv1.IngressBackend{
-				Service: &networkingv1.IngressServiceBackend{
-					Name: connector.Name,
-					Port: networkingv1.ServiceBackendPort{
-						Number: svcPort,
-					},
-				},
-			}
-			connectorMap[host] = backend
-		}
-	}
-
-	// 3. generate ingress host map, format: map[host]networkingv1.IngressBackend
-	ingressMap := make(map[string]networkingv1.IngressBackend)
-	for idx, rule := range ins.Spec.Rules {
-		if rule.Host == cons.DefaultVanusOperatorHost {
-			continue
-		}
-		ingressMap[rule.Host] = ins.Spec.Rules[idx].IngressRuleValue.HTTP.Paths[0].Backend
-	}
-
-	// 4. diff connectorMap and ingressMap
+func (inc *IngressController) diffAndUpdate(ingress *networkingv1.Ingress) error {
 	needUpdate := false
 	newRules := make([]networkingv1.IngressRule, 0)
 	newRules = append(newRules, defaultIngressRule())
-	for host, backend := range connectorMap {
-		if _, ok := ingressMap[host]; !ok {
-			needUpdate = true
+	for _, rule := range ingress.Spec.Rules {
+		if rule.Host == cons.DefaultVanusOperatorHost {
+			continue
 		}
-		prefix := networkingv1.PathTypePrefix
-		paths := make([]networkingv1.HTTPIngressPath, 0)
-		paths = append(paths, networkingv1.HTTPIngressPath{
-			Path:     "/",
-			PathType: &prefix,
-			Backend:  backend,
-		})
-		newRules = append(newRules, networkingv1.IngressRule{
-			Host: host,
-			IngressRuleValue: networkingv1.IngressRuleValue{
-				HTTP: &networkingv1.HTTPIngressRuleValue{
-					Paths: paths,
-				},
-			},
-		})
-	}
-
-	for host := range ingressMap {
-		if _, ok := connectorMap[host]; !ok {
+		// get connector from rule host
+		result := &vanusv1alpha1.ConnectorList{}
+		controller.AddToScheme(scheme.Scheme)
+		err := inc.ctrl.ClientSet().
+			Get().
+			Resource("connectors").
+			Namespace(cons.DefaultNamespace).
+			VersionedParams(&metav1.ListOptions{LabelSelector: fmt.Sprintf("%s=%s", cons.ConnectorNetworkHostDomainAnnotation, rule.Host)}, scheme.ParameterCodec).
+			Do(context.TODO()).
+			Into(result)
+		if err != nil {
+			log.Errorf("list connectors failed, err: %s\n", err.Error())
+			return fmt.Errorf("unable to list connectors, err: %s", err)
+		}
+		connectorsNumber := len(result.Items)
+		if connectorsNumber == 0 {
+			// connector has been deleted, need update rule
 			needUpdate = true
+		} else if connectorsNumber > 1 {
+			log.Warningf("there are %d connectors with the same network host domain\n", connectorsNumber)
+		} else {
+			newRules = append(newRules, rule)
 		}
 	}
 
 	if needUpdate {
-		ins.Spec.Rules = newRules
-		_, err = inc.ctrl.K8SClientSet().NetworkingV1().Ingresses(cons.DefaultNamespace).Update(context.TODO(), ins, metav1.UpdateOptions{})
+		ingress.Spec.Rules = newRules
+		_, err := inc.ctrl.K8SClientSet().NetworkingV1().Ingresses(cons.DefaultNamespace).Update(context.TODO(), ingress, metav1.UpdateOptions{})
 		if err != nil {
 			log.Errorf("update ingress failed, err: %s\n", err.Error())
 			return err
@@ -310,40 +257,6 @@ func rebuildIngress(ingress *networkingv1.Ingress) *networkingv1.Ingress {
 	newIngress.Namespace = ingress.Namespace
 	newIngress.Annotations = ingress.Annotations
 	newIngress.Spec.Rules = ingress.Spec.Rules
-	return newIngress
-}
-
-func newIngress() *networkingv1.Ingress {
-	newIngress := new(networkingv1.Ingress)
-	newIngress.Name = cons.DefaultVanusOperatorName
-	newIngress.Namespace = cons.DefaultNamespace
-	annotations := make(map[string]string)
-	annotations[cons.DefaultIngressClassAnnotationKey] = cons.DefaultIngressClassAnnotationValue
-	newIngress.Annotations = annotations
-	prefix := networkingv1.PathTypePrefix
-	paths := make([]networkingv1.HTTPIngressPath, 0)
-	paths = append(paths, networkingv1.HTTPIngressPath{
-		Path:     "/",
-		PathType: &prefix,
-		Backend: networkingv1.IngressBackend{
-			Service: &networkingv1.IngressServiceBackend{
-				Name: cons.DefaultVanusOperatorName,
-				Port: networkingv1.ServiceBackendPort{
-					Number: cons.DefaultOperatorContainerPortApi,
-				},
-			},
-		},
-	})
-	rules := make([]networkingv1.IngressRule, 0)
-	rules = append(rules, networkingv1.IngressRule{
-		Host: cons.DefaultVanusOperatorHost,
-		IngressRuleValue: networkingv1.IngressRuleValue{
-			HTTP: &networkingv1.HTTPIngressRuleValue{
-				Paths: paths,
-			},
-		},
-	})
-	newIngress.Spec.Rules = rules
 	return newIngress
 }
 
@@ -373,6 +286,12 @@ func defaultIngressRule() networkingv1.IngressRule {
 	return rule
 }
 
-func isOperatorIngress(namespace, name string) bool {
-	return (namespace == cons.DefaultNamespace && name == cons.DefaultVanusOperatorName)
+func isBuiltInIngress(ingress *networkingv1.Ingress) bool {
+	if ingress.Annotations == nil {
+		return false
+	}
+	if val, ok := ingress.Annotations[cons.AnnotationBuildInIngress]; ok && val == "true" {
+		return true
+	}
+	return false
 }

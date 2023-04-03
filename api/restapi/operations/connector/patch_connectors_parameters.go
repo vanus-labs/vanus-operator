@@ -37,7 +37,7 @@ type PatchConnectorsParams struct {
 	  Required: true
 	  In: body
 	*/
-	Connector []*models.ConnectorPatch
+	Connectors []*models.ConnectorPatch
 }
 
 // BindRequest both binds and validates a request, it assumes that complex things implement a Validatable(strfmt.Registry) error interface
@@ -54,9 +54,9 @@ func (o *PatchConnectorsParams) BindRequest(r *http.Request, route *middleware.M
 		var body []*models.ConnectorPatch
 		if err := route.Consumer.Consume(r.Body, &body); err != nil {
 			if err == io.EOF {
-				res = append(res, errors.Required("connector", "body", ""))
+				res = append(res, errors.Required("connectors", "body", ""))
 			} else {
-				res = append(res, errors.NewParseError("connector", "body", "", err))
+				res = append(res, errors.NewParseError("connectors", "body", "", err))
 			}
 		} else {
 
@@ -72,11 +72,11 @@ func (o *PatchConnectorsParams) BindRequest(r *http.Request, route *middleware.M
 			}
 
 			if len(res) == 0 {
-				o.Connector = body
+				o.Connectors = body
 			}
 		}
 	} else {
-		res = append(res, errors.Required("connector", "body", ""))
+		res = append(res, errors.Required("connectors", "body", ""))
 	}
 	if len(res) > 0 {
 		return errors.CompositeValidationError(res...)

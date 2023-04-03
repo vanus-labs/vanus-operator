@@ -16,7 +16,6 @@ package controllers
 
 import (
 	"context"
-	stderr "errors"
 	"fmt"
 	"time"
 
@@ -62,7 +61,7 @@ func (r *ConnectorReconciler) Reconcile(ctx context.Context, req ctrl.Request) (
 	_ = log.FromContext(ctx)
 
 	logger := log.Log.WithName("Connector")
-	logger.Info("Reconciling Connector.")
+	// logger.Info("Reconciling Connector.")
 
 	// TODO(user): your logic here
 	// Fetch the Connector instance
@@ -91,27 +90,23 @@ func (r *ConnectorReconciler) Reconcile(ctx context.Context, req ctrl.Request) (
 	if err != nil {
 		if errors.IsNotFound(err) {
 			// Create Connector ConfigMap
-			connectorConfigMap, err := r.generateConfigMapForConnector(connector)
-			if err != nil {
-				logger.Error(err, "Failed to generate new Connector ConfigMap")
-				return ctrl.Result{}, err
-			}
+			connectorConfigMap := r.generateConfigMapForConnector(connector)
 			logger.Info("Creating a new Connector ConfigMap.", "ConfigMap.Namespace", connectorConfigMap.Namespace, "ConfigMap.Name", connectorConfigMap.Name)
 			err = r.Create(ctx, connectorConfigMap)
 			if err != nil {
 				logger.Error(err, "Failed to create new Connector ConfigMap", "ConfigMap.Namespace", connectorConfigMap.Namespace, "ConfigMap.Name", connectorConfigMap.Name)
-				return ctrl.Result{}, err
+				return ctrl.Result{RequeueAfter: time.Duration(cons.DefaultRequeueIntervalInSecond) * time.Second}, err
 			} else {
 				logger.Info("Successfully create Connector ConfigMap")
 			}
 
 			// Create Connector Deployment
-			connectorDeployment := r.getDeploymentForConnector(connector)
+			connectorDeployment := r.generateDeploymentForConnector(connector)
 			logger.Info("Creating a new Connector Deployment.", "Deployment.Namespace", connectorDeployment.Namespace, "Deployment.Name", connectorDeployment.Name)
 			err = r.Create(ctx, connectorDeployment)
 			if err != nil {
 				logger.Error(err, "Failed to create new Connector Deployment", "Deployment.Namespace", connectorDeployment.Namespace, "Deployment.Name", connectorDeployment.Name)
-				return ctrl.Result{}, err
+				return ctrl.Result{RequeueAfter: time.Duration(cons.DefaultRequeueIntervalInSecond) * time.Second}, err
 			} else {
 				logger.Info("Successfully create Connector Deployment")
 			}
@@ -127,7 +122,7 @@ func (r *ConnectorReconciler) Reconcile(ctx context.Context, req ctrl.Request) (
 					err = r.Create(ctx, connectorSvc)
 					if err != nil {
 						logger.Error(err, "Failed to create new Connector Service", "Service.Namespace", connectorSvc.Namespace, "Service.Name", connectorSvc.Name)
-						return ctrl.Result{}, err
+						return ctrl.Result{RequeueAfter: time.Duration(cons.DefaultRequeueIntervalInSecond) * time.Second}, err
 					} else {
 						logger.Info("Successfully create Connector Service")
 					}
@@ -137,93 +132,75 @@ func (r *ConnectorReconciler) Reconcile(ctx context.Context, req ctrl.Request) (
 				}
 			}
 
-			// Update Ingress
-			if _, ok := connector.Annotations[cons.ConnectorNetworkHostDomainAnnotation]; ok {
-				ingress := &networkingv1.Ingress{}
-				err = r.Get(ctx, types.NamespacedName{Name: cons.DefaultVanusOperatorName, Namespace: cons.DefaultNamespace}, ingress)
-				if err != nil {
-					if errors.IsNotFound(err) {
-						logger.Error(err, "Failed to get operator Ingress cause not found.")
-						return ctrl.Result{RequeueAfter: time.Duration(cons.DefaultRequeueIntervalInSecond) * time.Second}, err
-					}
-					logger.Error(err, "Failed to get operator Ingress.")
-					return ctrl.Result{RequeueAfter: time.Duration(cons.DefaultRequeueIntervalInSecond) * time.Second}, err
-				}
-				updateIngress, err := r.generateIngressForConnector(connector, ingress)
-				if err == nil {
-					err = r.Update(ctx, updateIngress)
-					if err != nil {
-						logger.Error(err, "Failed to update Ingress", "Ingress.Namespace", updateIngress.Namespace, "Ingress.Name", updateIngress.Name)
-						return ctrl.Result{}, err
-					} else {
-						logger.Info("Successfully update Ingress")
-					}
-				}
-			}
-
-			return ctrl.Result{}, nil
+			// requeue
+			return ctrl.Result{Requeue: true}, err
 		} else {
 			logger.Error(err, "Failed to get Connector Deployment.")
 			return ctrl.Result{RequeueAfter: time.Duration(cons.DefaultRequeueIntervalInSecond) * time.Second}, err
 		}
 	}
 
-	// Get ori Connector Configmap
-	oriConfigMap := &corev1.ConfigMap{}
-	err = r.Get(ctx, types.NamespacedName{Name: connector.Name, Namespace: connector.Namespace}, oriConfigMap)
-	if err != nil {
-		if errors.IsNotFound(err) {
-			logger.Error(err, "Failed to Get ori Connector ConfigMap")
-			return ctrl.Result{}, err
+	// Check And Update Connector
+	if r.isNeedUpdateConnector(ctx, connector) {
+		err = r.Update(ctx, connector)
+		if err != nil {
+			logger.Error(err, "Failed to update Connector", "Namespace", cons.DefaultNamespace, "Name", "my-connector-1")
+			return ctrl.Result{RequeueAfter: time.Duration(cons.DefaultRequeueIntervalInSecond) * time.Second}, err
 		}
+		logger.Info("Successfully Update Connector.", "Connector", connector)
+		return ctrl.Result{Requeue: true}, err
 	}
 
-	// Update Connector Configmap
-	connectorConfigMap, err := r.generateConfigMapForConnector(connector)
+	// Check And Update Ingress
+	need1, err := r.isNeedUpdateIngress(ctx, connector)
 	if err != nil {
-		logger.Error(err, "Failed to generate patch Connector ConfigMap")
-		return ctrl.Result{}, err
+		logger.Error(err, "Failed to get Ingress", "Connector.Namespace", connector.Namespace, "Connector.Name", connector.Name)
+		return ctrl.Result{RequeueAfter: time.Duration(cons.DefaultRequeueIntervalInSecond) * time.Second}, err
 	}
-	logger.Info("Updating Connector ConfigMap.", "ConfigMap.Namespace", connectorConfigMap.Namespace, "ConfigMap.Name", connectorConfigMap.Name)
-	err = r.Update(ctx, connectorConfigMap)
-	if err != nil {
-		logger.Error(err, "Failed to update Connector ConfigMap", "ConfigMap.Namespace", connectorConfigMap.Namespace, "ConfigMap.Name", connectorConfigMap.Name)
-		return ctrl.Result{}, err
-	} else {
-		logger.Info("Successfully update Connector ConfigMap")
-	}
-
-	// Get new Connector Configmap
-	newConfigMap := &corev1.ConfigMap{}
-	err = r.Get(ctx, types.NamespacedName{Name: connector.Name, Namespace: connector.Namespace}, newConfigMap)
-	if err != nil {
-		if errors.IsNotFound(err) {
-			logger.Error(err, "Failed to Get new Connector ConfigMap")
-			return ctrl.Result{}, err
+	if need1 {
+		ingress := &networkingv1.Ingress{}
+		err = r.Get(ctx, types.NamespacedName{Name: connector.Annotations[cons.ConnectorIngressNameAnnotation], Namespace: cons.DefaultNamespace}, ingress)
+		if err != nil {
+			logger.Error(err, "Failed to get operator Ingress.")
+			return ctrl.Result{RequeueAfter: time.Duration(cons.DefaultRequeueIntervalInSecond) * time.Second}, err
 		}
+		updateIngress := r.generateIngressForConnector(connector, ingress)
+		err = r.Update(ctx, updateIngress)
+		if err != nil {
+			logger.Error(err, "Failed to update Ingress", "Ingress.Namespace", updateIngress.Namespace, "Ingress.Name", updateIngress.Name)
+			return ctrl.Result{RequeueAfter: time.Duration(cons.DefaultRequeueIntervalInSecond) * time.Second}, err
+		}
+		logger.Info("Successfully update Ingress")
+		return ctrl.Result{Requeue: true}, err
 	}
 
-	// Update Connector Deployment
-	connectorDeployment := r.getDeploymentForConnector(connector)
-	if oriConfigMap.ResourceVersion != newConfigMap.ResourceVersion {
+	need2, err := r.isNeedRestartDeployment(ctx, connector)
+	if err != nil {
+		logger.Error(err, "Failed to diff ConfigMap", "Connector.Namespace", connector.Namespace, "Connector.Name", connector.Name)
+		return ctrl.Result{RequeueAfter: time.Duration(cons.DefaultRequeueIntervalInSecond) * time.Second}, err
+	}
+	connectorDeployment := r.generateDeploymentForConnector(connector)
+	if need2 {
 		pauseConnectorDeployment := connectorDeployment.DeepCopy()
 		pauseConnectorDeployment.Spec.Replicas = convert.PtrInt32(0)
-		logger.Info("Pause Connector Deployment.", "Namespace", pauseConnectorDeployment.Namespace, "Name", pauseConnectorDeployment.Name, "Replicas", *pauseConnectorDeployment.Spec.Replicas)
+		logger.Info("Need to Pause Connector Deployment.", "Namespace", pauseConnectorDeployment.Namespace, "Name", pauseConnectorDeployment.Name, "Replicas", *pauseConnectorDeployment.Spec.Replicas)
 		err = r.Update(ctx, pauseConnectorDeployment)
 		if err != nil {
 			logger.Error(err, "Failed to update Connector Deployment", "Namespace", pauseConnectorDeployment.Namespace, "Name", pauseConnectorDeployment.Name)
-			return ctrl.Result{}, err
+			return ctrl.Result{RequeueAfter: time.Duration(cons.DefaultRequeueIntervalInSecond) * time.Second}, err
 		}
+		// TODO(jiangkai): waiting for pause deployment replicas to 0 until success
+		logger.Info("Successfully Pause Connector Deployment.")
 		return ctrl.Result{RequeueAfter: time.Second}, nil
 	}
-	logger.Info("Updating Connector Deployment.", "Namespace", connectorDeployment.Namespace, "Name", connectorDeployment.Name)
+
+	// Update Connector Deployment
 	err = r.Update(ctx, connectorDeployment)
 	if err != nil {
 		logger.Error(err, "Failed to update Connector Deployment", "Namespace", connectorDeployment.Namespace, "Name", connectorDeployment.Name)
-		return ctrl.Result{}, err
+		return ctrl.Result{RequeueAfter: time.Duration(cons.DefaultRequeueIntervalInSecond) * time.Second}, err
 	}
-	logger.Info("Successfully update Connector Deployment")
-	return ctrl.Result{}, nil
+	return ctrl.Result{RequeueAfter: time.Duration(cons.DefaultRequeueIntervalInSecond) * time.Second}, err
 }
 
 // SetupWithManager sets up the controller with the Manager.
@@ -234,7 +211,7 @@ func (r *ConnectorReconciler) SetupWithManager(mgr ctrl.Manager) error {
 }
 
 // returns a Connector Deployment object
-func (r *ConnectorReconciler) getDeploymentForConnector(connector *vanusv1alpha1.Connector) *appsv1.Deployment {
+func (r *ConnectorReconciler) generateDeploymentForConnector(connector *vanusv1alpha1.Connector) *appsv1.Deployment {
 	replicas, _ := convert.StrToInt32(connector.Annotations[cons.ConnectorDeploymentReplicasAnnotation])
 	labels := labelsForConnector(connector.Name)
 	requests := make(map[corev1.ResourceName]resource.Quantity)
@@ -277,7 +254,6 @@ func (r *ConnectorReconciler) getDeploymentForConnector(connector *vanusv1alpha1
 	}
 	// Set Connector instance as the owner and connector
 	controllerutil.SetControllerReference(connector, dep, r.Scheme)
-
 	return dep
 }
 
@@ -314,7 +290,7 @@ func labelsForConnector(name string) map[string]string {
 	return map[string]string{"app": name}
 }
 
-func (r *ConnectorReconciler) generateConfigMapForConnector(connector *vanusv1alpha1.Connector) (*corev1.ConfigMap, error) {
+func (r *ConnectorReconciler) generateConfigMapForConnector(connector *vanusv1alpha1.Connector) *corev1.ConfigMap {
 	labels := labelsForConnector(connector.Name)
 	data := make(map[string]string)
 	data["config.yml"] = connector.Spec.Config
@@ -329,7 +305,7 @@ func (r *ConnectorReconciler) generateConfigMapForConnector(connector *vanusv1al
 	}
 
 	controllerutil.SetControllerReference(connector, connectorConfigMap, r.Scheme)
-	return connectorConfigMap, nil
+	return connectorConfigMap
 }
 
 func (r *ConnectorReconciler) generateSvcForConnector(connector *vanusv1alpha1.Connector) *corev1.Service {
@@ -360,10 +336,7 @@ func (r *ConnectorReconciler) generateSvcForConnector(connector *vanusv1alpha1.C
 	return connectorSvc
 }
 
-func (r *ConnectorReconciler) generateIngressForConnector(connector *vanusv1alpha1.Connector, ingress *networkingv1.Ingress) (*networkingv1.Ingress, error) {
-	if _, ok := connector.Annotations[cons.ConnectorNetworkHostDomainAnnotation]; !ok {
-		return nil, stderr.New("connector network host domain annotation not found")
-	}
+func (r *ConnectorReconciler) generateIngressForConnector(connector *vanusv1alpha1.Connector, ingress *networkingv1.Ingress) *networkingv1.Ingress {
 	svcPort, _ := convert.StrToInt32(connector.Annotations[cons.ConnectorServicePortAnnotation])
 	pathType := networkingv1.PathTypePrefix
 	var httpIngressPath networkingv1.HTTPIngressPath = networkingv1.HTTPIngressPath{
@@ -389,7 +362,72 @@ func (r *ConnectorReconciler) generateIngressForConnector(connector *vanusv1alph
 	}
 
 	ingress.Spec.Rules = append(ingress.Spec.Rules, ingressRule)
-	return ingress, nil
+	return ingress
+}
+
+func (r *ConnectorReconciler) isNeedUpdateConnector(_ context.Context, connector *vanusv1alpha1.Connector) bool {
+	if connector.Annotations == nil {
+		return false
+	}
+	if _, ok := connector.Annotations[cons.ConnectorNetworkHostDomainAnnotation]; !ok {
+		return false
+	}
+	result := false
+	if _, ok := connector.Annotations[cons.ConnectorIngressNameAnnotation]; !ok {
+		connector.Annotations[cons.ConnectorIngressNameAnnotation] = cons.DefaultVanusOperatorName
+		result = true
+	}
+	if _, ok := connector.Labels[cons.ConnectorNetworkHostDomainAnnotation]; !ok {
+		connector.Labels[cons.ConnectorNetworkHostDomainAnnotation] = connector.Annotations[cons.ConnectorNetworkHostDomainAnnotation]
+		result = true
+	}
+	return result
+}
+
+func (r *ConnectorReconciler) isNeedUpdateIngress(ctx context.Context, connector *vanusv1alpha1.Connector) (bool, error) {
+	if _, ok := connector.Annotations[cons.ConnectorNetworkHostDomainAnnotation]; !ok {
+		return false, nil
+	}
+	ingress := &networkingv1.Ingress{}
+	err := r.Get(ctx, types.NamespacedName{Name: connector.Annotations[cons.ConnectorIngressNameAnnotation], Namespace: cons.DefaultNamespace}, ingress)
+	if err != nil {
+		return false, err
+	}
+	for _, rule := range ingress.Spec.Rules {
+		if rule.Host == connector.Annotations[cons.ConnectorNetworkHostDomainAnnotation] {
+			return false, nil
+		}
+	}
+	return true, nil
+}
+
+func (r *ConnectorReconciler) isNeedRestartDeployment(ctx context.Context, connector *vanusv1alpha1.Connector) (bool, error) {
+
+	// Get ori Connector Configmap
+	oriConfigMap := &corev1.ConfigMap{}
+	err := r.Get(ctx, types.NamespacedName{Name: connector.Name, Namespace: connector.Namespace}, oriConfigMap)
+	if err != nil {
+		return false, err
+	}
+
+	// Update Connector Configmap
+	connectorConfigMap := r.generateConfigMapForConnector(connector)
+	err = r.Update(ctx, connectorConfigMap)
+	if err != nil {
+		return false, err
+	}
+
+	// Get new Connector Configmap
+	newConfigMap := &corev1.ConfigMap{}
+	err = r.Get(ctx, types.NamespacedName{Name: connector.Name, Namespace: connector.Namespace}, newConfigMap)
+	if err != nil {
+		return false, err
+	}
+
+	if oriConfigMap.ResourceVersion != newConfigMap.ResourceVersion {
+		return true, nil
+	}
+	return false, nil
 }
 
 func ExplicitConnectorAnnotations(connector *vanusv1alpha1.Connector) {
