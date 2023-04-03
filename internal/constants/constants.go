@@ -177,4 +177,5 @@ const (
 	ConnectorServicePortAnnotation        = "connector.vanus.ai/service-port"
 	ConnectorNetworkHostDomainAnnotation  = "connector.vanus.ai/network-host-domain"
 	ConnectorIngressNameAnnotation        = "connector.vanus.ai/ingress-name"
+	ConnectorRestartAtAnnotation          = "connector.vanus.ai/restart-at"
 )
