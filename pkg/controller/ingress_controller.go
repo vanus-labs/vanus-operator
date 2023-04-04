@@ -120,7 +120,7 @@ func (inc *IngressController) updateIngress(old, new interface{}) {
 		// log.Infof("No changes on ingress. Skipping update, ingress: %+v\n", log.KObj(newIngress))
 		return
 	}
-	log.Infof("Updating ingress, old: %+v, new: %+v\n", oldIngress, newIngress)
+	log.Infof("Updating ingress, old: %+v, new: %+v\n", log.KObj(oldIngress), log.KObj(newIngress))
 	inc.syncIngress(context.Background(), fmt.Sprintf("%s/%s", newIngress.Namespace, newIngress.Name))
 }
 
