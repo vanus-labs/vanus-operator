@@ -86,12 +86,6 @@ func (a *Api) createConnectorHandler(params connector.CreateConnectorParams) mid
 		params.Connector.Config,
 		params.Connector.Annotations)
 
-	// Check connector params
-	if err := checkCreateConnectorParamsValid(params.Connector); err != nil {
-		log.Errorf("create connector params invalid, err: %s\n", err.Error())
-		return utils.Response(400, err)
-	}
-
 	// Check if the connector already exists, if exist, return error
 	exist, err := a.checkConnectorExist(params.Connector.Name)
 	if err != nil {
@@ -126,16 +120,6 @@ func (a *Api) patchConnectorsHandler(params connector.PatchConnectorsParams) mid
 			connector.Version,
 			connector.Config,
 			connector.Annotations)
-
-		// Check connector params
-		if err := checkPatchConnectorParamsValid(connector); err != nil {
-			log.Errorf("patch connector params invalid, err: %s\n", err.Error())
-			result.Failed = append(result.Failed, &models.ListOkErrFailedItems0{
-				Name:   connector.Name,
-				Reason: err.Error(),
-			})
-			continue
-		}
 
 		// Check if the connector exists, if not exist, return error
 		oriConnector, err := a.getConnector(cons.DefaultNamespace, connector.Name, &metav1.GetOptions{})
@@ -175,12 +159,6 @@ func (a *Api) patchConnectorHandler(params connector.PatchConnectorParams) middl
 		params.Connector.Version,
 		params.Connector.Config,
 		params.Connector.Annotations)
-
-	// Check connector params
-	if err := checkPatchConnectorParamsValid(params.Connector); err != nil {
-		log.Errorf("patch connector params invalid, err: %s\n", err.Error())
-		return utils.Response(400, err)
-	}
 
 	// Check if the connector exists, if not exist, return error
 	oriConnector, err := a.getConnector(cons.DefaultNamespace, params.Name, &metav1.GetOptions{})
@@ -317,31 +295,9 @@ func (a *Api) checkConnectorExist(name string) (bool, error) {
 	return false, nil
 }
 
-func checkCreateConnectorParamsValid(connector *models.ConnectorCreate) error {
-	if connector.Kind != SourceConnector && connector.Kind != SinkConnector {
-		return stderr.New("create connector kind params invalid")
-	}
-	if _, ok := connector.Annotations[cons.ConnectorNetworkHostDomainAnnotation]; ok {
-		if _, ok := connector.Annotations[cons.ConnectorIngressNameAnnotation]; !ok {
-			return stderr.New("the annotation of ingress-name not set")
-		}
-	}
-	return nil
-}
-
-func checkPatchConnectorParamsValid(connector *models.ConnectorPatch) error {
-	if _, ok := connector.Annotations[cons.ConnectorNetworkHostDomainAnnotation]; ok {
-		if _, ok := connector.Annotations[cons.ConnectorIngressNameAnnotation]; !ok {
-			return stderr.New("the annotation of ingress-name not set")
-		}
-	}
-	return nil
-}
-
 func labelsForConnector(c *models.ConnectorCreate) map[string]string {
 	labels := make(map[string]string)
 	labels["app"] = c.Name
-	labels[cons.ConnectorNetworkHostDomainAnnotation] = c.Annotations[cons.ConnectorNetworkHostDomainAnnotation]
 	return labels
 }
 

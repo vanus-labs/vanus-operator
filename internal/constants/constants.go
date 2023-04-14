@@ -16,14 +16,14 @@
 package constants
 
 const (
-	DefaultNamespace         = "vanus"
-	DefaultVanusCoreName     = "vanus-cluster"
-	DefaultVanusOperatorName = "vanus-operator"
-	DefaultVanusOperatorHost = "vanus-operator.com"
-	DefaultConfigMountPath   = "/vanus/config"
-	DefaultVolumeMountPath   = "/data"
-	DefaultVolumeName        = "data"
-	DefaultImagePullPolicy   = "Always"
+	DefaultNamespace               = "vanus"
+	DefaultVanusCoreName           = "vanus-cluster"
+	DefaultVanusOperatorName       = "vanus-operator"
+	DefaultVanusOperatorHostPrefix = "vanus-operator"
+	DefaultConfigMountPath         = "/vanus/config"
+	DefaultVolumeMountPath         = "/data"
+	DefaultVolumeName              = "data"
+	DefaultImagePullPolicy         = "Always"
 
 	// DefaultRequeueIntervalInSecond is an universal interval of the reconcile function
 	DefaultRequeueIntervalInSecond     = 6
