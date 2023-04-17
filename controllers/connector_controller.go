@@ -23,7 +23,6 @@ import (
 	"github.com/vanus-labs/vanus-operator/internal/convert"
 	appsv1 "k8s.io/api/apps/v1"
 	corev1 "k8s.io/api/core/v1"
-	networkingv1 "k8s.io/api/networking/v1"
 	"k8s.io/apimachinery/pkg/api/errors"
 	"k8s.io/apimachinery/pkg/api/resource"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
@@ -153,29 +152,6 @@ func (r *ConnectorReconciler) Reconcile(ctx context.Context, req ctrl.Request) (
 			return ctrl.Result{RequeueAfter: time.Duration(cons.DefaultRequeueIntervalInSecond) * time.Second}, err
 		}
 		logger.Info("Successfully Update Connector.", "Connector.Namespace", connector.Namespace, "Connector.Name", connector.Name)
-		return ctrl.Result{Requeue: true}, err
-	}
-
-	// Check And Update Ingress
-	needUpdateIngress, err := r.isNeedUpdateIngress(ctx, connector)
-	if err != nil {
-		logger.Error(err, "Failed to get Ingress", "Connector.Namespace", connector.Namespace, "Connector.Name", connector.Name)
-		return ctrl.Result{RequeueAfter: time.Duration(cons.DefaultRequeueIntervalInSecond) * time.Second}, err
-	}
-	if needUpdateIngress {
-		ingress := &networkingv1.Ingress{}
-		err = r.Get(ctx, types.NamespacedName{Name: connector.Annotations[cons.ConnectorIngressNameAnnotation], Namespace: cons.DefaultNamespace}, ingress)
-		if err != nil {
-			logger.Error(err, "Failed to get operator Ingress.")
-			return ctrl.Result{RequeueAfter: time.Duration(cons.DefaultRequeueIntervalInSecond) * time.Second}, err
-		}
-		updateIngress := r.generateIngressForConnector(connector, ingress)
-		err = r.Update(ctx, updateIngress)
-		if err != nil {
-			logger.Error(err, "Failed to update Ingress", "Ingress.Namespace", updateIngress.Namespace, "Ingress.Name", updateIngress.Name)
-			return ctrl.Result{RequeueAfter: time.Duration(cons.DefaultRequeueIntervalInSecond) * time.Second}, err
-		}
-		logger.Info("Successfully update Ingress")
 		return ctrl.Result{Requeue: true}, err
 	}
 
@@ -325,48 +301,8 @@ func (r *ConnectorReconciler) generateSvcForConnector(connector *vanusv1alpha1.C
 	return connectorSvc
 }
 
-func (r *ConnectorReconciler) generateIngressForConnector(connector *vanusv1alpha1.Connector, ingress *networkingv1.Ingress) *networkingv1.Ingress {
-	svcPort, _ := convert.StrToInt32(connector.Annotations[cons.ConnectorServicePortAnnotation])
-	pathType := networkingv1.PathTypePrefix
-	var httpIngressPath networkingv1.HTTPIngressPath = networkingv1.HTTPIngressPath{
-		Path:     "/",
-		PathType: &pathType,
-		Backend: networkingv1.IngressBackend{
-			Service: &networkingv1.IngressServiceBackend{
-				Name: connector.Name,
-				Port: networkingv1.ServiceBackendPort{
-					Number: svcPort,
-				},
-			},
-		},
-	}
-	var ingressRuleValue = networkingv1.IngressRuleValue{
-		HTTP: &networkingv1.HTTPIngressRuleValue{
-			Paths: []networkingv1.HTTPIngressPath{httpIngressPath},
-		},
-	}
-	var ingressRule = networkingv1.IngressRule{
-		Host:             connector.Annotations[cons.ConnectorNetworkHostDomainAnnotation],
-		IngressRuleValue: ingressRuleValue,
-	}
-
-	ingress.Spec.Rules = append(ingress.Spec.Rules, ingressRule)
-	return ingress
-}
-
 func (r *ConnectorReconciler) isNeedUpdateConnector(ctx context.Context, connector *vanusv1alpha1.Connector) (bool, error) {
 	need := false
-	if _, ok := connector.Annotations[cons.ConnectorNetworkHostDomainAnnotation]; ok {
-		if _, ok := connector.Annotations[cons.ConnectorIngressNameAnnotation]; !ok {
-			connector.Annotations[cons.ConnectorIngressNameAnnotation] = cons.DefaultVanusOperatorName
-			need = true
-		}
-		if _, ok := connector.Labels[cons.ConnectorNetworkHostDomainAnnotation]; !ok {
-			connector.Labels[cons.ConnectorNetworkHostDomainAnnotation] = connector.Annotations[cons.ConnectorNetworkHostDomainAnnotation]
-			need = true
-		}
-	}
-
 	// Get Connector Configmap
 	oriConfigMap := &corev1.ConfigMap{}
 	err := r.Get(ctx, types.NamespacedName{Name: connector.Name, Namespace: connector.Namespace}, oriConfigMap)
@@ -384,23 +320,6 @@ func (r *ConnectorReconciler) isNeedUpdateConnector(ctx context.Context, connect
 		need = true
 	}
 	return need, nil
-}
-
-func (r *ConnectorReconciler) isNeedUpdateIngress(ctx context.Context, connector *vanusv1alpha1.Connector) (bool, error) {
-	if _, ok := connector.Annotations[cons.ConnectorNetworkHostDomainAnnotation]; !ok {
-		return false, nil
-	}
-	ingress := &networkingv1.Ingress{}
-	err := r.Get(ctx, types.NamespacedName{Name: connector.Annotations[cons.ConnectorIngressNameAnnotation], Namespace: cons.DefaultNamespace}, ingress)
-	if err != nil {
-		return false, err
-	}
-	for _, rule := range ingress.Spec.Rules {
-		if rule.Host == connector.Annotations[cons.ConnectorNetworkHostDomainAnnotation] {
-			return false, nil
-		}
-	}
-	return true, nil
 }
 
 func ExplicitConnectorAnnotations(connector *vanusv1alpha1.Connector) {

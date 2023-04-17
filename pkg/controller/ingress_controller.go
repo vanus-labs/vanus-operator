@@ -18,6 +18,7 @@ import (
 	"context"
 	"fmt"
 	"reflect"
+	"strings"
 	"time"
 
 	networkingv1 "k8s.io/api/networking/v1"
@@ -120,7 +121,7 @@ func (inc *IngressController) updateIngress(old, new interface{}) {
 		// log.Infof("No changes on ingress. Skipping update, ingress: %+v\n", log.KObj(newIngress))
 		return
 	}
-	log.Infof("Updating ingress, old: %+v, new: %+v\n", oldIngress, newIngress)
+	log.Infof("Updating ingress, old: %+v, new: %+v\n", log.KObj(oldIngress), log.KObj(newIngress))
 	inc.syncIngress(context.Background(), fmt.Sprintf("%s/%s", newIngress.Namespace, newIngress.Name))
 }
 
@@ -147,7 +148,7 @@ func (inc *IngressController) deleteIngress(obj interface{}) {
 	_, err := inc.ctrl.K8SClientSet().NetworkingV1().Ingresses(ingress.Namespace).Create(context.Background(), newIngress, metav1.CreateOptions{})
 	if err != nil {
 		log.Errorf("rebuild ingress failed, err: %s\n", err.Error())
-		utilruntime.HandleError(fmt.Errorf("couldn't rebuild ingress object %+v, err: %s", ingress, err.Error()))
+		utilruntime.HandleError(fmt.Errorf("couldn't rebuild ingress object %+v, err: %s", log.KObj(ingress), err.Error()))
 		return
 	}
 }
@@ -172,7 +173,7 @@ func (inc *IngressController) syncIngress(ctx context.Context, key string) error
 func (inc *IngressController) enqueue(in *networkingv1.Ingress) {
 	key, err := cache.DeletionHandlingMetaNamespaceKeyFunc(in)
 	if err != nil {
-		utilruntime.HandleError(fmt.Errorf("couldn't get key for object %#v: %v", in, err))
+		utilruntime.HandleError(fmt.Errorf("couldn't get key for object %s: %v", in.Name, err))
 		return
 	}
 	inc.queue.Add(key)
@@ -210,9 +211,14 @@ func (inc *IngressController) processNextWorkItem(ctx context.Context) bool {
 func (inc *IngressController) diffAndUpdate(ingress *networkingv1.Ingress) error {
 	needUpdate := false
 	newRules := make([]networkingv1.IngressRule, 0)
-	newRules = append(newRules, defaultIngressRule())
+	// newRules = append(newRules, defaultIngressRule())
 	for _, rule := range ingress.Spec.Rules {
-		if rule.Host == cons.DefaultVanusOperatorHost {
+		if rule.Host == "" {
+			needUpdate = true
+			newRules = append(newRules, rule)
+			continue
+		}
+		if strings.HasPrefix(rule.Host, cons.DefaultVanusOperatorHostPrefix) {
 			continue
 		}
 		// get connector from rule host
@@ -276,7 +282,7 @@ func defaultIngressRule() networkingv1.IngressRule {
 		},
 	})
 	rule := networkingv1.IngressRule{
-		Host: cons.DefaultVanusOperatorHost,
+		Host: fmt.Sprintf("%s.connector.vanus.ai", cons.DefaultVanusOperatorHostPrefix),
 		IngressRuleValue: networkingv1.IngressRuleValue{
 			HTTP: &networkingv1.HTTPIngressRuleValue{
 				Paths: paths,
