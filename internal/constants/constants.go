@@ -179,3 +179,26 @@ const (
 	ConnectorIngressNameAnnotation        = "connector.vanus.ai/ingress-name"
 	ConnectorRestartAtAnnotation          = "connector.vanus.ai/restart-at"
 )
+
+const (
+	// PodStatusStatusPending captures enum value "Pending"
+	PodStatusStatusPending string = "Pending"
+
+	// PodStatusStatusRunning captures enum value "Running"
+	PodStatusStatusRunning string = "Running"
+
+	// PodStatusStatusSucceeded captures enum value "Succeeded"
+	PodStatusStatusSucceeded string = "Succeeded"
+
+	// PodStatusStatusStarting captures enum value "Starting"
+	PodStatusStatusStarting string = "Starting"
+
+	// PodStatusStatusFailed captures enum value "Failed"
+	PodStatusStatusFailed string = "Failed"
+
+	// PodStatusStatusRemoving captures enum value "Removing"
+	PodStatusStatusRemoving string = "Removing"
+
+	// PodStatusStatusUnknown captures enum value "Unknown"
+	PodStatusStatusUnknown string = "Unknown"
+)

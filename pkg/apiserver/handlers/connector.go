@@ -36,29 +36,6 @@ import (
 )
 
 const (
-	// PodStatusStatusPending captures enum value "Pending"
-	PodStatusStatusPending string = "Pending"
-
-	// PodStatusStatusRunning captures enum value "Running"
-	PodStatusStatusRunning string = "Running"
-
-	// PodStatusStatusSucceeded captures enum value "Succeeded"
-	PodStatusStatusSucceeded string = "Succeeded"
-
-	// PodStatusStatusStarting captures enum value "Starting"
-	PodStatusStatusStarting string = "Starting"
-
-	// PodStatusStatusFailed captures enum value "Failed"
-	PodStatusStatusFailed string = "Failed"
-
-	// PodStatusStatusRemoving captures enum value "Removing"
-	PodStatusStatusRemoving string = "Removing"
-
-	// PodStatusStatusUnknown captures enum value "Unknown"
-	PodStatusStatusUnknown string = "Unknown"
-)
-
-const (
 	SourceConnector = "source"
 	SinkConnector   = "sink"
 )
@@ -362,10 +339,10 @@ func (a *Api) getConnectorStatus(name string) (string, string, error) {
 
 func statusCheck(a *corev1.Pod) (string, string) {
 	if a == nil {
-		return PodStatusStatusUnknown, ""
+		return cons.PodStatusStatusUnknown, ""
 	}
 	if a.DeletionTimestamp != nil {
-		return PodStatusStatusRemoving, ""
+		return cons.PodStatusStatusRemoving, ""
 	}
 	// Status: Pending/Succeeded/Failed/Unknown
 	if a.Status.Phase != corev1.PodRunning {
@@ -384,16 +361,16 @@ func statusCheck(a *corev1.Pod) (string, string) {
 		}
 		if v.State.Terminated != nil {
 			if v.State.Terminated.ExitCode != 0 {
-				return PodStatusStatusFailed, v.State.Terminated.Reason
+				return cons.PodStatusStatusFailed, v.State.Terminated.Reason
 			}
 			if v.State.Waiting != nil {
-				return PodStatusStatusStarting, v.State.Waiting.Reason
+				return cons.PodStatusStatusStarting, v.State.Waiting.Reason
 			}
 		}
 	}
 	if rnum == len(containers) {
-		return PodStatusStatusRunning, ""
+		return cons.PodStatusStatusRunning, ""
 	} else {
-		return PodStatusStatusStarting, ""
+		return cons.PodStatusStatusStarting, ""
 	}
 }

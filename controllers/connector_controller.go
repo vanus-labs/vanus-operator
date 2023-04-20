@@ -132,7 +132,7 @@ func (r *ConnectorReconciler) Reconcile(ctx context.Context, req ctrl.Request) (
 			}
 
 			// requeue
-			return ctrl.Result{Requeue: true}, err
+			return ctrl.Result{RequeueAfter: time.Duration(cons.DefaultRequeueIntervalInSecond) * time.Second}, nil
 		} else {
 			logger.Error(err, "Failed to get Connector Deployment.")
 			return ctrl.Result{RequeueAfter: time.Duration(cons.DefaultRequeueIntervalInSecond) * time.Second}, err
@@ -152,7 +152,7 @@ func (r *ConnectorReconciler) Reconcile(ctx context.Context, req ctrl.Request) (
 			return ctrl.Result{RequeueAfter: time.Duration(cons.DefaultRequeueIntervalInSecond) * time.Second}, err
 		}
 		logger.Info("Successfully Update Connector.", "Connector.Namespace", connector.Namespace, "Connector.Name", connector.Name)
-		return ctrl.Result{Requeue: true}, err
+		return ctrl.Result{RequeueAfter: time.Second}, err
 	}
 
 	// Update Connector Deployment
@@ -162,7 +162,7 @@ func (r *ConnectorReconciler) Reconcile(ctx context.Context, req ctrl.Request) (
 		logger.Error(err, "Failed to update Connector Deployment", "Namespace", connectorDeployment.Namespace, "Name", connectorDeployment.Name)
 		return ctrl.Result{RequeueAfter: time.Duration(cons.DefaultRequeueIntervalInSecond) * time.Second}, err
 	}
-	return ctrl.Result{}, err
+	return ctrl.Result{RequeueAfter: time.Duration(cons.DefaultRequeueIntervalInSecond) * time.Second}, err
 }
 
 // SetupWithManager sets up the controller with the Manager.
@@ -319,7 +319,69 @@ func (r *ConnectorReconciler) isNeedUpdateConnector(ctx context.Context, connect
 		connector.Annotations[cons.ConnectorRestartAtAnnotation] = time.Now().Format("2006-01-02T15:04:05Z")
 		need = true
 	}
+
+	// Get Connector Status
+	status, reason, err := r.getConnectorStatus(ctx, connector)
+	if err != nil {
+		return false, err
+	}
+	if status != connector.Status.Status || reason != connector.Status.Reason {
+		connector.Status.Status = status
+		connector.Status.Reason = reason
+		need = true
+	}
 	return need, nil
+}
+
+func (r *ConnectorReconciler) getConnectorStatus(ctx context.Context, connector *vanusv1alpha1.Connector) (string, string, error) {
+	pods := &corev1.PodList{}
+	err := r.List(ctx, pods, client.MatchingLabels(connector.Labels))
+	if err != nil {
+		return "", "", err
+	}
+	var status, reason string
+	if len(pods.Items) != 0 {
+		status, reason = StatusCheck(&pods.Items[0])
+	}
+	return status, reason, nil
+}
+
+func StatusCheck(a *corev1.Pod) (string, string) {
+	if a == nil {
+		return cons.PodStatusStatusUnknown, ""
+	}
+	if a.DeletionTimestamp != nil {
+		return cons.PodStatusStatusRemoving, ""
+	}
+	// Status: Pending/Succeeded/Failed/Unknown
+	if a.Status.Phase != corev1.PodRunning {
+		return string(a.Status.Phase), a.Status.Reason
+	}
+	// handle running
+	var (
+		containers = a.Status.ContainerStatuses
+		rnum       int
+	)
+
+	for _, v := range containers {
+		if v.Ready {
+			rnum++
+			continue
+		}
+		if v.State.Terminated != nil {
+			if v.State.Terminated.ExitCode != 0 {
+				return cons.PodStatusStatusFailed, v.State.Terminated.Reason
+			}
+			if v.State.Waiting != nil {
+				return cons.PodStatusStatusStarting, v.State.Waiting.Reason
+			}
+		}
+	}
+	if rnum == len(containers) {
+		return cons.PodStatusStatusRunning, ""
+	} else {
+		return cons.PodStatusStatusStarting, ""
+	}
 }
 
 func ExplicitConnectorAnnotations(connector *vanusv1alpha1.Connector) {
