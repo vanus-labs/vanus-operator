@@ -141,6 +141,7 @@ func (c *Controller) Update(obj ctrlclient.Object, opts ...ctrlclient.UpdateOpti
 }
 
 func (c *Controller) K8SClientSet() *kubernetes.Clientset {
+	c.k8sclientset.RESTClient().
 	return c.k8sclientset
 }
 

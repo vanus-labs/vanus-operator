@@ -21,6 +21,7 @@ import (
 
 	cons "github.com/vanus-labs/vanus-operator/internal/constants"
 	"github.com/vanus-labs/vanus-operator/internal/convert"
+	"github.com/vmware/vmware-go-kcl/logger"
 	appsv1 "k8s.io/api/apps/v1"
 	corev1 "k8s.io/api/core/v1"
 	"k8s.io/apimachinery/pkg/api/errors"
@@ -36,6 +37,8 @@ import (
 
 	vanusv1alpha1 "github.com/vanus-labs/vanus-operator/api/v1alpha1"
 )
+
+var deployedSharedMode bool
 
 // ConnectorReconciler reconciles a Connector object
 type ConnectorReconciler struct {
@@ -76,11 +79,19 @@ func (r *ConnectorReconciler) Reconcile(ctx context.Context, req ctrl.Request) (
 		}
 		// Error reading the object - requeue the req.
 		logger.Error(err, "Failed to get Connector.")
-		return ctrl.Result{RequeueAfter: time.Duration(cons.DefaultRequeueIntervalInSecond) * time.Second}, err
+		return ctrl.Result{RequeueAfter: cons.DefaultRequeueIntervalInSecond}, err
 	}
 
 	// explicitly all supported annotations
 	ExplicitConnectorAnnotations(connector)
+
+	if isSharedDeploymentMode(connector) {
+		err := handlerForSharedDeployment(connector)
+		if err != nil {
+			logger.Error(err, "Failed to handle shared Connector", "Connector.Namespace", connector.Namespace, "Connector.Name", connector.Name)
+			return ctrl.Result{RequeueAfter: cons.DefaultRequeueIntervalInSecond}, err
+		}
+	}
 
 	// Create Connector Deployment
 	// Check if the Deployment already exists, if not create a new one
@@ -94,7 +105,7 @@ func (r *ConnectorReconciler) Reconcile(ctx context.Context, req ctrl.Request) (
 			err = r.Create(ctx, connectorConfigMap)
 			if err != nil {
 				logger.Error(err, "Failed to create new Connector ConfigMap", "ConfigMap.Namespace", connectorConfigMap.Namespace, "ConfigMap.Name", connectorConfigMap.Name)
-				return ctrl.Result{RequeueAfter: time.Duration(cons.DefaultRequeueIntervalInSecond) * time.Second}, err
+				return ctrl.Result{RequeueAfter: cons.DefaultRequeueIntervalInSecond}, err
 			} else {
 				logger.Info("Successfully create Connector ConfigMap")
 			}
@@ -105,7 +116,7 @@ func (r *ConnectorReconciler) Reconcile(ctx context.Context, req ctrl.Request) (
 			err = r.Create(ctx, connectorDeployment)
 			if err != nil {
 				logger.Error(err, "Failed to create new Connector Deployment", "Deployment.Namespace", connectorDeployment.Namespace, "Deployment.Name", connectorDeployment.Name)
-				return ctrl.Result{RequeueAfter: time.Duration(cons.DefaultRequeueIntervalInSecond) * time.Second}, err
+				return ctrl.Result{RequeueAfter: cons.DefaultRequeueIntervalInSecond}, err
 			} else {
 				logger.Info("Successfully create Connector Deployment")
 			}
@@ -121,21 +132,21 @@ func (r *ConnectorReconciler) Reconcile(ctx context.Context, req ctrl.Request) (
 					err = r.Create(ctx, connectorSvc)
 					if err != nil {
 						logger.Error(err, "Failed to create new Connector Service", "Service.Namespace", connectorSvc.Namespace, "Service.Name", connectorSvc.Name)
-						return ctrl.Result{RequeueAfter: time.Duration(cons.DefaultRequeueIntervalInSecond) * time.Second}, err
+						return ctrl.Result{RequeueAfter: cons.DefaultRequeueIntervalInSecond}, err
 					} else {
 						logger.Info("Successfully create Connector Service")
 					}
 				} else {
 					logger.Error(err, "Failed to get Connector Service.")
-					return ctrl.Result{RequeueAfter: time.Duration(cons.DefaultRequeueIntervalInSecond) * time.Second}, err
+					return ctrl.Result{RequeueAfter: cons.DefaultRequeueIntervalInSecond}, err
 				}
 			}
 
 			// requeue
-			return ctrl.Result{Requeue: true}, err
+			return ctrl.Result{RequeueAfter: time.Second}, err
 		} else {
 			logger.Error(err, "Failed to get Connector Deployment.")
-			return ctrl.Result{RequeueAfter: time.Duration(cons.DefaultRequeueIntervalInSecond) * time.Second}, err
+			return ctrl.Result{RequeueAfter: cons.DefaultRequeueIntervalInSecond}, err
 		}
 	}
 
@@ -143,16 +154,16 @@ func (r *ConnectorReconciler) Reconcile(ctx context.Context, req ctrl.Request) (
 	needUpdateConnector, err := r.isNeedUpdateConnector(ctx, connector)
 	if err != nil {
 		logger.Error(err, "Failed to check Connector", "Connector.Namespace", connector.Namespace, "Connector.Name", connector.Name)
-		return ctrl.Result{RequeueAfter: time.Duration(cons.DefaultRequeueIntervalInSecond) * time.Second}, err
+		return ctrl.Result{RequeueAfter: cons.DefaultRequeueIntervalInSecond}, err
 	}
 	if needUpdateConnector {
 		err = r.Update(ctx, connector)
 		if err != nil {
 			logger.Error(err, "Failed to update Connector", "Connector.Namespace", connector.Namespace, "Connector.Name", connector.Name)
-			return ctrl.Result{RequeueAfter: time.Duration(cons.DefaultRequeueIntervalInSecond) * time.Second}, err
+			return ctrl.Result{RequeueAfter: cons.DefaultRequeueIntervalInSecond}, err
 		}
 		logger.Info("Successfully Update Connector.", "Connector.Namespace", connector.Namespace, "Connector.Name", connector.Name)
-		return ctrl.Result{Requeue: true}, err
+		return ctrl.Result{RequeueAfter: time.Second}, err
 	}
 
 	// Update Connector Deployment
@@ -160,7 +171,7 @@ func (r *ConnectorReconciler) Reconcile(ctx context.Context, req ctrl.Request) (
 	err = r.Update(ctx, connectorDeployment)
 	if err != nil {
 		logger.Error(err, "Failed to update Connector Deployment", "Namespace", connectorDeployment.Namespace, "Name", connectorDeployment.Name)
-		return ctrl.Result{RequeueAfter: time.Duration(cons.DefaultRequeueIntervalInSecond) * time.Second}, err
+		return ctrl.Result{RequeueAfter: cons.DefaultRequeueIntervalInSecond}, err
 	}
 	return ctrl.Result{}, err
 }
@@ -337,4 +348,76 @@ func ExplicitConectorAnnotationWithDefaultValue(connector *vanusv1alpha1.Connect
 	} else {
 		connector.Annotations[key] = defaultValue
 	}
+}
+
+func isSharedDeploymentMode(connector *vanusv1alpha1.Connector) bool {
+	if val, ok := connector.Annotations[cons.ConnectorDeploymentModeAnnotation]; ok && val == cons.ConnectorSharedDeploymentMode {
+		return true
+	}
+	return false
+}
+
+func handlerForSharedDeployment(connector *vanusv1alpha1.Connector) error {
+	// check whether deployed
+	if deployedSharedMode {
+		return nil
+	}
+	// Create Connector Deployment
+	// Check if the Deployment already exists, if not create a new one
+	dep := &appsv1.Deployment{}
+	err = r.Get(ctx, types.NamespacedName{Name: connector.Name, Namespace: connector.Namespace}, dep)
+	if err != nil {
+		if errors.IsNotFound(err) {
+			// Create Connector ConfigMap
+			connectorConfigMap := r.generateConfigMapForConnector(connector)
+			logger.Info("Creating a new Connector ConfigMap.", "ConfigMap.Namespace", connectorConfigMap.Namespace, "ConfigMap.Name", connectorConfigMap.Name)
+			err = r.Create(ctx, connectorConfigMap)
+			if err != nil {
+				logger.Error(err, "Failed to create new Connector ConfigMap", "ConfigMap.Namespace", connectorConfigMap.Namespace, "ConfigMap.Name", connectorConfigMap.Name)
+				return ctrl.Result{RequeueAfter: cons.DefaultRequeueIntervalInSecond}, err
+			} else {
+				logger.Info("Successfully create Connector ConfigMap")
+			}
+
+			// Create Connector Deployment
+			connectorDeployment := r.generateDeploymentForConnector(connector)
+			logger.Info("Creating a new Connector Deployment.", "Deployment.Namespace", connectorDeployment.Namespace, "Deployment.Name", connectorDeployment.Name)
+			err = r.Create(ctx, connectorDeployment)
+			if err != nil {
+				logger.Error(err, "Failed to create new Connector Deployment", "Deployment.Namespace", connectorDeployment.Namespace, "Deployment.Name", connectorDeployment.Name)
+				return ctrl.Result{RequeueAfter: cons.DefaultRequeueIntervalInSecond}, err
+			} else {
+				logger.Info("Successfully create Connector Deployment")
+			}
+
+			// Create Connector Service
+			// Check if the service already exists, if not create a new one
+			connectorSvc := r.generateSvcForConnector(connector)
+			svc := &corev1.Service{}
+			err = r.Get(ctx, types.NamespacedName{Name: connectorSvc.Name, Namespace: connectorSvc.Namespace}, svc)
+			if err != nil {
+				if errors.IsNotFound(err) {
+					logger.Info("Creating a new Connector Service.", "Service.Namespace", connectorSvc.Namespace, "Service.Name", connectorSvc.Name)
+					err = r.Create(ctx, connectorSvc)
+					if err != nil {
+						logger.Error(err, "Failed to create new Connector Service", "Service.Namespace", connectorSvc.Namespace, "Service.Name", connectorSvc.Name)
+						return ctrl.Result{RequeueAfter: cons.DefaultRequeueIntervalInSecond}, err
+					} else {
+						logger.Info("Successfully create Connector Service")
+					}
+				} else {
+					logger.Error(err, "Failed to get Connector Service.")
+					return ctrl.Result{RequeueAfter: cons.DefaultRequeueIntervalInSecond}, err
+				}
+			}
+
+			// requeue
+			return ctrl.Result{RequeueAfter: time.Second}, err
+		} else {
+			logger.Error(err, "Failed to get Connector Deployment.")
+			return ctrl.Result{RequeueAfter: cons.DefaultRequeueIntervalInSecond}, err
+		}
+	}
+	deployedSharedMode = true
+	return nil
 }
