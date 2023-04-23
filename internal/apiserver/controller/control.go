@@ -19,8 +19,8 @@ import (
 	"time"
 
 	vanusv1alpha1 "github.com/vanus-labs/vanus-operator/api/v1alpha1"
-	"github.com/vanus-labs/vanus-operator/pkg/apiserver/lower/cache"
-	"github.com/vanus-labs/vanus-operator/pkg/apiserver/lower/k8s"
+	"github.com/vanus-labs/vanus-operator/internal/apiserver/lower/cache"
+	"github.com/vanus-labs/vanus-operator/internal/apiserver/lower/k8s"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/runtime"
 	"k8s.io/apimachinery/pkg/runtime/schema"

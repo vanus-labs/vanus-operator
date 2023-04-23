@@ -35,8 +35,8 @@ import (
 	"k8s.io/kubectl/pkg/scheme"
 
 	vanusv1alpha1 "github.com/vanus-labs/vanus-operator/api/v1alpha1"
-	cons "github.com/vanus-labs/vanus-operator/internal/constants"
-	"github.com/vanus-labs/vanus-operator/pkg/apiserver/controller"
+	"github.com/vanus-labs/vanus-operator/internal/apiserver/controller"
+	cons "github.com/vanus-labs/vanus-operator/pkg/constants"
 )
 
 // IngressController is responsible for synchronizing Ingress objects stored

@@ -19,7 +19,7 @@ import (
 	"encoding/json"
 
 	vanusv1alpha1 "github.com/vanus-labs/vanus-operator/api/v1alpha1"
-	cons "github.com/vanus-labs/vanus-operator/internal/constants"
+	cons "github.com/vanus-labs/vanus-operator/pkg/constants"
 	networkingv1 "k8s.io/api/networking/v1"
 	"k8s.io/apimachinery/pkg/api/errors"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"

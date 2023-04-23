@@ -22,7 +22,7 @@ import (
 	"k8s.io/client-go/informers"
 	log "k8s.io/klog/v2"
 
-	"github.com/vanus-labs/vanus-operator/pkg/apiserver/controller"
+	"github.com/vanus-labs/vanus-operator/internal/apiserver/controller"
 )
 
 var (

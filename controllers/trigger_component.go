@@ -21,8 +21,8 @@ import (
 	"time"
 
 	"github.com/go-logr/logr"
-	cons "github.com/vanus-labs/vanus-operator/internal/constants"
-	"github.com/vanus-labs/vanus-operator/internal/convert"
+	cons "github.com/vanus-labs/vanus-operator/pkg/constants"
+	"github.com/vanus-labs/vanus-operator/pkg/convert"
 	appsv1 "k8s.io/api/apps/v1"
 	corev1 "k8s.io/api/core/v1"
 	"k8s.io/apimachinery/pkg/api/errors"

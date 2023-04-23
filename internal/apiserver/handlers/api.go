@@ -21,7 +21,7 @@ import (
 
 	"github.com/vanus-labs/vanus-operator/api/restapi"
 	"github.com/vanus-labs/vanus-operator/api/restapi/operations"
-	"github.com/vanus-labs/vanus-operator/pkg/apiserver/controller"
+	"github.com/vanus-labs/vanus-operator/internal/apiserver/controller"
 
 	"github.com/go-kit/kit/log"
 	"github.com/go-openapi/loads"

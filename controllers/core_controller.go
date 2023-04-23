@@ -19,7 +19,7 @@ import (
 	"fmt"
 	"time"
 
-	cons "github.com/vanus-labs/vanus-operator/internal/constants"
+	cons "github.com/vanus-labs/vanus-operator/pkg/constants"
 	"k8s.io/apimachinery/pkg/api/errors"
 	"k8s.io/apimachinery/pkg/runtime"
 	ctrl "sigs.k8s.io/controller-runtime"
