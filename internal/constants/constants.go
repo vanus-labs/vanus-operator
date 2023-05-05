@@ -26,11 +26,12 @@ const (
 	DefaultImagePullPolicy         = "Always"
 
 	// DefaultRequeueIntervalInSecond is an universal interval of the reconcile function
-	DefaultRequeueIntervalInSecond     = 6
-	DefaultPortMetrics                 = 2112
-	DefaultOperatorContainerPortApi    = 8089
-	DefaultIngressClassAnnotationKey   = "kubernetes.io/ingress.class"
-	DefaultIngressClassAnnotationValue = "alb"
+	DefaultRequeueIntervalInSecond       = 6
+	DefaultPortMetrics                   = 2112
+	DefaultOperatorContainerPortApi      = 8089
+	DefaultIngressClassAnnotationKey     = "kubernetes.io/ingress.class"
+	DefaultIngressClassAnnotationValue   = "alb"
+	DefaultConnectorDeploymentModeShared = "shared"
 )
 
 const (
@@ -172,6 +173,7 @@ const (
 
 // Annotations supported by Connector
 const (
+	ConnectorDeploymentModeAnnotation     = "connector.vanus.ai/deployment-mode"
 	ConnectorDeploymentReplicasAnnotation = "connector.vanus.ai/deployment-replicas"
 	ConnectorServiceTypeAnnotation        = "connector.vanus.ai/service-type"
 	ConnectorServicePortAnnotation        = "connector.vanus.ai/service-port"

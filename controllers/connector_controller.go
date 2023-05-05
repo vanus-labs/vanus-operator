@@ -82,6 +82,12 @@ func (r *ConnectorReconciler) Reconcile(ctx context.Context, req ctrl.Request) (
 	// explicitly all supported annotations
 	ExplicitConnectorAnnotations(connector)
 
+	// Only chatgpt&chatai support shared deployment mode
+	if isSharedDeploymentMode(connector) {
+		logger.Info("Shared Connector. No need deploy workload.")
+		return ctrl.Result{}, nil
+	}
+
 	// Create Connector Deployment
 	// Check if the Deployment already exists, if not create a new one
 	dep := &appsv1.Deployment{}
@@ -301,6 +307,16 @@ func (r *ConnectorReconciler) generateSvcForConnector(connector *vanusv1alpha1.C
 	return connectorSvc
 }
 
+func isSharedDeploymentMode(connector *vanusv1alpha1.Connector) bool {
+	if connector.Spec.Kind != "source" {
+		return false
+	}
+	if connector.Spec.Type != "chatgpt" {
+		return false
+	}
+	return connector.Annotations[cons.ConnectorDeploymentModeAnnotation] == cons.DefaultConnectorDeploymentModeShared
+}
+
 func (r *ConnectorReconciler) isNeedUpdateConnector(ctx context.Context, connector *vanusv1alpha1.Connector) (bool, error) {
 	need := false
 	// Get Connector Configmap
@@ -326,6 +342,7 @@ func ExplicitConnectorAnnotations(connector *vanusv1alpha1.Connector) {
 	if connector.Annotations == nil {
 		connector.Annotations = make(map[string]string)
 	}
+	ExplicitConectorAnnotationWithDefaultValue(connector, cons.ConnectorDeploymentModeAnnotation, cons.DefaultConnectorDeploymentModeShared)
 	ExplicitConectorAnnotationWithDefaultValue(connector, cons.ConnectorDeploymentReplicasAnnotation, fmt.Sprintf("%d", cons.DefaultConnectorReplicas))
 	ExplicitConectorAnnotationWithDefaultValue(connector, cons.ConnectorServiceTypeAnnotation, cons.DefaultConnectorServiceType)
 	ExplicitConectorAnnotationWithDefaultValue(connector, cons.ConnectorServicePortAnnotation, fmt.Sprintf("%d", cons.DefaultConnectorServicePort))
