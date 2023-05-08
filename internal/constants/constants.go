@@ -15,6 +15,8 @@
 // Package constants defines some global constants
 package constants
 
+import "time"
+
 const (
 	DefaultNamespace               = "vanus"
 	DefaultVanusCoreName           = "vanus-cluster"
@@ -26,7 +28,7 @@ const (
 	DefaultImagePullPolicy         = "Always"
 
 	// DefaultRequeueIntervalInSecond is an universal interval of the reconcile function
-	DefaultRequeueIntervalInSecond       = 6
+	DefaultRequeueIntervalInSecond       = 6 * time.Second
 	DefaultPortMetrics                   = 2112
 	DefaultOperatorContainerPortApi      = 8089
 	DefaultIngressClassAnnotationKey     = "kubernetes.io/ingress.class"
@@ -180,4 +182,10 @@ const (
 	ConnectorNetworkHostDomainAnnotation  = "connector.vanus.ai/network-host-domain"
 	ConnectorIngressNameAnnotation        = "connector.vanus.ai/ingress-name"
 	ConnectorRestartAtAnnotation          = "connector.vanus.ai/restart-at"
+)
+
+// Labels supported by Connector
+const (
+	ConnectorKindLabel = "kind"
+	ConnectorTypeLabel = "type"
 )

@@ -31,7 +31,18 @@ func newConnectorOptions(options ...ConnectorOption) connectorOptions {
 }
 
 func defaultConnectorOptions() connectorOptions {
-	return connectorOptions{}
+	defaultHandler := ConnectorEventHandlerFuncs{
+		AddFunc: func(connectorID, config string) error {
+			return nil
+		},
+		UpdateFunc: func(connectorID, config string) error {
+			return nil
+		},
+		DeleteFunc: func(connectorID string) error {
+			return nil
+		},
+	}
+	return connectorOptions{handler: defaultHandler}
 }
 
 func WithFilter(filter string) ConnectorOption {
