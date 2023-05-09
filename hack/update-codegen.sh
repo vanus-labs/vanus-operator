@@ -11,7 +11,7 @@ SCRIPT_ROOT=$(dirname ${BASH_SOURCE})/..
 CODEGEN_PKG=/Users/jiangkai/Projects/github/code-generator
 
 ${CODEGEN_PKG}/generate-groups.sh "deepcopy,client,informer,lister" \
-  github.com/vanus-labs/vanus-operator/pkg/client github.com/vanus-labs/vanus-operator/pkg/apis \
+  github.com/vanus-labs/vanus-operator/pkg/runtime/client github.com/vanus-labs/vanus-operator/pkg/runtime/apis \
   vanus:v1alpha1 \
   --output-base "${SCRIPT_ROOT}" \
   --go-header-file "${SCRIPT_ROOT}/hack/boilerplate.go.txt"

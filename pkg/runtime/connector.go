@@ -22,7 +22,7 @@ import (
 	"k8s.io/client-go/tools/cache"
 	log "k8s.io/klog/v2"
 
-	vanusv1alpha1 "github.com/vanus-labs/vanus-operator/pkg/apis/vanus/v1alpha1"
+	vanusv1alpha1 "github.com/vanus-labs/vanus-operator/pkg/runtime/apis/vanus/v1alpha1"
 )
 
 func (r *runtime) enqueueAddConnector(obj interface{}) {

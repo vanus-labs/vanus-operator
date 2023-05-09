@@ -23,7 +23,7 @@ import (
 	"k8s.io/client-go/tools/clientcmd"
 	"k8s.io/klog/v2"
 
-	clientset "github.com/vanus-labs/vanus-operator/pkg/client/clientset/versioned"
+	clientset "github.com/vanus-labs/vanus-operator/pkg/runtime/client/clientset/versioned"
 )
 
 // Config is the controller conf
