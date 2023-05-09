@@ -25,8 +25,8 @@ import (
 	"k8s.io/client-go/util/workqueue"
 	log "k8s.io/klog/v2"
 
-	vanusinformer "github.com/vanus-labs/vanus-operator/pkg/client/informers/externalversions"
-	vanuslister "github.com/vanus-labs/vanus-operator/pkg/client/listers/vanus/v1alpha1"
+	vanusinformer "github.com/vanus-labs/vanus-operator/pkg/runtime/client/informers/externalversions"
+	vanuslister "github.com/vanus-labs/vanus-operator/pkg/runtime/client/listers/vanus/v1alpha1"
 )
 
 type Runtime interface {
