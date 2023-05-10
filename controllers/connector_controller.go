@@ -82,19 +82,19 @@ func (r *ConnectorReconciler) Reconcile(ctx context.Context, req ctrl.Request) (
 	// explicitly all supported annotations
 	ExplicitConnectorAnnotations(connector)
 
-	if r.isNeedUpdateConnectorLabel(ctx, connector) {
-		err = r.Update(ctx, connector)
-		if err != nil {
-			logger.Error(err, "Failed to update Connector Labels", "Connector.Namespace", connector.Namespace, "Connector.Name", connector.Name)
-			return ctrl.Result{RequeueAfter: cons.DefaultRequeueIntervalInSecond}, err
-		}
-		logger.Info("Successfully Update Connector Labels.", "Connector.Namespace", connector.Namespace, "Connector.Name", connector.Name)
-		return ctrl.Result{RequeueAfter: time.Second}, err
-	}
+	// TODO(jiangkai): delete me when all metadata is completed
+	// if r.isNeedUpdateConnectorMeta(ctx, connector) {
+	// 	err = r.Update(ctx, connector)
+	// 	if err != nil {
+	// 		logger.Error(err, "Failed to update Connector Meta", "Connector.Namespace", connector.Namespace, "Connector.Name", connector.Name)
+	// 		return ctrl.Result{RequeueAfter: cons.DefaultRequeueIntervalInSecond}, err
+	// 	}
+	// 	logger.Info("Successfully Update Connector Meta.", "Connector.Namespace", connector.Namespace, "Connector.Name", connector.Name)
+	// 	return ctrl.Result{RequeueAfter: time.Second}, err
+	// }
 
-	// Only chatgpt&chatai support shared deployment mode
 	if isSharedDeploymentMode(connector) {
-		logger.Info("Shared Connector. No need deploy workload.")
+		logger.Info("Shared Connector. Ignoring since object no need deploy.", "Connector.Namespace", connector.Namespace, "Connector.Name", connector.Name)
 		return ctrl.Result{}, nil
 	}
 
@@ -318,23 +318,34 @@ func (r *ConnectorReconciler) generateSvcForConnector(connector *vanusv1alpha1.C
 }
 
 func isSharedDeploymentMode(connector *vanusv1alpha1.Connector) bool {
-	if connector.Spec.Kind != "source" {
-		return false
-	}
-	if connector.Spec.Type != "chatgpt" {
-		return false
-	}
-	return connector.Annotations[cons.ConnectorDeploymentModeAnnotation] == cons.DefaultConnectorDeploymentModeShared
+	return connector.Annotations[cons.ConnectorDeploymentModeAnnotation] == cons.ConnectorDeploymentModeShared
 }
 
-func (r *ConnectorReconciler) isNeedUpdateConnectorLabel(ctx context.Context, connector *vanusv1alpha1.Connector) bool {
-	if _, ok := connector.Labels[cons.ConnectorKindLabel]; ok {
-		return false
-	}
-	connector.Labels[cons.ConnectorKindLabel] = connector.Spec.Kind
-	connector.Labels[cons.ConnectorTypeLabel] = connector.Spec.Type
-	return true
-}
+// func (r *ConnectorReconciler) isNeedUpdateConnectorMeta(ctx context.Context, connector *vanusv1alpha1.Connector) bool {
+// 	need := false
+// 	if _, ok := connector.Labels[cons.ConnectorKindLabel]; !ok {
+// 		connector.Labels[cons.ConnectorKindLabel] = connector.Spec.Kind
+// 		connector.Labels[cons.ConnectorTypeLabel] = connector.Spec.Type
+// 		need = true
+// 	}
+// 	if _, ok := connector.Annotations[cons.ConnectorDeploymentModeAnnotation]; !ok {
+// 		if connector.Spec.Kind == "source" {
+// 			if connector.Spec.Type == "chatgpt" || connector.Spec.Type == "chatai" {
+// 				connector.Annotations[cons.ConnectorDeploymentModeAnnotation] = cons.ConnectorDeploymentModeShared
+// 			} else {
+// 				connector.Annotations[cons.ConnectorDeploymentModeAnnotation] = cons.ConnectorDeploymentModeUnshared
+// 			}
+// 		} else if connector.Spec.Kind == "sink" {
+// 			if connector.Spec.Type == "http" || connector.Spec.Type == "feishu" {
+// 				connector.Annotations[cons.ConnectorDeploymentModeAnnotation] = cons.ConnectorDeploymentModeShared
+// 			} else {
+// 				connector.Annotations[cons.ConnectorDeploymentModeAnnotation] = cons.ConnectorDeploymentModeUnshared
+// 			}
+// 		}
+// 		need = true
+// 	}
+// 	return need
+// }
 
 func (r *ConnectorReconciler) isNeedUpdateConnector(ctx context.Context, connector *vanusv1alpha1.Connector) (bool, error) {
 	need := false
@@ -361,7 +372,7 @@ func ExplicitConnectorAnnotations(connector *vanusv1alpha1.Connector) {
 	if connector.Annotations == nil {
 		connector.Annotations = make(map[string]string)
 	}
-	ExplicitConectorAnnotationWithDefaultValue(connector, cons.ConnectorDeploymentModeAnnotation, cons.DefaultConnectorDeploymentModeShared)
+	ExplicitConectorAnnotationWithDefaultValue(connector, cons.ConnectorDeploymentModeAnnotation, cons.ConnectorDeploymentModeShared)
 	ExplicitConectorAnnotationWithDefaultValue(connector, cons.ConnectorDeploymentReplicasAnnotation, fmt.Sprintf("%d", cons.DefaultConnectorReplicas))
 	ExplicitConectorAnnotationWithDefaultValue(connector, cons.ConnectorServiceTypeAnnotation, cons.DefaultConnectorServiceType)
 	ExplicitConectorAnnotationWithDefaultValue(connector, cons.ConnectorServicePortAnnotation, fmt.Sprintf("%d", cons.DefaultConnectorServicePort))
