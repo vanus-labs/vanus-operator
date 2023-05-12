@@ -53,10 +53,6 @@ type ConnectorStatus struct {
 //+kubebuilder:object:root=true
 //+kubebuilder:subresource:status
 
-// +genclient
-// +k8s:deepcopy-gen:interfaces=k8s.io/apimachinery/pkg/runtime.Object
-// +genclient:nonNamespaced
-
 // Connector is the Schema for the connectors API
 type Connector struct {
 	metav1.TypeMeta   `json:",inline"`
@@ -67,7 +63,6 @@ type Connector struct {
 }
 
 //+kubebuilder:object:root=true
-// +k8s:deepcopy-gen:interfaces=k8s.io/apimachinery/pkg/runtime.Object
 
 // ConnectorList contains a list of Connector
 type ConnectorList struct {

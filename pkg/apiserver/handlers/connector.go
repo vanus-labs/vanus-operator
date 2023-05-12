@@ -298,6 +298,8 @@ func (a *Api) checkConnectorExist(name string) (bool, error) {
 func labelsForConnector(c *models.ConnectorCreate) map[string]string {
 	labels := make(map[string]string)
 	labels["app"] = c.Name
+	labels["kind"] = c.Kind
+	labels["type"] = c.Type
 	return labels
 }
 
