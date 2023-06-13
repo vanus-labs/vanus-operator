@@ -92,6 +92,8 @@ const (
 	DefaultConnectorContainerName   = "connector"
 	DefaultConnectorConfigMountPath = "/vanus-connect/config"
 	DefaultConnectorConfigMapName   = "config"
+	DefaultConnectorDataMountPath   = "/vanus-connect/data"
+	DefaultConnectorPvcName         = "data"
 	DefaultConnectorServiceType     = "ClusterIP"
 	DefaultConnectorServicePort     = 80
 )
@@ -177,6 +179,7 @@ const (
 	ConnectorDeploymentModeShared   = "shared"
 	ConnectorDeploymentModeUnshared = "unshared"
 
+	ConnectorStorageClassAnnotation       = "connector.vanus.ai/storage_class"
 	ConnectorDeploymentModeAnnotation     = "connector.vanus.ai/deployment-mode"
 	ConnectorDeploymentReplicasAnnotation = "connector.vanus.ai/deployment-replicas"
 	ConnectorServiceTypeAnnotation        = "connector.vanus.ai/service-type"
