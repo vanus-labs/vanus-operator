@@ -86,9 +86,9 @@ func (r *ConnectorReconciler) Reconcile(ctx context.Context, req ctrl.Request) (
 		logger.Info("Shared Connector. Ignoring since object no need deploy.", "Connector.Namespace", connector.Namespace, "Connector.Name", connector.Name)
 		return ctrl.Result{}, nil
 	}
-	isSts := isNeedStorage(connector)
+	needStorage := isNeedStorage(connector)
 	var obj client.Object
-	if isSts {
+	if needStorage {
 		obj = &appsv1.StatefulSet{}
 	} else {
 		// Create Connector Deployment
@@ -108,7 +108,7 @@ func (r *ConnectorReconciler) Reconcile(ctx context.Context, req ctrl.Request) (
 			} else {
 				logger.Info("Successfully create Connector ConfigMap")
 			}
-			if isSts {
+			if needStorage {
 				// Create Connector StatefulSet
 				obj = r.generateStsForConnector(connector)
 			} else {
@@ -170,7 +170,7 @@ func (r *ConnectorReconciler) Reconcile(ctx context.Context, req ctrl.Request) (
 	}
 
 	// Update Connector Deployment
-	if isSts {
+	if needStorage {
 		obj = r.generateStsForConnector(connector)
 	} else {
 		obj = r.generateDeploymentForConnector(connector)
