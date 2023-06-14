@@ -37,6 +37,13 @@ import (
 	"github.com/vanus-labs/vanus-operator/internal/convert"
 )
 
+type workloadType string
+
+const (
+	Deployment  workloadType = "Deployment"
+	StatefulSet workloadType = "StatefulSet"
+)
+
 // ConnectorReconciler reconciles a Connector object
 type ConnectorReconciler struct {
 	client.Client
@@ -86,9 +93,9 @@ func (r *ConnectorReconciler) Reconcile(ctx context.Context, req ctrl.Request) (
 		logger.Info("Shared Connector. Ignoring since object no need deploy.", "Connector.Namespace", connector.Namespace, "Connector.Name", connector.Name)
 		return ctrl.Result{}, nil
 	}
-	needStorage := isNeedStorage(connector)
+	workLoadType := getWorkloadType(connector)
 	var obj client.Object
-	if needStorage {
+	if workLoadType == StatefulSet {
 		obj = &appsv1.StatefulSet{}
 	} else {
 		// Create Connector Deployment
@@ -108,20 +115,20 @@ func (r *ConnectorReconciler) Reconcile(ctx context.Context, req ctrl.Request) (
 			} else {
 				logger.Info("Successfully create Connector ConfigMap")
 			}
-			if needStorage {
+			if workLoadType == StatefulSet {
 				// Create Connector StatefulSet
-				obj = r.generateStsForConnector(connector)
+				obj = r.generateStatefulSetForConnector(connector)
 			} else {
 				// Create Connector Deployment
 				obj = r.generateDeploymentForConnector(connector)
 			}
-			logger.Info("Creating a new Connector", "Kind", obj.GetObjectKind(), "Namespace", obj.GetNamespace(), "Name", obj.GetName())
+			logger.Info("Creating a new Connector", "Kind", workLoadType, "Namespace", obj.GetNamespace(), "Name", obj.GetName())
 			err = r.Create(ctx, obj)
 			if err != nil {
 				logger.Error(err, "Failed to create new Connector StatefulSet", "Kind", obj.GetObjectKind(), "Namespace", obj.GetNamespace(), "Name", obj.GetName())
 				return ctrl.Result{RequeueAfter: cons.DefaultRequeueIntervalInSecond}, err
 			} else {
-				logger.Info("Successfully create Connector", "Kind", obj.GetObjectKind())
+				logger.Info("Successfully create Connector", "Kind", workLoadType)
 			}
 
 			// Create Connector Service
@@ -170,14 +177,14 @@ func (r *ConnectorReconciler) Reconcile(ctx context.Context, req ctrl.Request) (
 	}
 
 	// Update Connector Deployment
-	if needStorage {
-		obj = r.generateStsForConnector(connector)
+	if workLoadType == StatefulSet {
+		obj = r.generateStatefulSetForConnector(connector)
 	} else {
 		obj = r.generateDeploymentForConnector(connector)
 	}
 	err = r.Update(ctx, obj)
 	if err != nil {
-		logger.Error(err, "Failed to update Connector", "Kind", obj.GetObjectKind(), "Namespace", obj.GetNamespace(), "Name", obj.GetName())
+		logger.Error(err, "Failed to update Connector", "Kind", workLoadType, "Namespace", obj.GetNamespace(), "Name", obj.GetName())
 		return ctrl.Result{RequeueAfter: cons.DefaultRequeueIntervalInSecond}, err
 	}
 	return ctrl.Result{}, err
@@ -191,7 +198,7 @@ func (r *ConnectorReconciler) SetupWithManager(mgr ctrl.Manager) error {
 }
 
 // returns a Connector StatefulSet object
-func (r *ConnectorReconciler) generateStsForConnector(connector *vanusv1alpha1.Connector) *appsv1.StatefulSet {
+func (r *ConnectorReconciler) generateStatefulSetForConnector(connector *vanusv1alpha1.Connector) *appsv1.StatefulSet {
 	replicas, _ := convert.StrToInt32(connector.Annotations[cons.ConnectorDeploymentReplicasAnnotation])
 	labels := labelsForConnector(connector.Name)
 	sts := &appsv1.StatefulSet{
@@ -230,7 +237,7 @@ func (r *ConnectorReconciler) generateStsForConnector(connector *vanusv1alpha1.C
 					AccessModes: []corev1.PersistentVolumeAccessMode{corev1.ReadWriteOnce},
 					Resources: corev1.ResourceRequirements{
 						Requests: corev1.ResourceList{
-							corev1.ResourceStorage: resource.MustParse("10Gi"),
+							corev1.ResourceStorage: resource.MustParse("20Gi"),
 						},
 					},
 					StorageClassName: getStorageClass(connector),
@@ -399,9 +406,16 @@ func isSharedDeploymentMode(connector *vanusv1alpha1.Connector) bool {
 	return connector.Annotations[cons.ConnectorDeploymentModeAnnotation] == cons.ConnectorDeploymentModeShared
 }
 
-func isNeedStorage(connector *vanusv1alpha1.Connector) bool {
-	_, exist := connector.Annotations[cons.ConnectorStorageClassAnnotation]
-	return exist
+func getWorkloadType(connector *vanusv1alpha1.Connector) workloadType {
+	if val, exist := connector.Annotations[cons.ConnectorWorkloadTypeAnnotation]; exist && val != "" {
+		switch val {
+		case string(StatefulSet):
+			return StatefulSet
+		case string(Deployment):
+			return Deployment
+		}
+	}
+	return Deployment
 }
 
 func getStorageClass(connector *vanusv1alpha1.Connector) *string {

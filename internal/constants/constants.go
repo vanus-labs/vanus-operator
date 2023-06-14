@@ -179,6 +179,7 @@ const (
 	ConnectorDeploymentModeShared   = "shared"
 	ConnectorDeploymentModeUnshared = "unshared"
 
+	ConnectorWorkloadTypeAnnotation       = "connector.vanus.ai/workload_type"
 	ConnectorStorageClassAnnotation       = "connector.vanus.ai/storage_class"
 	ConnectorDeploymentModeAnnotation     = "connector.vanus.ai/deployment-mode"
 	ConnectorDeploymentReplicasAnnotation = "connector.vanus.ai/deployment-replicas"
