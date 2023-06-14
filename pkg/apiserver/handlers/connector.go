@@ -20,12 +20,6 @@ import (
 	"strings"
 
 	"github.com/go-openapi/runtime/middleware"
-	"github.com/vanus-labs/vanus-operator/api/models"
-	"github.com/vanus-labs/vanus-operator/api/restapi/operations/connector"
-	vanusv1alpha1 "github.com/vanus-labs/vanus-operator/api/v1alpha1"
-	cons "github.com/vanus-labs/vanus-operator/internal/constants"
-	"github.com/vanus-labs/vanus-operator/internal/convert"
-	"github.com/vanus-labs/vanus-operator/pkg/apiserver/utils"
 	"gopkg.in/yaml.v2"
 	corev1 "k8s.io/api/core/v1"
 	"k8s.io/apimachinery/pkg/api/errors"
@@ -33,6 +27,13 @@ import (
 	"k8s.io/apimachinery/pkg/labels"
 	log "k8s.io/klog/v2"
 	ctrlclient "sigs.k8s.io/controller-runtime/pkg/client"
+
+	"github.com/vanus-labs/vanus-operator/api/models"
+	"github.com/vanus-labs/vanus-operator/api/restapi/operations/connector"
+	vanusv1alpha1 "github.com/vanus-labs/vanus-operator/api/v1alpha1"
+	cons "github.com/vanus-labs/vanus-operator/internal/constants"
+	"github.com/vanus-labs/vanus-operator/internal/convert"
+	"github.com/vanus-labs/vanus-operator/pkg/apiserver/utils"
 )
 
 const (
@@ -209,7 +210,11 @@ func (a *Api) deleteConnectorHandler(params connector.DeleteConnectorParams) mid
 		log.Errorf("update ingress failed, err: %s\n", err.Error())
 		return utils.Response(500, err)
 	}
-
+	err = a.deleteConnectorPVC(c)
+	if err != nil {
+		log.Errorf("delete pvc failed, err: %s\n", err.Error())
+		return utils.Response(500, err)
+	}
 	err = a.deleteConnector(cons.DefaultNamespace, params.Name)
 	if err != nil {
 		log.Errorf("delete connector failed, err: %s\n", err.Error())

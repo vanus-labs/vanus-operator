@@ -62,10 +62,6 @@ type Connector struct {
 	Status ConnectorStatus `json:"status,omitempty"`
 }
 
-func (in Connector) IsMarkedForDeletion() bool {
-	return !in.DeletionTimestamp.IsZero()
-}
-
 //+kubebuilder:object:root=true
 
 // ConnectorList contains a list of Connector

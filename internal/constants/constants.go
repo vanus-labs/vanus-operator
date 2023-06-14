@@ -195,4 +195,7 @@ const (
 const (
 	ConnectorKindLabel = "kind"
 	ConnectorTypeLabel = "type"
+
+	WorkloadDeployment  = "Deployment"
+	WorkloadStatefulSet = "StatefulSet"
 )

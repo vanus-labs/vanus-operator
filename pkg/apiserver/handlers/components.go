@@ -18,13 +18,17 @@ import (
 	"context"
 	"encoding/json"
 
-	vanusv1alpha1 "github.com/vanus-labs/vanus-operator/api/v1alpha1"
-	cons "github.com/vanus-labs/vanus-operator/internal/constants"
+	corev1 "k8s.io/api/core/v1"
 	networkingv1 "k8s.io/api/networking/v1"
 	"k8s.io/apimachinery/pkg/api/errors"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	"k8s.io/apimachinery/pkg/labels"
 	"k8s.io/apimachinery/pkg/types"
 	"k8s.io/client-go/kubernetes/scheme"
+	"sigs.k8s.io/controller-runtime/pkg/client"
+
+	vanusv1alpha1 "github.com/vanus-labs/vanus-operator/api/v1alpha1"
+	cons "github.com/vanus-labs/vanus-operator/internal/constants"
 )
 
 const (
@@ -272,4 +276,30 @@ func (a *Api) updateIngress(connector *vanusv1alpha1.Connector) error {
 	ingress.Spec.Rules = newIngressRules
 	_, err = a.ctrl.K8SClientSet().NetworkingV1().Ingresses(cons.DefaultNamespace).Update(context.TODO(), ingress, metav1.UpdateOptions{})
 	return err
+}
+
+func (a *Api) deleteConnectorPVC(connector *vanusv1alpha1.Connector) error {
+	annotation, ok := connector.Annotations[cons.ConnectorWorkloadTypeAnnotation]
+	if !ok || annotation != cons.WorkloadStatefulSet {
+		return nil
+	}
+	var pvcs corev1.PersistentVolumeClaimList
+	l := make(map[string]string)
+	l["app"] = connector.Name
+	opts := &client.ListOptions{Namespace: connector.Namespace, LabelSelector: labels.SelectorFromSet(l)}
+	if err := a.ctrl.List(&pvcs, opts); err != nil {
+		return err
+	}
+	for i := range pvcs.Items {
+		s := pvcs.Items[i]
+		err := a.ctrl.Delete(&s)
+		if errors.IsNotFound(err) {
+			// already deleted
+			continue
+		}
+		if err != nil {
+			return err
+		}
+	}
+	return nil
 }
