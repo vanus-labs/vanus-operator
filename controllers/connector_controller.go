@@ -183,30 +183,6 @@ func (r *ConnectorReconciler) Reconcile(ctx context.Context, req ctrl.Request) (
 	return ctrl.Result{}, err
 }
 
-func (r *ConnectorReconciler) onDelete(ctx context.Context, connector *vanusv1alpha1.Connector) error {
-	// gc pvc
-	var pvcs corev1.PersistentVolumeClaimList
-	labels := labelsForConnector(connector.Name)
-	if err := r.List(ctx, &pvcs,
-		client.InNamespace(connector.Namespace),
-		client.MatchingLabels(labels),
-	); err != nil {
-		return err
-	}
-	for i := range pvcs.Items {
-		s := pvcs.Items[i]
-		err := r.Delete(ctx, &s)
-		if errors.IsNotFound(err) {
-			// already deleted
-			continue
-		}
-		if err != nil {
-			return err
-		}
-	}
-	return nil
-}
-
 // SetupWithManager sets up the controller with the Manager.
 func (r *ConnectorReconciler) SetupWithManager(mgr ctrl.Manager) error {
 	return ctrl.NewControllerManagedBy(mgr).
