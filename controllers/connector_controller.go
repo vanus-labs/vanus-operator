@@ -432,7 +432,7 @@ func getConnectorStorageSize(connector *vanusv1alpha1.Connector) resource.Quanti
 			return q
 		}
 	}
-	return resource.MustParse("20Gi")
+	return resource.MustParse("10Gi")
 }
 
 func (r *ConnectorReconciler) isNeedUpdateConnector(ctx context.Context, connector *vanusv1alpha1.Connector) (bool, error) {
