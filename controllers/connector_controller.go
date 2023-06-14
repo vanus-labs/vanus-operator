@@ -228,6 +228,9 @@ func (r *ConnectorReconciler) generateStatefulSetForConnector(connector *vanusv1
 					Volumes: getVolumesForConnector(connector),
 				},
 			},
+			PersistentVolumeClaimRetentionPolicy: &appsv1.StatefulSetPersistentVolumeClaimRetentionPolicy{
+				WhenDeleted: appsv1.DeletePersistentVolumeClaimRetentionPolicyType,
+			},
 			VolumeClaimTemplates: []corev1.PersistentVolumeClaim{{
 				ObjectMeta: metav1.ObjectMeta{
 					Labels: labels,
