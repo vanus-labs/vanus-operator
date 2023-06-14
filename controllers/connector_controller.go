@@ -93,7 +93,18 @@ func (r *ConnectorReconciler) Reconcile(ctx context.Context, req ctrl.Request) (
 		logger.Info("Shared Connector. Ignoring since object no need deploy.", "Connector.Namespace", connector.Namespace, "Connector.Name", connector.Name)
 		return ctrl.Result{}, nil
 	}
-	workLoadType := getWorkloadType(connector)
+	workLoadType := r.getWorkloadType(connector)
+	if connector.IsMarkedForDeletion() {
+		if workLoadType == StatefulSet {
+			err = r.onDelete(ctx, connector)
+			if err != nil {
+				logger.Error(err, "Failed to gc Connector", "Connector.Namespace", connector.Namespace, "Connector.Name", connector.Name)
+				return ctrl.Result{}, err
+			}
+			logger.Info("Success to gc Connector", "Connector.Namespace", connector.Namespace, "Connector.Name", connector.Name)
+		}
+		return ctrl.Result{}, nil
+	}
 	var obj client.Object
 	if workLoadType == StatefulSet {
 		obj = &appsv1.StatefulSet{}
@@ -190,6 +201,30 @@ func (r *ConnectorReconciler) Reconcile(ctx context.Context, req ctrl.Request) (
 	return ctrl.Result{}, err
 }
 
+func (r *ConnectorReconciler) onDelete(ctx context.Context, connector *vanusv1alpha1.Connector) error {
+	// gc pvc
+	var pvcs corev1.PersistentVolumeClaimList
+	labels := labelsForConnector(connector.Name)
+	if err := r.List(ctx, &pvcs,
+		client.InNamespace(connector.Namespace),
+		client.MatchingLabels(labels),
+	); err != nil {
+		return err
+	}
+	for i := range pvcs.Items {
+		s := pvcs.Items[i]
+		err := r.Delete(ctx, &s)
+		if errors.IsNotFound(err) {
+			// already deleted
+			continue
+		}
+		if err != nil {
+			return err
+		}
+	}
+	return nil
+}
+
 // SetupWithManager sets up the controller with the Manager.
 func (r *ConnectorReconciler) SetupWithManager(mgr ctrl.Manager) error {
 	return ctrl.NewControllerManagedBy(mgr).
@@ -228,16 +263,15 @@ func (r *ConnectorReconciler) generateStatefulSetForConnector(connector *vanusv1
 					Volumes: getVolumesForConnector(connector),
 				},
 			},
-			PersistentVolumeClaimRetentionPolicy: &appsv1.StatefulSetPersistentVolumeClaimRetentionPolicy{
-				WhenDeleted: appsv1.DeletePersistentVolumeClaimRetentionPolicyType,
-			},
 			VolumeClaimTemplates: []corev1.PersistentVolumeClaim{{
 				ObjectMeta: metav1.ObjectMeta{
 					Labels: labels,
 					Name:   cons.DefaultConnectorPvcName,
 				},
 				Spec: corev1.PersistentVolumeClaimSpec{
-					AccessModes: []corev1.PersistentVolumeAccessMode{corev1.ReadWriteOnce},
+					AccessModes: []corev1.PersistentVolumeAccessMode{
+						corev1.ReadWriteOnce,
+					},
 					Resources: corev1.ResourceRequirements{
 						Requests: corev1.ResourceList{
 							corev1.ResourceStorage: getConnectorStorageSize(connector),
@@ -409,7 +443,7 @@ func isSharedDeploymentMode(connector *vanusv1alpha1.Connector) bool {
 	return connector.Annotations[cons.ConnectorDeploymentModeAnnotation] == cons.ConnectorDeploymentModeShared
 }
 
-func getWorkloadType(connector *vanusv1alpha1.Connector) workloadType {
+func (r *ConnectorReconciler) getWorkloadType(connector *vanusv1alpha1.Connector) workloadType {
 	if val, exist := connector.Annotations[cons.ConnectorWorkloadTypeAnnotation]; exist && val != "" {
 		switch val {
 		case string(StatefulSet):
@@ -435,7 +469,7 @@ func getConnectorStorageSize(connector *vanusv1alpha1.Connector) resource.Quanti
 			return q
 		}
 	}
-	return resource.MustParse("10Gi")
+	return resource.MustParse("1Gi")
 }
 
 func (r *ConnectorReconciler) isNeedUpdateConnector(ctx context.Context, connector *vanusv1alpha1.Connector) (bool, error) {
