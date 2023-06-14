@@ -2,7 +2,6 @@
 apiVersion: rbac.authorization.k8s.io/v1
 kind: ClusterRole
 metadata:
-  creationTimestamp: null
   name: vanus-operator
 rules:
 - apiGroups:
@@ -17,6 +16,20 @@ rules:
   - patch
   - update
   - watch
+- apiGroups:
+    - ""
+  resources:
+    - persistentvolumes
+    - persistentvolumeclaims
+    - persistentvolumeclaims/status
+  verbs:
+    - create
+    - delete
+    - get
+    - list
+    - patch
+    - update
+    - watch
 - apiGroups:
   - ""
   resources:
