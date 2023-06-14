@@ -237,10 +237,10 @@ func (r *ConnectorReconciler) generateStatefulSetForConnector(connector *vanusv1
 					AccessModes: []corev1.PersistentVolumeAccessMode{corev1.ReadWriteOnce},
 					Resources: corev1.ResourceRequirements{
 						Requests: corev1.ResourceList{
-							corev1.ResourceStorage: resource.MustParse("20Gi"),
+							corev1.ResourceStorage: getConnectorStorageSize(connector),
 						},
 					},
-					StorageClassName: getStorageClass(connector),
+					StorageClassName: getConnectorStorageClass(connector),
 				},
 			}},
 		},
@@ -418,38 +418,22 @@ func getWorkloadType(connector *vanusv1alpha1.Connector) workloadType {
 	return Deployment
 }
 
-func getStorageClass(connector *vanusv1alpha1.Connector) *string {
+func getConnectorStorageClass(connector *vanusv1alpha1.Connector) *string {
 	if val, exist := connector.Annotations[cons.ConnectorStorageClassAnnotation]; exist && val != "" {
 		return &val
 	}
 	return nil
 }
 
-// func (r *ConnectorReconciler) isNeedUpdateConnectorMeta(ctx context.Context, connector *vanusv1alpha1.Connector) bool {
-// 	need := false
-// 	if _, ok := connector.Labels[cons.ConnectorKindLabel]; !ok {
-// 		connector.Labels[cons.ConnectorKindLabel] = connector.Spec.Kind
-// 		connector.Labels[cons.ConnectorTypeLabel] = connector.Spec.Type
-// 		need = true
-// 	}
-// 	if _, ok := connector.Annotations[cons.ConnectorDeploymentModeAnnotation]; !ok {
-// 		if connector.Spec.Kind == "source" {
-// 			if connector.Spec.Type == "chatgpt" || connector.Spec.Type == "chatai" {
-// 				connector.Annotations[cons.ConnectorDeploymentModeAnnotation] = cons.ConnectorDeploymentModeShared
-// 			} else {
-// 				connector.Annotations[cons.ConnectorDeploymentModeAnnotation] = cons.ConnectorDeploymentModeUnshared
-// 			}
-// 		} else if connector.Spec.Kind == "sink" {
-// 			if connector.Spec.Type == "http" || connector.Spec.Type == "feishu" {
-// 				connector.Annotations[cons.ConnectorDeploymentModeAnnotation] = cons.ConnectorDeploymentModeShared
-// 			} else {
-// 				connector.Annotations[cons.ConnectorDeploymentModeAnnotation] = cons.ConnectorDeploymentModeUnshared
-// 			}
-// 		}
-// 		need = true
-// 	}
-// 	return need
-// }
+func getConnectorStorageSize(connector *vanusv1alpha1.Connector) resource.Quantity {
+	if val, exist := connector.Annotations[cons.ConnectorStorageSizeAnnotation]; exist && val != "" {
+		q, err := resource.ParseQuantity(val)
+		if err == nil {
+			return q
+		}
+	}
+	return resource.MustParse("20Gi")
+}
 
 func (r *ConnectorReconciler) isNeedUpdateConnector(ctx context.Context, connector *vanusv1alpha1.Connector) (bool, error) {
 	need := false
