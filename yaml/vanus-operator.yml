@@ -176,6 +176,20 @@ rules:
   - update
   - watch
 - apiGroups:
+    - ""
+  resources:
+    - persistentvolumes
+    - persistentvolumeclaims
+    - persistentvolumeclaims/status
+  verbs:
+    - create
+    - delete
+    - get
+    - list
+    - patch
+    - update
+    - watch
+- apiGroups:
   - ""
   resources:
   - events
