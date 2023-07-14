@@ -256,6 +256,8 @@ func (r *ConnectorReconciler) generateStatefulSet(connector *vanusv1alpha1.Conne
 	// Set Connector instance as the owner and connector
 	if !isSharedDeploymentMode(connector) {
 		_ = controllerutil.SetControllerReference(connector, sts, r.Scheme)
+	} else {
+		sts.Spec.Template.Spec.ServiceAccountName = "vanus-operator"
 	}
 	return sts
 }
@@ -300,6 +302,8 @@ func (r *ConnectorReconciler) generateDeployment(connector *vanusv1alpha1.Connec
 	// Set Connector instance as the owner and connector
 	if !isSharedDeploymentMode(connector) {
 		_ = controllerutil.SetControllerReference(connector, dep, r.Scheme)
+	} else {
+		dep.Spec.Template.Spec.ServiceAccountName = "vanus-operator"
 	}
 	return dep
 }
