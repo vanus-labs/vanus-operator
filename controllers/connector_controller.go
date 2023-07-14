@@ -391,7 +391,7 @@ func (r *ConnectorReconciler) generateConfigMap(connector *vanusv1alpha1.Connect
 			"multi":          true,
 			"connector_type": connector.Spec.Type,
 			"port":           8080,
-			"base_path":      fmt.Sprintf("/api/v1/%s/%s/", connector.Spec.Kind, connector.Spec.Type),
+			//"base_path":      fmt.Sprintf("/api/v1/%s/%s/", connector.Spec.Kind, connector.Spec.Type),
 		})
 		data["config.yml"] = string(config)
 	} else {
