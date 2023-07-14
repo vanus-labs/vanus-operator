@@ -19,6 +19,7 @@ import (
 	"fmt"
 	"time"
 
+	"gopkg.in/yaml.v3"
 	appsv1 "k8s.io/api/apps/v1"
 	corev1 "k8s.io/api/core/v1"
 	"k8s.io/apimachinery/pkg/api/errors"
@@ -82,10 +83,6 @@ func (r *ConnectorReconciler) Reconcile(ctx context.Context, req ctrl.Request) (
 	// explicitly all supported annotations
 	ExplicitConnectorAnnotations(connector)
 
-	if isSharedDeploymentMode(connector) {
-		logger.Info("Shared Connector. Ignoring since object no need deploy.", "Connector.Namespace", connector.Namespace, "Connector.Name", connector.Name)
-		return ctrl.Result{}, nil
-	}
 	workLoadType := getConnectorWorkloadType(connector)
 	var obj client.Object
 	if workLoadType == cons.WorkloadStatefulSet {
@@ -95,11 +92,12 @@ func (r *ConnectorReconciler) Reconcile(ctx context.Context, req ctrl.Request) (
 		// Check if the Deployment already exists, if not create a new one
 		obj = &appsv1.Deployment{}
 	}
-	err = r.Get(ctx, types.NamespacedName{Name: connector.Name, Namespace: connector.Namespace}, obj)
+	name := r.getResourceName(connector)
+	err = r.Get(ctx, types.NamespacedName{Name: name, Namespace: connector.Namespace}, obj)
 	if err != nil {
 		if errors.IsNotFound(err) {
 			// Create Connector ConfigMap
-			connectorConfigMap := r.generateConfigMapForConnector(connector)
+			connectorConfigMap := r.generateConfigMap(connector)
 			logger.Info("Creating a new Connector ConfigMap.", "ConfigMap.Namespace", connectorConfigMap.Namespace, "ConfigMap.Name", connectorConfigMap.Name)
 			err = r.Create(ctx, connectorConfigMap)
 			if err != nil {
@@ -110,10 +108,10 @@ func (r *ConnectorReconciler) Reconcile(ctx context.Context, req ctrl.Request) (
 			}
 			if workLoadType == cons.WorkloadStatefulSet {
 				// Create Connector StatefulSet
-				obj = r.generateStatefulSetForConnector(connector)
+				obj = r.generateStatefulSet(connector)
 			} else {
 				// Create Connector Deployment
-				obj = r.generateDeploymentForConnector(connector)
+				obj = r.generateDeployment(connector)
 			}
 			logger.Info("Creating a new Connector", "Kind", workLoadType, "Namespace", obj.GetNamespace(), "Name", obj.GetName())
 			err = r.Create(ctx, obj)
@@ -152,6 +150,10 @@ func (r *ConnectorReconciler) Reconcile(ctx context.Context, req ctrl.Request) (
 			return ctrl.Result{RequeueAfter: cons.DefaultRequeueIntervalInSecond}, err
 		}
 	}
+	if isSharedDeploymentMode(connector) {
+		logger.Info("Shared Connector. Ignoring since object no need deploy.", "Connector.Namespace", connector.Namespace, "Connector.Name", connector.Name)
+		return ctrl.Result{}, nil
+	}
 
 	// Check And Update Connector
 	needUpdateConnector, err := r.isNeedUpdateConnector(ctx, connector)
@@ -171,9 +173,9 @@ func (r *ConnectorReconciler) Reconcile(ctx context.Context, req ctrl.Request) (
 
 	// Update Connector Deployment
 	if workLoadType == cons.WorkloadStatefulSet {
-		obj = r.generateStatefulSetForConnector(connector)
+		obj = r.generateStatefulSet(connector)
 	} else {
-		obj = r.generateDeploymentForConnector(connector)
+		obj = r.generateDeployment(connector)
 	}
 	err = r.Update(ctx, obj)
 	if err != nil {
@@ -190,13 +192,21 @@ func (r *ConnectorReconciler) SetupWithManager(mgr ctrl.Manager) error {
 		Complete(r)
 }
 
+func (r *ConnectorReconciler) getResourceName(connector *vanusv1alpha1.Connector) string {
+	if isSharedDeploymentMode(connector) {
+		return fmt.Sprintf("%s-%s", connector.Spec.Kind, connector.Spec.Type)
+	}
+	return connector.Name
+}
+
 // returns a Connector StatefulSet object
-func (r *ConnectorReconciler) generateStatefulSetForConnector(connector *vanusv1alpha1.Connector) *appsv1.StatefulSet {
+func (r *ConnectorReconciler) generateStatefulSet(connector *vanusv1alpha1.Connector) *appsv1.StatefulSet {
 	replicas, _ := convert.StrToInt32(connector.Annotations[cons.ConnectorDeploymentReplicasAnnotation])
-	labels := labelsForConnector(connector.Name)
+	name := r.getResourceName(connector)
+	labels := labelsForConnector(name)
 	sts := &appsv1.StatefulSet{
 		ObjectMeta: metav1.ObjectMeta{
-			Name:      connector.Name,
+			Name:      name,
 			Namespace: connector.Namespace,
 			Labels:    labels,
 		},
@@ -214,11 +224,11 @@ func (r *ConnectorReconciler) generateStatefulSetForConnector(connector *vanusv1
 						Name:            cons.DefaultConnectorContainerName,
 						Image:           connector.Spec.Image,
 						ImagePullPolicy: connector.Spec.ImagePullPolicy,
-						Resources:       getResourceForConnector(connector),
-						Env:             getEnvForConnector(connector),
-						VolumeMounts:    getVolumeMountsForConnectorWithPvc(connector),
+						Resources:       r.getResource(connector),
+						Env:             r.getEnv(connector),
+						VolumeMounts:    r.getVolumeMountsWithPvc(connector),
 					}},
-					Volumes: getVolumesForConnector(connector),
+					Volumes: r.getVolumes(connector),
 				},
 			},
 			VolumeClaimTemplates: []corev1.PersistentVolumeClaim{{
@@ -244,17 +254,20 @@ func (r *ConnectorReconciler) generateStatefulSetForConnector(connector *vanusv1
 		sts.Spec.Template.Annotations = map[string]string{cons.ConnectorRestartAtAnnotation: val}
 	}
 	// Set Connector instance as the owner and connector
-	controllerutil.SetControllerReference(connector, sts, r.Scheme)
+	if !isSharedDeploymentMode(connector) {
+		_ = controllerutil.SetControllerReference(connector, sts, r.Scheme)
+	}
 	return sts
 }
 
 // returns a Connector Deployment object
-func (r *ConnectorReconciler) generateDeploymentForConnector(connector *vanusv1alpha1.Connector) *appsv1.Deployment {
+func (r *ConnectorReconciler) generateDeployment(connector *vanusv1alpha1.Connector) *appsv1.Deployment {
 	replicas, _ := convert.StrToInt32(connector.Annotations[cons.ConnectorDeploymentReplicasAnnotation])
-	labels := labelsForConnector(connector.Name)
+	name := r.getResourceName(connector)
+	labels := labelsForConnector(name)
 	dep := &appsv1.Deployment{
 		ObjectMeta: metav1.ObjectMeta{
-			Name:      connector.Name,
+			Name:      name,
 			Namespace: connector.Namespace,
 			Labels:    labels,
 		},
@@ -272,11 +285,11 @@ func (r *ConnectorReconciler) generateDeploymentForConnector(connector *vanusv1a
 						Name:            cons.DefaultConnectorContainerName,
 						Image:           connector.Spec.Image,
 						ImagePullPolicy: connector.Spec.ImagePullPolicy,
-						Resources:       getResourceForConnector(connector),
-						Env:             getEnvForConnector(connector),
-						VolumeMounts:    getVolumeMountsForConnector(connector),
+						Resources:       r.getResource(connector),
+						Env:             r.getEnv(connector),
+						VolumeMounts:    r.getVolumeMounts(connector),
 					}},
-					Volumes: getVolumesForConnector(connector),
+					Volumes: r.getVolumes(connector),
 				},
 			},
 		},
@@ -285,11 +298,27 @@ func (r *ConnectorReconciler) generateDeploymentForConnector(connector *vanusv1a
 		dep.Spec.Template.Annotations = map[string]string{cons.ConnectorRestartAtAnnotation: val}
 	}
 	// Set Connector instance as the owner and connector
-	controllerutil.SetControllerReference(connector, dep, r.Scheme)
+	if !isSharedDeploymentMode(connector) {
+		_ = controllerutil.SetControllerReference(connector, dep, r.Scheme)
+	}
 	return dep
 }
 
-func getResourceForConnector(connector *vanusv1alpha1.Connector) corev1.ResourceRequirements {
+func (r *ConnectorReconciler) getResource(connector *vanusv1alpha1.Connector) corev1.ResourceRequirements {
+	if isSharedDeploymentMode(connector) {
+		requests := corev1.ResourceList{
+			corev1.ResourceCPU:    resource.MustParse("250m"),
+			corev1.ResourceMemory: resource.MustParse("500Mi"),
+		}
+		limits := corev1.ResourceList{
+			corev1.ResourceCPU:    resource.MustParse("1000m"),
+			corev1.ResourceMemory: resource.MustParse("2048Mi"),
+		}
+		return corev1.ResourceRequirements{
+			Requests: requests,
+			Limits:   limits,
+		}
+	}
 	requests := corev1.ResourceList{
 		corev1.ResourceCPU:    resource.MustParse("100m"),
 		corev1.ResourceMemory: resource.MustParse("128Mi"),
@@ -304,7 +333,7 @@ func getResourceForConnector(connector *vanusv1alpha1.Connector) corev1.Resource
 	}
 }
 
-func getEnvForConnector(connector *vanusv1alpha1.Connector) []corev1.EnvVar {
+func (r *ConnectorReconciler) getEnv(_ *vanusv1alpha1.Connector) []corev1.EnvVar {
 	defaultEnvs := []corev1.EnvVar{{
 		Name:  cons.EnvLogLevel,
 		Value: "INFO",
@@ -312,7 +341,7 @@ func getEnvForConnector(connector *vanusv1alpha1.Connector) []corev1.EnvVar {
 	return defaultEnvs
 }
 
-func getVolumeMountsForConnector(connector *vanusv1alpha1.Connector) []corev1.VolumeMount {
+func (r *ConnectorReconciler) getVolumeMounts(_ *vanusv1alpha1.Connector) []corev1.VolumeMount {
 	defaultVolumeMounts := []corev1.VolumeMount{{
 		Name:      cons.DefaultConnectorConfigMapName,
 		MountPath: cons.DefaultConnectorConfigMountPath,
@@ -320,7 +349,7 @@ func getVolumeMountsForConnector(connector *vanusv1alpha1.Connector) []corev1.Vo
 	return defaultVolumeMounts
 }
 
-func getVolumeMountsForConnectorWithPvc(connector *vanusv1alpha1.Connector) []corev1.VolumeMount {
+func (r *ConnectorReconciler) getVolumeMountsWithPvc(_ *vanusv1alpha1.Connector) []corev1.VolumeMount {
 	defaultVolumeMounts := []corev1.VolumeMount{
 		{
 			Name:      cons.DefaultConnectorConfigMapName,
@@ -334,13 +363,14 @@ func getVolumeMountsForConnectorWithPvc(connector *vanusv1alpha1.Connector) []co
 	return defaultVolumeMounts
 }
 
-func getVolumesForConnector(connector *vanusv1alpha1.Connector) []corev1.Volume {
+func (r *ConnectorReconciler) getVolumes(connector *vanusv1alpha1.Connector) []corev1.Volume {
+	name := r.getResourceName(connector)
 	defaultVolumes := []corev1.Volume{{
 		Name: cons.DefaultConnectorConfigMapName,
 		VolumeSource: corev1.VolumeSource{
 			ConfigMap: &corev1.ConfigMapVolumeSource{
 				LocalObjectReference: corev1.LocalObjectReference{
-					Name: connector.Name,
+					Name: name,
 				},
 			}},
 	}}
@@ -351,31 +381,45 @@ func labelsForConnector(name string) map[string]string {
 	return map[string]string{"app": name}
 }
 
-func (r *ConnectorReconciler) generateConfigMapForConnector(connector *vanusv1alpha1.Connector) *corev1.ConfigMap {
-	labels := labelsForConnector(connector.Name)
+func (r *ConnectorReconciler) generateConfigMap(connector *vanusv1alpha1.Connector) *corev1.ConfigMap {
+	share := isSharedDeploymentMode(connector)
+	name := r.getResourceName(connector)
+	labels := labelsForConnector(name)
 	data := make(map[string]string)
-	data["config.yml"] = connector.Spec.Config
+	if share {
+		config, _ := yaml.Marshal(map[string]interface{}{
+			"multi":          true,
+			"connector_type": connector.Spec.Type,
+			"port":           8080,
+			"base_path":      fmt.Sprintf("/api/v1/%s/%s/", connector.Spec.Kind, connector.Spec.Type),
+		})
+		data["config.yml"] = string(config)
+	} else {
+		data["config.yml"] = connector.Spec.Config
+	}
 	connectorConfigMap := &corev1.ConfigMap{
 		ObjectMeta: metav1.ObjectMeta{
 			Namespace:  cons.DefaultNamespace,
-			Name:       connector.Name,
+			Name:       name,
 			Labels:     labels,
 			Finalizers: []string{metav1.FinalizerOrphanDependents},
 		},
 		Data: data,
 	}
-
-	controllerutil.SetControllerReference(connector, connectorConfigMap, r.Scheme)
+	if !share {
+		_ = controllerutil.SetControllerReference(connector, connectorConfigMap, r.Scheme)
+	}
 	return connectorConfigMap
 }
 
 func (r *ConnectorReconciler) generateSvcForConnector(connector *vanusv1alpha1.Connector) *corev1.Service {
-	labels := labelsForConnector(connector.Name)
+	name := r.getResourceName(connector)
+	labels := labelsForConnector(name)
 	svcPort, _ := convert.StrToInt32(connector.Annotations[cons.ConnectorServicePortAnnotation])
 	connectorSvc := &corev1.Service{
 		ObjectMeta: metav1.ObjectMeta{
 			Namespace:   connector.Namespace,
-			Name:        connector.Name,
+			Name:        name,
 			Labels:      labels,
 			Annotations: connector.Annotations,
 			Finalizers:  []string{metav1.FinalizerOrphanDependents},
@@ -385,15 +429,16 @@ func (r *ConnectorReconciler) generateSvcForConnector(connector *vanusv1alpha1.C
 			Type:     corev1.ServiceType(connector.Annotations[cons.ConnectorServiceTypeAnnotation]),
 			Ports: []corev1.ServicePort{
 				{
-					Name:       connector.Name,
+					Name:       name,
 					Port:       svcPort,
 					TargetPort: intstr.FromInt(8080),
 				},
 			},
 		},
 	}
-
-	controllerutil.SetControllerReference(connector, connectorSvc, r.Scheme)
+	if !isSharedDeploymentMode(connector) {
+		_ = controllerutil.SetControllerReference(connector, connectorSvc, r.Scheme)
+	}
 	return connectorSvc
 }
 
@@ -422,7 +467,11 @@ func getConnectorStorageSize(connector *vanusv1alpha1.Connector) resource.Quanti
 			return q
 		}
 	}
-	return resource.MustParse("1Gi")
+	if !isSharedDeploymentMode(connector) {
+		return resource.MustParse("1Gi")
+	} else {
+		return resource.MustParse("10Gi")
+	}
 }
 
 func (r *ConnectorReconciler) isNeedUpdateConnector(ctx context.Context, connector *vanusv1alpha1.Connector) (bool, error) {
@@ -435,7 +484,7 @@ func (r *ConnectorReconciler) isNeedUpdateConnector(ctx context.Context, connect
 	}
 	if oriConfigMap.Data["config.yml"] != connector.Spec.Config {
 		// Update Connector Configmap
-		connectorConfigMap := r.generateConfigMapForConnector(connector)
+		connectorConfigMap := r.generateConfigMap(connector)
 		err = r.Update(ctx, connectorConfigMap)
 		if err != nil {
 			return false, err
