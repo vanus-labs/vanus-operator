@@ -204,12 +204,6 @@ func (a *Api) deleteConnectorHandler(params connector.DeleteConnectorParams) mid
 		log.Errorf("get connector failed, err: %s\n", err.Error())
 		return utils.Response(500, err)
 	}
-
-	err = a.updateIngress(c)
-	if err != nil {
-		log.Errorf("update ingress failed, err: %s\n", err.Error())
-		return utils.Response(500, err)
-	}
 	err = a.deleteConnectorPVC(c)
 	if err != nil {
 		log.Errorf("delete pvc failed, err: %s\n", err.Error())

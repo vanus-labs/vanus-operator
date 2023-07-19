@@ -15,7 +15,6 @@
 package main
 
 import (
-	"context"
 	"flag"
 	"os"
 	"path/filepath"
@@ -24,7 +23,6 @@ import (
 	"github.com/go-kit/log"
 	apictrl "github.com/vanus-labs/vanus-operator/pkg/apiserver/controller"
 	"github.com/vanus-labs/vanus-operator/pkg/apiserver/handlers"
-	"github.com/vanus-labs/vanus-operator/pkg/controller"
 	"k8s.io/klog/v2"
 )
 
@@ -64,14 +62,6 @@ func main() {
 	engine.NoMethod(func(c *gin.Context) {
 		a.Handler().ServeHTTP(c.Writer, c.Request)
 	})
-
-	ctx := context.Background()
-	c, err := controller.NewController(ctx, control)
-	if err != nil {
-		klog.Errorf("new controller manager failed, err: %s", err.Error())
-		panic(err)
-	}
-	go c.Run(ctx)
 
 	err = engine.Run(*addr)
 	if err != nil {
