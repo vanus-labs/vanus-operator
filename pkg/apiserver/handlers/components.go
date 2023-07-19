@@ -19,7 +19,6 @@ import (
 	"encoding/json"
 
 	corev1 "k8s.io/api/core/v1"
-	networkingv1 "k8s.io/api/networking/v1"
 	"k8s.io/apimachinery/pkg/api/errors"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/labels"
@@ -255,27 +254,6 @@ func (a *Api) existConnector(namespace string, name string, opts *metav1.GetOpti
 		return result, false, err
 	}
 	return result, true, nil
-}
-
-func (a *Api) updateIngress(connector *vanusv1alpha1.Connector) error {
-	ingress, err := a.ctrl.K8SClientSet().NetworkingV1().Ingresses(cons.DefaultNamespace).Get(context.TODO(), cons.DefaultVanusOperatorName, metav1.GetOptions{})
-	if err != nil {
-		return err
-	}
-	var newIngressRules []networkingv1.IngressRule = make([]networkingv1.IngressRule, 0)
-	annotation, ok := connector.Annotations[cons.ConnectorNetworkHostDomainAnnotation]
-	if !ok {
-		return nil
-	}
-	for idx, rule := range ingress.Spec.Rules {
-		if rule.Host == annotation {
-			continue
-		}
-		newIngressRules = append(newIngressRules, ingress.Spec.Rules[idx])
-	}
-	ingress.Spec.Rules = newIngressRules
-	_, err = a.ctrl.K8SClientSet().NetworkingV1().Ingresses(cons.DefaultNamespace).Update(context.TODO(), ingress, metav1.UpdateOptions{})
-	return err
 }
 
 func (a *Api) deleteConnectorPVC(connector *vanusv1alpha1.Connector) error {

@@ -18,21 +18,17 @@ package constants
 import "time"
 
 const (
-	DefaultNamespace               = "vanus"
-	DefaultVanusCoreName           = "vanus-cluster"
-	DefaultVanusOperatorName       = "vanus-operator"
-	DefaultVanusOperatorHostPrefix = "vanus-operator"
-	DefaultConfigMountPath         = "/vanus/config"
-	DefaultVolumeMountPath         = "/data"
-	DefaultVolumeName              = "data"
-	DefaultImagePullPolicy         = "Always"
+	DefaultNamespace       = "vanus"
+	DefaultVanusCoreName   = "vanus-cluster"
+	DefaultConfigMountPath = "/vanus/config"
+	DefaultVolumeMountPath = "/data"
+	DefaultVolumeName      = "data"
+	DefaultImagePullPolicy = "Always"
 
 	// DefaultRequeueIntervalInSecond is an universal interval of the reconcile function
-	DefaultRequeueIntervalInSecond     = 6 * time.Second
-	DefaultPortMetrics                 = 2112
-	DefaultOperatorContainerPortApi    = 8089
-	DefaultIngressClassAnnotationKey   = "kubernetes.io/ingress.class"
-	DefaultIngressClassAnnotationValue = "alb"
+	DefaultRequeueIntervalInSecond  = 6 * time.Second
+	DefaultPortMetrics              = 2112
+	DefaultOperatorContainerPortApi = 8089
 )
 
 const (
@@ -114,8 +110,6 @@ const (
 	EnvPodIP    = "POD_IP"
 	EnvPodName  = "POD_NAME"
 	EnvLogLevel = "VANUS_LOG_LEVEL"
-
-	AnnotationBuildInIngress = "vanus.ai/build-in-ingress"
 )
 
 var (
@@ -186,8 +180,6 @@ const (
 	ConnectorDeploymentReplicasAnnotation = "connector.vanus.ai/deployment-replicas"
 	ConnectorServiceTypeAnnotation        = "connector.vanus.ai/service-type"
 	ConnectorServicePortAnnotation        = "connector.vanus.ai/service-port"
-	ConnectorNetworkHostDomainAnnotation  = "connector.vanus.ai/network-host-domain"
-	ConnectorIngressNameAnnotation        = "connector.vanus.ai/ingress-name"
 	ConnectorRestartAtAnnotation          = "connector.vanus.ai/restart-at"
 )
 

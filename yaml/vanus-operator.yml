@@ -233,18 +233,6 @@ rules:
   - update
   - watch
 - apiGroups:
-  - networking.k8s.io
-  resources:
-  - ingresses
-  verbs:
-  - create
-  - delete
-  - get
-  - list
-  - patch
-  - update
-  - watch
-- apiGroups:
   - apps
   resources:
   - deployments
@@ -363,26 +351,6 @@ spec:
       targetPort: 8089
       nodePort: 30009
       name: proxy
----
-apiVersion: networking.k8s.io/v1
-kind: Ingress
-metadata:
-  name: vanus-operator
-  namespace: vanus
-  annotations:
-    kubernetes.io/ingress.class: alb
-spec:
-  rules:
-    - host: vanus-operator.com
-      http:
-        paths:
-          - backend:
-              service:
-                name: "vanus-operator"
-                port:
-                  number: 8089
-            pathType: Prefix
-            path: /
 ---
 apiVersion: v1
 kind: ServiceAccount

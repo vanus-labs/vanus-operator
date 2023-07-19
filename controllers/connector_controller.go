@@ -142,7 +142,6 @@ func (r *ConnectorReconciler) Reconcile(ctx context.Context, req ctrl.Request) (
 					return ctrl.Result{RequeueAfter: cons.DefaultRequeueIntervalInSecond}, err
 				}
 			}
-
 			// requeue
 			return ctrl.Result{RequeueAfter: time.Second}, err
 		} else {
@@ -182,7 +181,7 @@ func (r *ConnectorReconciler) Reconcile(ctx context.Context, req ctrl.Request) (
 		logger.Error(err, "Failed to update Connector", "Kind", workLoadType, "Namespace", obj.GetNamespace(), "Name", obj.GetName())
 		return ctrl.Result{RequeueAfter: cons.DefaultRequeueIntervalInSecond}, err
 	}
-	return ctrl.Result{}, err
+	return ctrl.Result{}, nil
 }
 
 // SetupWithManager sets up the controller with the Manager.
@@ -250,14 +249,14 @@ func (r *ConnectorReconciler) generateStatefulSet(connector *vanusv1alpha1.Conne
 			}},
 		},
 	}
+	if isSharedDeploymentMode(connector) {
+		sts.Spec.Template.Spec.ServiceAccountName = cons.OperatorServiceAccountName
+	} else {
+		// Set Connector instance as the owner and connector
+		_ = controllerutil.SetControllerReference(connector, sts, r.Scheme)
+	}
 	if val, ok := connector.Annotations[cons.ConnectorRestartAtAnnotation]; ok {
 		sts.Spec.Template.Annotations = map[string]string{cons.ConnectorRestartAtAnnotation: val}
-	}
-	// Set Connector instance as the owner and connector
-	if !isSharedDeploymentMode(connector) {
-		_ = controllerutil.SetControllerReference(connector, sts, r.Scheme)
-	} else {
-		sts.Spec.Template.Spec.ServiceAccountName = "vanus-operator"
 	}
 	return sts
 }
@@ -296,14 +295,14 @@ func (r *ConnectorReconciler) generateDeployment(connector *vanusv1alpha1.Connec
 			},
 		},
 	}
+	if isSharedDeploymentMode(connector) {
+		dep.Spec.Template.Spec.ServiceAccountName = cons.OperatorServiceAccountName
+	} else {
+		// Set Connector instance as the owner and connector
+		_ = controllerutil.SetControllerReference(connector, dep, r.Scheme)
+	}
 	if val, ok := connector.Annotations[cons.ConnectorRestartAtAnnotation]; ok {
 		dep.Spec.Template.Annotations = map[string]string{cons.ConnectorRestartAtAnnotation: val}
-	}
-	// Set Connector instance as the owner and connector
-	if !isSharedDeploymentMode(connector) {
-		_ = controllerutil.SetControllerReference(connector, dep, r.Scheme)
-	} else {
-		dep.Spec.Template.Spec.ServiceAccountName = "vanus-operator"
 	}
 	return dep
 }
@@ -386,11 +385,10 @@ func labelsForConnector(name string) map[string]string {
 }
 
 func (r *ConnectorReconciler) generateConfigMap(connector *vanusv1alpha1.Connector) *corev1.ConfigMap {
-	share := isSharedDeploymentMode(connector)
 	name := r.getResourceName(connector)
 	labels := labelsForConnector(name)
 	data := make(map[string]string)
-	if share {
+	if isSharedDeploymentMode(connector) {
 		config, _ := yaml.Marshal(map[string]interface{}{
 			"multi":          true,
 			"connector_type": connector.Spec.Type,
@@ -410,7 +408,7 @@ func (r *ConnectorReconciler) generateConfigMap(connector *vanusv1alpha1.Connect
 		},
 		Data: data,
 	}
-	if !share {
+	if !isSharedDeploymentMode(connector) {
 		_ = controllerutil.SetControllerReference(connector, connectorConfigMap, r.Scheme)
 	}
 	return connectorConfigMap
