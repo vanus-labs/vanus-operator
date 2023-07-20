@@ -36,7 +36,7 @@ const (
 	DefaultControllerComponentName      = "vanus-controller"
 	DefaultControllerContainerName      = "controller"
 	DefaultControllerPortGrpc           = 2048
-	DefaultControllerSegmentCapacity    = "64Mi" // 64Mi: 64*1024*1024=67108864
+	DefaultControllerSegmentCapacity    = "4Mi" // 4Mi: 4*1024*1024=4194304
 	DefaultControllerContainerImageName = "public.ecr.aws/vanus/controller"
 	DefaultControllerConfigMapName      = "config-controller"
 	// Root Controller
@@ -52,14 +52,14 @@ const (
 	DefaultEtcdPortPeer           = 2380
 	DefaultEtcdContainerImageName = "public.ecr.aws/vanus/etcd:v3.5.7" // from 'docker.io/bitnami/etcd:3.5.7-debian-11-r9'
 	DefaultEtcdVolumeMountPath    = "/bitnami/etcd"
-	DefaultEtcdStorageSize        = "10Gi"
+	DefaultEtcdStorageSize        = "20Gi"
 	// Store
 	DefaultStoreComponentName      = "vanus-store"
 	DefaultStoreContainerName      = "store"
 	DefaultStoreContainerPortGrpc  = 11811
 	DefaultStoreContainerImageName = "public.ecr.aws/vanus/store"
 	DefaultStoreConfigMapName      = "config-store"
-	DefaultStoreStorageSize        = "10Gi"
+	DefaultStoreStorageSize        = "20Gi"
 	// Trigger
 	DefaultTriggerComponentName      = "vanus-trigger"
 	DefaultTriggerContainerName      = "trigger"
@@ -95,7 +95,7 @@ const (
 )
 
 const (
-	// OperatorServiceAccountName is the ServiceAccount name of Vanus cluster
+	// OperatorServiceAccountName is the ServiceAccount name of Vanus connector
 	OperatorServiceAccountName = "vanus-operator"
 	HeadlessServiceClusterIP   = "None"
 
@@ -113,13 +113,14 @@ const (
 )
 
 var (
-	DefaultControllerReplicas int32 = 2
-	DefaultEtcdReplicas       int32 = 3
-	DefaultStoreReplicas      int32 = 3
-	DefaultGatewayReplicas    int32 = 1
-	DefaultTriggerReplicas    int32 = 1
-	DefaultTimerReplicas      int32 = 2
-	DefaultConnectorReplicas  int32 = 1
+	DefaultControllerReplicas     int32 = 2
+	DefaultRootControllerReplicas int32 = 2
+	DefaultEtcdReplicas           int32 = 3
+	DefaultStoreReplicas          int32 = 3
+	DefaultGatewayReplicas        int32 = 1
+	DefaultTriggerReplicas        int32 = 1
+	DefaultTimerReplicas          int32 = 2
+	DefaultConnectorReplicas      int32 = 1
 )
 
 // Annotations supported by Core

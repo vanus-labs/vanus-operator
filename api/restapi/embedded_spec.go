@@ -42,6 +42,17 @@ func init() {
           "cluster"
         ],
         "operationId": "getCluster",
+        "parameters": [
+          {
+            "name": "get",
+            "in": "body",
+            "required": true,
+            "schema": {
+              "type": "object",
+              "$ref": "#/definitions/Cluster_get"
+            }
+          }
+        ],
         "responses": {
           "200": {
             "description": "OK",
@@ -553,6 +564,14 @@ func init() {
             "type": "string"
           }
         },
+        "name": {
+          "description": "cluster name",
+          "type": "string"
+        },
+        "namespace": {
+          "description": "cluster namespace",
+          "type": "string"
+        },
         "version": {
           "description": "cluster version",
           "type": "string"
@@ -567,6 +586,28 @@ func init() {
           "description": "true means force delete, default false",
           "type": "boolean",
           "default": false
+        },
+        "name": {
+          "description": "cluster name",
+          "type": "string"
+        },
+        "namespace": {
+          "description": "cluster namespace",
+          "type": "string"
+        }
+      }
+    },
+    "Cluster_get": {
+      "description": "cluster get params",
+      "type": "object",
+      "properties": {
+        "name": {
+          "description": "cluster name",
+          "type": "string"
+        },
+        "namespace": {
+          "description": "cluster namespace",
+          "type": "string"
         }
       }
     },
@@ -574,6 +615,14 @@ func init() {
       "description": "cluster info",
       "type": "object",
       "properties": {
+        "name": {
+          "description": "cluster name",
+          "type": "string"
+        },
+        "namespace": {
+          "description": "cluster namespace",
+          "type": "string"
+        },
         "status": {
           "description": "cluster status",
           "type": "string"
@@ -596,6 +645,14 @@ func init() {
           "additionalProperties": {
             "type": "string"
           }
+        },
+        "name": {
+          "description": "cluster name",
+          "type": "string"
+        },
+        "namespace": {
+          "description": "cluster namespace",
+          "type": "string"
         },
         "version": {
           "description": "cluster version",
@@ -785,6 +842,17 @@ func init() {
           "cluster"
         ],
         "operationId": "getCluster",
+        "parameters": [
+          {
+            "name": "get",
+            "in": "body",
+            "required": true,
+            "schema": {
+              "type": "object",
+              "$ref": "#/definitions/Cluster_get"
+            }
+          }
+        ],
         "responses": {
           "200": {
             "description": "OK",
@@ -1296,6 +1364,14 @@ func init() {
             "type": "string"
           }
         },
+        "name": {
+          "description": "cluster name",
+          "type": "string"
+        },
+        "namespace": {
+          "description": "cluster namespace",
+          "type": "string"
+        },
         "version": {
           "description": "cluster version",
           "type": "string"
@@ -1310,6 +1386,28 @@ func init() {
           "description": "true means force delete, default false",
           "type": "boolean",
           "default": false
+        },
+        "name": {
+          "description": "cluster name",
+          "type": "string"
+        },
+        "namespace": {
+          "description": "cluster namespace",
+          "type": "string"
+        }
+      }
+    },
+    "Cluster_get": {
+      "description": "cluster get params",
+      "type": "object",
+      "properties": {
+        "name": {
+          "description": "cluster name",
+          "type": "string"
+        },
+        "namespace": {
+          "description": "cluster namespace",
+          "type": "string"
         }
       }
     },
@@ -1317,6 +1415,14 @@ func init() {
       "description": "cluster info",
       "type": "object",
       "properties": {
+        "name": {
+          "description": "cluster name",
+          "type": "string"
+        },
+        "namespace": {
+          "description": "cluster namespace",
+          "type": "string"
+        },
         "status": {
           "description": "cluster status",
           "type": "string"
@@ -1339,6 +1445,14 @@ func init() {
           "additionalProperties": {
             "type": "string"
           }
+        },
+        "name": {
+          "description": "cluster name",
+          "type": "string"
+        },
+        "namespace": {
+          "description": "cluster namespace",
+          "type": "string"
         },
         "version": {
           "description": "cluster version",

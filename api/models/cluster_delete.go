@@ -19,6 +19,12 @@ type ClusterDelete struct {
 
 	// true means force delete, default false
 	Force *bool `json:"force,omitempty"`
+
+	// cluster name
+	Name string `json:"name,omitempty"`
+
+	// cluster namespace
+	Namespace string `json:"namespace,omitempty"`
 }
 
 // Validate validates this cluster delete

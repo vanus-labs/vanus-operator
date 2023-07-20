@@ -87,7 +87,7 @@ func (r *CoreReconciler) generateTrigger(core *vanusv1alpha1.Core) *appsv1.Deplo
 	dep := &appsv1.Deployment{
 		ObjectMeta: metav1.ObjectMeta{
 			Name:      cons.DefaultTriggerComponentName,
-			Namespace: cons.DefaultNamespace,
+			Namespace: core.Namespace,
 			Labels:    labels,
 		},
 		Spec: appsv1.DeploymentSpec{
@@ -101,7 +101,6 @@ func (r *CoreReconciler) generateTrigger(core *vanusv1alpha1.Core) *appsv1.Deplo
 					Annotations: annotations,
 				},
 				Spec: corev1.PodSpec{
-					ServiceAccountName: cons.OperatorServiceAccountName,
 					Containers: []corev1.Container{{
 						Name:            cons.DefaultTriggerContainerName,
 						Image:           fmt.Sprintf("%s:%s", cons.DefaultTriggerContainerImageName, core.Spec.Version),
@@ -187,20 +186,30 @@ func (r *CoreReconciler) generateConfigMapForTrigger(core *vanusv1alpha1.Core) *
 	value := bytes.Buffer{}
 	value.WriteString(fmt.Sprintf("port: %d\n", cons.DefaultTriggerContainerPortGrpc))
 	value.WriteString("ip: ${POD_IP}\n")
+	value.WriteString("send_event_goroutine_size: 1000\n")
+	value.WriteString("send_event_batch_size: 32\n")
+	value.WriteString("pull_event_batch_size: 32\n")
+	value.WriteString("max_uack_event_number: 10000\n")
 	value.WriteString("controllers:\n")
 	for i := int32(0); i < cons.DefaultControllerReplicas; i++ {
 		value.WriteString(fmt.Sprintf("  - vanus-controller-%d.vanus-controller.vanus.svc:%s\n", i, core.Annotations[cons.CoreComponentControllerSvcPortAnnotation]))
 	}
+	value.WriteString("observability:\n")
+	value.WriteString("  metrics:\n")
+	value.WriteString("    enable: true\n")
+	value.WriteString("  tracing:\n")
+	value.WriteString("    enable: false\n")
+	value.WriteString("    # OpenTelemetry Collector endpoint, https://opentelemetry.io/docs/collector/getting-started/\n")
+	value.WriteString("    otel_collector: http://127.0.0.1:4318\n")
 	data["trigger.yaml"] = value.String()
 	cm := &corev1.ConfigMap{
 		ObjectMeta: metav1.ObjectMeta{
-			Namespace:  cons.DefaultNamespace,
+			Namespace:  core.Namespace,
 			Name:       cons.DefaultTriggerConfigMapName,
 			Finalizers: []string{metav1.FinalizerOrphanDependents},
 		},
 		Data: data,
 	}
-
 	controllerutil.SetControllerReference(core, cm, r.Scheme)
 	return cm
 }

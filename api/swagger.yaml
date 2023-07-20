@@ -21,6 +21,13 @@ paths:
         - "cluster"
       description: "get Cluster"
       operationId: "getCluster"
+      parameters:
+        - name: "get"
+          in: "body"
+          required: true
+          schema:
+            type: "object"
+            $ref: "#/definitions/Cluster_get"
       responses:
         '200':
           description: OK
@@ -410,6 +417,12 @@ definitions:
     type: "object"
     description: "cluster info"
     properties:
+      name:
+        type: "string"
+        description: "cluster name"
+      namespace:
+        type: "string"
+        description: "cluster namespace"
       version:
         type: "string"
         description: "cluster version"
@@ -417,10 +430,27 @@ definitions:
         type: "string"
         description: "cluster status"
 
+  Cluster_get:
+    type: object
+    description: "cluster get params"
+    properties:
+      name:
+        type: "string"
+        description: "cluster name"
+      namespace:
+        type: "string"
+        description: "cluster namespace"
+
   Cluster_create:
     type: "object"
     description: "cluster create params"
     properties:
+      name:
+        type: "string"
+        description: "cluster name"
+      namespace:
+        type: "string"
+        description: "cluster namespace"
       version:
         type: "string"
         description: "cluster version"
@@ -435,6 +465,12 @@ definitions:
     type: object
     description: "cluster patch params"
     properties:
+      name:
+        type: "string"
+        description: "cluster name"
+      namespace:
+        type: "string"
+        description: "cluster namespace"
       version:
         type: "string"
         description: "cluster version"
@@ -449,6 +485,12 @@ definitions:
     type: object
     description: "cluster create params"
     properties:
+      name:
+        type: "string"
+        description: "cluster name"
+      namespace:
+        type: "string"
+        description: "cluster namespace"
       force:
         type: "boolean"
         default: false
@@ -540,4 +582,3 @@ definitions:
       reason:
         type: "string"
         description: "connector status reason"
-

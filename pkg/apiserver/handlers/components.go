@@ -35,8 +35,8 @@ const (
 	ResourceConnector = "connectors"
 )
 
-func (a *Api) createCore(vanus *vanusv1alpha1.Core, namespace string) (*vanusv1alpha1.Core, error) {
-	existCore, exist, err := a.existCore(namespace, vanus.Name, &metav1.GetOptions{})
+func (a *Api) createCore(vanus *vanusv1alpha1.Core) (*vanusv1alpha1.Core, error) {
+	existCore, exist, err := a.existCore(vanus.Namespace, vanus.Name, &metav1.GetOptions{})
 	if err != nil {
 		return existCore, err
 	}
@@ -46,7 +46,7 @@ func (a *Api) createCore(vanus *vanusv1alpha1.Core, namespace string) (*vanusv1a
 	result := &vanusv1alpha1.Core{}
 	err = a.ctrl.ClientSet().
 		Post().
-		Namespace(namespace).
+		Namespace(vanus.Namespace).
 		Resource(ResourceCore).
 		Body(vanus).
 		Do(context.TODO()).
@@ -278,6 +278,30 @@ func (a *Api) deleteConnectorPVC(connector *vanusv1alpha1.Connector) error {
 		if err != nil {
 			return err
 		}
+	}
+	return nil
+}
+
+func (a *Api) existNamespace(name string) (bool, error) {
+	_, err := a.ctrl.K8SClientSet().CoreV1().Namespaces().Get(a.ctx, name, metav1.GetOptions{})
+	if err != nil {
+		if errors.IsNotFound(err) {
+			return false, nil
+		}
+		return false, err
+	}
+	return true, nil
+}
+
+func (a *Api) createNamespace(name string) error {
+	ns := &corev1.Namespace{
+		ObjectMeta: metav1.ObjectMeta{
+			Name: name,
+		},
+	}
+	_, err := a.ctrl.K8SClientSet().CoreV1().Namespaces().Create(a.ctx, ns, metav1.CreateOptions{})
+	if err != nil {
+		return err
 	}
 	return nil
 }

@@ -88,7 +88,7 @@ func (r *CoreReconciler) generateStore(core *vanusv1alpha1.Core) *appsv1.Statefu
 	sts := &appsv1.StatefulSet{
 		ObjectMeta: metav1.ObjectMeta{
 			Name:      cons.DefaultStoreComponentName,
-			Namespace: cons.DefaultNamespace,
+			Namespace: core.Namespace,
 			Labels:    labels,
 		},
 		Spec: appsv1.StatefulSetSpec{
@@ -221,7 +221,7 @@ func annotationsForStore() map[string]string {
 func (r *CoreReconciler) generateConfigMapForStore(core *vanusv1alpha1.Core) *corev1.ConfigMap {
 	value := bytes.Buffer{}
 	value.WriteString(fmt.Sprintf("port: %d\n", cons.DefaultStoreContainerPortGrpc))
-	value.WriteString("ip: ${POD_IP}\n")
+	value.WriteString("ip: ${POD_NAME}.vanus-store.vanus.svc.cluster.local\n")
 	value.WriteString("controllers:\n")
 	for i := int32(0); i < cons.DefaultControllerReplicas; i++ {
 		value.WriteString(fmt.Sprintf("  - vanus-controller-%d.vanus-controller:%s\n", i, core.Annotations[cons.CoreComponentControllerSvcPortAnnotation]))
@@ -243,17 +243,28 @@ func (r *CoreReconciler) generateConfigMapForStore(core *vanusv1alpha1.Core) *co
 	value.WriteString("  wal:\n")
 	value.WriteString("    io:\n")
 	value.WriteString("      engine: psync\n")
+	value.WriteString("vsb:\n")
+	value.WriteString("  flush_batch_size: 16384\n")
+	value.WriteString("    io:\n")
+	value.WriteString("      engine: psync\n")
+	value.WriteString("      parallel: 16\n")
+	value.WriteString("observability:\n")
+	value.WriteString("  metrics:\n")
+	value.WriteString("    enable: true\n")
+	value.WriteString("  tracing:\n")
+	value.WriteString("    enable: false\n")
+	value.WriteString("    # OpenTelemetry Collector endpoint, https://opentelemetry.io/docs/collector/getting-started/\n")
+	value.WriteString("    otel_collector: http://127.0.0.1:4318\n")
 	data := make(map[string]string)
 	data["store.yaml"] = value.String()
 	cm := &corev1.ConfigMap{
 		ObjectMeta: metav1.ObjectMeta{
-			Namespace:  cons.DefaultNamespace,
+			Namespace:  core.Namespace,
 			Name:       cons.DefaultStoreConfigMapName,
 			Finalizers: []string{metav1.FinalizerOrphanDependents},
 		},
 		Data: data,
 	}
-
 	controllerutil.SetControllerReference(core, cm, r.Scheme)
 	return cm
 }

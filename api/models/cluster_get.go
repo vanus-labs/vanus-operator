@@ -12,36 +12,30 @@ import (
 	"github.com/go-openapi/swag"
 )
 
-// ClusterPatch cluster patch params
+// ClusterGet cluster get params
 //
-// swagger:model Cluster_patch
-type ClusterPatch struct {
-
-	// annotations
-	Annotations map[string]string `json:"annotations,omitempty"`
+// swagger:model Cluster_get
+type ClusterGet struct {
 
 	// cluster name
 	Name string `json:"name,omitempty"`
 
 	// cluster namespace
 	Namespace string `json:"namespace,omitempty"`
-
-	// cluster version
-	Version string `json:"version,omitempty"`
 }
 
-// Validate validates this cluster patch
-func (m *ClusterPatch) Validate(formats strfmt.Registry) error {
+// Validate validates this cluster get
+func (m *ClusterGet) Validate(formats strfmt.Registry) error {
 	return nil
 }
 
-// ContextValidate validates this cluster patch based on context it is used
-func (m *ClusterPatch) ContextValidate(ctx context.Context, formats strfmt.Registry) error {
+// ContextValidate validates this cluster get based on context it is used
+func (m *ClusterGet) ContextValidate(ctx context.Context, formats strfmt.Registry) error {
 	return nil
 }
 
 // MarshalBinary interface implementation
-func (m *ClusterPatch) MarshalBinary() ([]byte, error) {
+func (m *ClusterGet) MarshalBinary() ([]byte, error) {
 	if m == nil {
 		return nil, nil
 	}
@@ -49,8 +43,8 @@ func (m *ClusterPatch) MarshalBinary() ([]byte, error) {
 }
 
 // UnmarshalBinary interface implementation
-func (m *ClusterPatch) UnmarshalBinary(b []byte) error {
-	var res ClusterPatch
+func (m *ClusterGet) UnmarshalBinary(b []byte) error {
+	var res ClusterGet
 	if err := swag.ReadJSON(b, &res); err != nil {
 		return err
 	}
