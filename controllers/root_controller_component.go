@@ -40,15 +40,15 @@ func (r *CoreReconciler) handleRootController(ctx context.Context, logger logr.L
 	rootController := r.generateRootController(core)
 	// Check if the statefulSet already exists, if not create a new one
 	sts := &appsv1.StatefulSet{}
-	err := r.Get(ctx, types.NamespacedName{Name: cons.DefaultRootControllerComponentName, Namespace: cons.DefaultNamespace}, sts)
+	err := r.Get(ctx, types.NamespacedName{Name: cons.DefaultRootControllerComponentName, Namespace: core.Namespace}, sts)
 	if err != nil {
 		if errors.IsNotFound(err) {
 			// Create rootController ConfigMap
-			rootControllerConfigMap := r.generateConfigMapForRootController(core)
-			logger.Info("Creating a new rootController ConfigMap.", "Namespace", rootControllerConfigMap.Namespace, "Name", rootControllerConfigMap.Name)
-			err = r.Create(ctx, rootControllerConfigMap)
+			cm := r.generateConfigMapForRootController(core)
+			logger.Info("Creating a new rootController ConfigMap.", "Namespace", cm.Namespace, "Name", cm.Name)
+			err = r.Create(ctx, cm)
 			if err != nil {
-				logger.Error(err, "Failed to create new rootController ConfigMap", "Namespace", rootControllerConfigMap.Namespace, "Name", rootControllerConfigMap.Name)
+				logger.Error(err, "Failed to create new rootController ConfigMap", "Namespace", cm.Namespace, "Name", cm.Name)
 				return ctrl.Result{}, err
 			} else {
 				logger.Info("Successfully create rootController ConfigMap")
@@ -120,7 +120,6 @@ func (r *CoreReconciler) handleRootController(ctx context.Context, logger logr.L
 		}
 	}
 	logger.Info("rootController is ready", "WaitingTime", time.Since(start))
-
 	return ctrl.Result{}, nil
 }
 
@@ -131,11 +130,11 @@ func (r *CoreReconciler) generateRootController(core *vanusv1alpha1.Core) *appsv
 	sts := &appsv1.StatefulSet{
 		ObjectMeta: metav1.ObjectMeta{
 			Name:      cons.DefaultRootControllerComponentName,
-			Namespace: cons.DefaultNamespace,
+			Namespace: core.Namespace,
 			Labels:    labels,
 		},
 		Spec: appsv1.StatefulSetSpec{
-			Replicas: &cons.DefaultControllerReplicas,
+			Replicas: &cons.DefaultRootControllerReplicas,
 			Selector: &metav1.LabelSelector{
 				MatchLabels: labels,
 			},
@@ -171,11 +170,11 @@ func (r *CoreReconciler) generateRootController(core *vanusv1alpha1.Core) *appsv
 
 func (r *CoreReconciler) waitRootControllerIsReady(ctx context.Context, core *vanusv1alpha1.Core) (bool, error) {
 	sts := &appsv1.StatefulSet{}
-	err := r.Get(ctx, types.NamespacedName{Name: cons.DefaultRootControllerComponentName, Namespace: cons.DefaultNamespace}, sts)
+	err := r.Get(ctx, types.NamespacedName{Name: cons.DefaultRootControllerComponentName, Namespace: core.Namespace}, sts)
 	if err != nil {
 		return false, err
 	}
-	if sts.Status.Replicas == cons.DefaultControllerReplicas && sts.Status.ReadyReplicas == cons.DefaultControllerReplicas && sts.Status.AvailableReplicas == cons.DefaultControllerReplicas {
+	if sts.Status.Replicas == cons.DefaultRootControllerReplicas && sts.Status.ReadyReplicas == cons.DefaultRootControllerReplicas && sts.Status.AvailableReplicas == cons.DefaultRootControllerReplicas {
 		return true, nil
 	}
 	return false, nil
@@ -251,7 +250,6 @@ func (r *CoreReconciler) generateConfigMapForRootController(core *vanusv1alpha1.
 	value.WriteString("    enable: false\n")
 	value.WriteString("    # OpenTelemetry Collector endpoint, https://opentelemetry.io/docs/collector/getting-started/\n")
 	value.WriteString("    otel_collector: http://127.0.0.1:4318\n")
-
 	value.WriteString("cluster:\n")
 	value.WriteString("  component_name: root-controller\n")
 	value.WriteString("  lease_duration_in_sec: 15\n")
@@ -260,19 +258,18 @@ func (r *CoreReconciler) generateConfigMapForRootController(core *vanusv1alpha1.
 		value.WriteString(fmt.Sprintf("    - vanus-etcd-%d.vanus-etcd:%s\n", i, core.Annotations[cons.CoreComponentEtcdPortClientAnnotation]))
 	}
 	value.WriteString("  topology:\n")
-	for i := int32(0); i < cons.DefaultControllerReplicas; i++ {
+	for i := int32(0); i < cons.DefaultRootControllerReplicas; i++ {
 		value.WriteString(fmt.Sprintf("    vanus-root-controller-%d: vanus-root-controller-%d.vanus-root-controller.vanus.svc:%s\n", i, i, core.Annotations[cons.CoreComponentRootControllerSvcPortAnnotation]))
 	}
 	data["root.yaml"] = value.String()
 	cm := &corev1.ConfigMap{
 		ObjectMeta: metav1.ObjectMeta{
-			Namespace:  cons.DefaultNamespace,
+			Namespace:  core.Namespace,
 			Name:       cons.DefaultRootControllerConfigMapName,
 			Finalizers: []string{metav1.FinalizerOrphanDependents},
 		},
 		Data: data,
 	}
-
 	controllerutil.SetControllerReference(core, cm, r.Scheme)
 	return cm
 }
@@ -282,7 +279,7 @@ func (r *CoreReconciler) generateSvcForRootController(core *vanusv1alpha1.Core) 
 	labels := genLabels(cons.DefaultRootControllerComponentName)
 	svc := &corev1.Service{
 		ObjectMeta: metav1.ObjectMeta{
-			Namespace:  cons.DefaultNamespace,
+			Namespace:  core.Namespace,
 			Name:       cons.DefaultRootControllerComponentName,
 			Labels:     labels,
 			Finalizers: []string{metav1.FinalizerOrphanDependents},
@@ -300,7 +297,6 @@ func (r *CoreReconciler) generateSvcForRootController(core *vanusv1alpha1.Core) 
 			},
 		},
 	}
-
 	controllerutil.SetControllerReference(core, svc, r.Scheme)
 	return svc
 }

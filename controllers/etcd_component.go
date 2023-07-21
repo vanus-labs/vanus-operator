@@ -40,7 +40,7 @@ func (r *CoreReconciler) handleEtcd(ctx context.Context, logger logr.Logger, cor
 	// Create Etcd StatefulSet
 	// Check if the statefulSet already exists, if not create a new one
 	sts := &appsv1.StatefulSet{}
-	err := r.Get(ctx, types.NamespacedName{Name: cons.DefaultEtcdComponentName, Namespace: cons.DefaultNamespace}, sts)
+	err := r.Get(ctx, types.NamespacedName{Name: cons.DefaultEtcdComponentName, Namespace: core.Namespace}, sts)
 	if err != nil {
 		if errors.IsNotFound(err) {
 			// Create Etcd Service
@@ -80,7 +80,7 @@ func (r *CoreReconciler) handleEtcd(ctx context.Context, logger logr.Logger, cor
 			ticker := time.NewTicker(defaultWaitForReadyTimeout)
 			defer ticker.Stop()
 			for {
-				ready, err := r.waitEtcdIsReady(ctx)
+				ready, err := r.waitEtcdIsReady(ctx, core)
 				if err != nil {
 					logger.Error(err, "Wait for Etcd install is ready but got error")
 					return ctrl.Result{RequeueAfter: time.Duration(cons.DefaultRequeueIntervalInSecond) * time.Second}, err
@@ -108,9 +108,9 @@ func (r *CoreReconciler) handleEtcd(ctx context.Context, logger logr.Logger, cor
 	return ctrl.Result{}, nil
 }
 
-func (r *CoreReconciler) waitEtcdIsReady(ctx context.Context) (bool, error) {
+func (r *CoreReconciler) waitEtcdIsReady(ctx context.Context, core *vanusv1alpha1.Core) (bool, error) {
 	sts := &appsv1.StatefulSet{}
-	err := r.Get(ctx, types.NamespacedName{Name: cons.DefaultEtcdComponentName, Namespace: cons.DefaultNamespace}, sts)
+	err := r.Get(ctx, types.NamespacedName{Name: cons.DefaultEtcdComponentName, Namespace: core.Namespace}, sts)
 	if err != nil {
 		return false, err
 	}
@@ -132,7 +132,7 @@ func (r *CoreReconciler) generateEtcd(core *vanusv1alpha1.Core) *appsv1.Stateful
 	sts := &appsv1.StatefulSet{
 		ObjectMeta: metav1.ObjectMeta{
 			Name:      cons.DefaultEtcdComponentName,
-			Namespace: cons.DefaultNamespace,
+			Namespace: core.Namespace,
 			Labels:    labels,
 		},
 		Spec: appsv1.StatefulSetSpec{
@@ -270,8 +270,16 @@ func getEnvForEtcd(core *vanusv1alpha1.Core) []corev1.EnvVar {
 	}, {
 		Name:  "ETCD_CLUSTER_DOMAIN",
 		Value: "vanus-etcd.vanus.svc.cluster.local",
+	}, {
+		Name:  "ETCD_QUOTA_BACKEND_BYTES",
+		Value: "8589934592",
+	}, {
+		Name:  "ETCD_AUTO_COMPACTION_MODE",
+		Value: "periodic",
+	}, {
+		Name:  "ETCD_AUTO_COMPACTION_RETENTION",
+		Value: "60m",
 	}}
-
 	return defaultEnvs
 }
 
@@ -338,7 +346,7 @@ func (r *CoreReconciler) generateSvcForEtcd(core *vanusv1alpha1.Core) *corev1.Se
 	labels := genLabels(cons.DefaultEtcdComponentName)
 	svc := &corev1.Service{
 		ObjectMeta: metav1.ObjectMeta{
-			Namespace:  cons.DefaultNamespace,
+			Namespace:  core.Namespace,
 			Name:       cons.DefaultEtcdComponentName,
 			Labels:     labels,
 			Finalizers: []string{metav1.FinalizerOrphanDependents},
@@ -361,7 +369,6 @@ func (r *CoreReconciler) generateSvcForEtcd(core *vanusv1alpha1.Core) *corev1.Se
 			PublishNotReadyAddresses: true,
 		},
 	}
-
 	controllerutil.SetControllerReference(core, svc, r.Scheme)
 	return svc
 }

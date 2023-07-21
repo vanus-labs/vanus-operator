@@ -85,7 +85,7 @@ func (r *CoreReconciler) generateTimer(core *vanusv1alpha1.Core) *appsv1.Deploym
 	dep := &appsv1.Deployment{
 		ObjectMeta: metav1.ObjectMeta{
 			Name:      cons.DefaultTimerComponentName,
-			Namespace: cons.DefaultNamespace,
+			Namespace: core.Namespace,
 			Labels:    labels,
 		},
 		Spec: appsv1.DeploymentSpec{
@@ -99,7 +99,6 @@ func (r *CoreReconciler) generateTimer(core *vanusv1alpha1.Core) *appsv1.Deploym
 					Annotations: annotations,
 				},
 				Spec: corev1.PodSpec{
-					ServiceAccountName: cons.OperatorServiceAccountName,
 					Containers: []corev1.Container{{
 						Name:            cons.DefaultTimerContainerName,
 						Image:           fmt.Sprintf("%s:%s", cons.DefaultTimerContainerImageName, core.Spec.Version),
@@ -191,16 +190,22 @@ func (r *CoreReconciler) generateConfigMapForTimer(core *vanusv1alpha1.Core) *co
 	value.WriteString(fmt.Sprintf("  tick: %s\n", core.Annotations[cons.CoreComponentTimerTimingWheelTickAnnotation]))
 	value.WriteString(fmt.Sprintf("  wheel_size: %s\n", core.Annotations[cons.CoreComponentTimerTimingWheelSizeAnnotation]))
 	value.WriteString(fmt.Sprintf("  layers: %s\n", core.Annotations[cons.CoreComponentTimerTimingWheelLayersAnnotation]))
+	value.WriteString("observability:\n")
+	value.WriteString("  metrics:\n")
+	value.WriteString("    enable: true\n")
+	value.WriteString("  tracing:\n")
+	value.WriteString("    enable: false\n")
+	value.WriteString("    # OpenTelemetry Collector endpoint, https://opentelemetry.io/docs/collector/getting-started/\n")
+	value.WriteString("    otel_collector: http://127.0.0.1:4318\n")
 	data["timer.yaml"] = value.String()
 	cm := &corev1.ConfigMap{
 		ObjectMeta: metav1.ObjectMeta{
-			Namespace:  cons.DefaultNamespace,
+			Namespace:  core.Namespace,
 			Name:       cons.DefaultTimerConfigMapName,
 			Finalizers: []string{metav1.FinalizerOrphanDependents},
 		},
 		Data: data,
 	}
-
 	controllerutil.SetControllerReference(core, cm, r.Scheme)
 	return cm
 }

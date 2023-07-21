@@ -20,6 +20,12 @@ type ClusterCreate struct {
 	// annotations
 	Annotations map[string]string `json:"annotations,omitempty"`
 
+	// cluster name
+	Name string `json:"name,omitempty"`
+
+	// cluster namespace
+	Namespace string `json:"namespace,omitempty"`
+
 	// cluster version
 	Version string `json:"version,omitempty"`
 }

@@ -17,6 +17,12 @@ import (
 // swagger:model Cluster_info
 type ClusterInfo struct {
 
+	// cluster name
+	Name string `json:"name,omitempty"`
+
+	// cluster namespace
+	Namespace string `json:"namespace,omitempty"`
+
 	// cluster status
 	Status string `json:"status,omitempty"`
 
