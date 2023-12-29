@@ -22,8 +22,6 @@ import (
 	"time"
 
 	"github.com/go-logr/logr"
-	cons "github.com/vanus-labs/vanus-operator/internal/constants"
-	"github.com/vanus-labs/vanus-operator/internal/convert"
 	appsv1 "k8s.io/api/apps/v1"
 	corev1 "k8s.io/api/core/v1"
 	"k8s.io/apimachinery/pkg/api/errors"
@@ -33,6 +31,9 @@ import (
 	"k8s.io/apimachinery/pkg/util/intstr"
 	ctrl "sigs.k8s.io/controller-runtime"
 	"sigs.k8s.io/controller-runtime/pkg/controller/controllerutil"
+
+	cons "github.com/vanus-labs/vanus-operator/internal/constants"
+	"github.com/vanus-labs/vanus-operator/internal/convert"
 
 	vanusv1alpha1 "github.com/vanus-labs/vanus-operator/api/v1alpha1"
 )
@@ -152,7 +153,7 @@ func (r *CoreReconciler) generateController(core *vanusv1alpha1.Core) *appsv1.St
 				Spec: corev1.PodSpec{
 					Containers: []corev1.Container{{
 						Name:            cons.DefaultControllerContainerName,
-						Image:           fmt.Sprintf("%s:%s", cons.DefaultControllerContainerImageName, core.Spec.Version),
+						Image:           fmt.Sprintf("%s/%s:%s", cons.GetImageRepo(), cons.DefaultControllerContainerImageName, core.Spec.Version),
 						ImagePullPolicy: corev1.PullPolicy(core.Annotations[cons.CoreComponentImagePullPolicyAnnotation]),
 						Resources:       getResourcesForController(core),
 						Env:             getEnvForController(core),

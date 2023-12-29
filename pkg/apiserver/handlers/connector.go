@@ -321,7 +321,7 @@ func generateConnector(c *models.ConnectorCreate) *vanusv1alpha1.Connector {
 			Kind:            c.Kind,
 			Type:            c.Type,
 			Config:          string(config),
-			Image:           fmt.Sprintf("public.ecr.aws/vanus/connector/%s-%s:%s", c.Kind, c.Type, version),
+			Image:           fmt.Sprintf("%s/connector/%s-%s:%s", cons.GetImageRepo(), c.Kind, c.Type, version),
 			ImagePullPolicy: corev1.PullAlways,
 		},
 	}
@@ -332,7 +332,7 @@ func updateConnector(c *models.ConnectorPatch, ori *vanusv1alpha1.Connector) *va
 	newConnector := ori.DeepCopy()
 	oriVersion := getConnectorVersion(ori.Spec.Image)
 	if c.Version != "" && c.Version != oriVersion {
-		newConnector.Spec.Image = fmt.Sprintf("public.ecr.aws/vanus/connector/%s-%s:%s", ori.Spec.Kind, ori.Spec.Type, c.Version)
+		newConnector.Spec.Image = fmt.Sprintf("%s/connector/%s-%s:%s", cons.GetImageRepo(), ori.Spec.Kind, ori.Spec.Type, c.Version)
 	}
 	config, _ := yaml.Marshal(c.Config)
 	newConnector.Spec.Config = string(config)
