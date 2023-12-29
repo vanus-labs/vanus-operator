@@ -21,8 +21,6 @@ import (
 	"time"
 
 	"github.com/go-logr/logr"
-	cons "github.com/vanus-labs/vanus-operator/internal/constants"
-	"github.com/vanus-labs/vanus-operator/internal/convert"
 	appsv1 "k8s.io/api/apps/v1"
 	corev1 "k8s.io/api/core/v1"
 	"k8s.io/apimachinery/pkg/api/errors"
@@ -31,6 +29,9 @@ import (
 	"k8s.io/apimachinery/pkg/types"
 	ctrl "sigs.k8s.io/controller-runtime"
 	"sigs.k8s.io/controller-runtime/pkg/controller/controllerutil"
+
+	cons "github.com/vanus-labs/vanus-operator/internal/constants"
+	"github.com/vanus-labs/vanus-operator/internal/convert"
 
 	vanusv1alpha1 "github.com/vanus-labs/vanus-operator/api/v1alpha1"
 )
@@ -104,7 +105,7 @@ func (r *CoreReconciler) generateTrigger(core *vanusv1alpha1.Core) *appsv1.Deplo
 					ServiceAccountName: cons.OperatorServiceAccountName,
 					Containers: []corev1.Container{{
 						Name:            cons.DefaultTriggerContainerName,
-						Image:           fmt.Sprintf("%s:%s", cons.DefaultTriggerContainerImageName, core.Spec.Version),
+						Image:           fmt.Sprintf("%s/%s:%s", cons.GetImageRepo(), cons.DefaultTriggerContainerImageName, core.Spec.Version),
 						ImagePullPolicy: corev1.PullPolicy(core.Annotations[cons.CoreComponentImagePullPolicyAnnotation]),
 						Resources:       getResourcesForTrigger(core),
 						Env:             getEnvForTrigger(core),

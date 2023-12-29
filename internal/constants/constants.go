@@ -15,7 +15,11 @@
 // Package constants defines some global constants
 package constants
 
-import "time"
+import (
+	"os"
+	"strings"
+	"time"
+)
 
 const (
 	DefaultNamespace       = "vanus"
@@ -37,39 +41,39 @@ const (
 	DefaultControllerContainerName      = "controller"
 	DefaultControllerPortGrpc           = 2048
 	DefaultControllerSegmentCapacity    = "64Mi" // 64Mi: 64*1024*1024=67108864
-	DefaultControllerContainerImageName = "public.ecr.aws/vanus/controller"
+	DefaultControllerContainerImageName = "controller"
 	DefaultControllerConfigMapName      = "config-controller"
 	// Root Controller
 	DefaultRootControllerComponentName      = "vanus-root-controller"
 	DefaultRootControllerContainerName      = "root-controller"
 	DefaultRootControllerPortGrpc           = 2021
-	DefaultRootControllerContainerImageName = "public.ecr.aws/vanus/root-controller"
+	DefaultRootControllerContainerImageName = "root-controller"
 	DefaultRootControllerConfigMapName      = "config-root-controller"
 	// Etcd
 	DefaultEtcdComponentName      = "vanus-etcd"
 	DefaultEtcdContainerName      = "etcd"
 	DefaultEtcdPortClient         = 2379
 	DefaultEtcdPortPeer           = 2380
-	DefaultEtcdContainerImageName = "public.ecr.aws/vanus/etcd:v3.5.7" // from 'docker.io/bitnami/etcd:3.5.7-debian-11-r9'
+	DefaultEtcdContainerImageName = "etcd:v3.5.7" // from 'docker.io/bitnami/etcd:3.5.7-debian-11-r9'
 	DefaultEtcdVolumeMountPath    = "/bitnami/etcd"
 	DefaultEtcdStorageSize        = "10Gi"
 	// Store
 	DefaultStoreComponentName      = "vanus-store"
 	DefaultStoreContainerName      = "store"
 	DefaultStoreContainerPortGrpc  = 11811
-	DefaultStoreContainerImageName = "public.ecr.aws/vanus/store"
+	DefaultStoreContainerImageName = "store"
 	DefaultStoreConfigMapName      = "config-store"
 	DefaultStoreStorageSize        = "10Gi"
 	// Trigger
 	DefaultTriggerComponentName      = "vanus-trigger"
 	DefaultTriggerContainerName      = "trigger"
 	DefaultTriggerContainerPortGrpc  = 2148
-	DefaultTriggerContainerImageName = "public.ecr.aws/vanus/trigger"
+	DefaultTriggerContainerImageName = "trigger"
 	DefaultTriggerConfigMapName      = "config-trigger"
 	// Timer
 	DefaultTimerComponentName      = "vanus-timer"
 	DefaultTimerContainerName      = "timer"
-	DefaultTimerContainerImageName = "public.ecr.aws/vanus/timer"
+	DefaultTimerContainerImageName = "timer"
 	DefaultTimerConfigMapName      = "config-timer"
 	DefaultTimerTimingWheelTick    = 1
 	DefaultTimerTimingWheelSize    = 32
@@ -82,7 +86,7 @@ const (
 	DefaultGatewayContainerPortSinkProxy     = 8082
 	DefaultGatewayServiceNodePortProxy       = 30001
 	DefaultGatewayServiceNodePortCloudevents = 30002
-	DefaultGatewayContainerImageName         = "public.ecr.aws/vanus/gateway"
+	DefaultGatewayContainerImageName         = "gateway"
 	DefaultGatewayConfigMapName              = "config-gateway"
 	// Connector
 	DefaultConnectorContainerName   = "connector"
@@ -188,6 +192,28 @@ const (
 	ConnectorKindLabel = "kind"
 	ConnectorTypeLabel = "type"
 
-	WorkloadDeployment  = "Deployment"
-	WorkloadStatefulSet = "StatefulSet"
+	WorkloadDeployment    = "Deployment"
+	WorkloadStatefulSet   = "StatefulSet"
+	envVanusImageRepo     = "VANUS_IMAGE_REPO"
+	defaultVanusImageRepo = "public.ecr.aws/vanus"
 )
+
+var (
+	imageRepo = ""
+)
+
+func GetImageRepo() string {
+	if imageRepo != "" {
+		return imageRepo
+	}
+	image := os.Getenv(envVanusImageRepo)
+	if image != "" {
+		if strings.HasSuffix(image, "/") {
+			image = image[:len(image)-1]
+		}
+		imageRepo = image
+	} else {
+		imageRepo = defaultVanusImageRepo
+	}
+	return imageRepo
+}
