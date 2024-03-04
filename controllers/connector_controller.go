@@ -96,16 +96,26 @@ func (r *ConnectorReconciler) Reconcile(ctx context.Context, req ctrl.Request) (
 	err = r.Get(ctx, types.NamespacedName{Name: name, Namespace: connector.Namespace}, obj)
 	if err != nil {
 		if errors.IsNotFound(err) {
-			// Create Connector ConfigMap
-			connectorConfigMap := r.generateConfigMap(connector)
-			logger.Info("Creating a new Connector ConfigMap.", "ConfigMap.Namespace", connectorConfigMap.Namespace, "ConfigMap.Name", connectorConfigMap.Name)
-			err = r.Create(ctx, connectorConfigMap)
+			// Connector ConfigMap
+			connectorCfg := r.generateConfigMap(connector)
+			cfg := &corev1.ConfigMap{}
+			err = r.Get(ctx, types.NamespacedName{Name: connectorCfg.Name, Namespace: connectorCfg.Namespace}, cfg)
 			if err != nil {
-				logger.Error(err, "Failed to create new Connector ConfigMap", "ConfigMap.Namespace", connectorConfigMap.Namespace, "ConfigMap.Name", connectorConfigMap.Name)
-				return ctrl.Result{RequeueAfter: cons.DefaultRequeueIntervalInSecond}, err
-			} else {
-				logger.Info("Successfully create Connector ConfigMap")
+				if errors.IsNotFound(err) {
+					logger.Info("Creating a new Connector ConfigMap.", "ConfigMap.Namespace", connectorCfg.Namespace, "ConfigMap.Name", connectorCfg.Name)
+					err = r.Create(ctx, connectorCfg)
+					if err != nil {
+						logger.Error(err, "Failed to create new Connector ConfigMap", "ConfigMap.Namespace", connectorCfg.Namespace, "ConfigMap.Name", connectorCfg.Name)
+						return ctrl.Result{RequeueAfter: cons.DefaultRequeueIntervalInSecond}, err
+					} else {
+						logger.Info("Successfully create Connector ConfigMap")
+					}
+				} else {
+					logger.Error(err, "Failed to get Connector ConfigMap.")
+					return ctrl.Result{RequeueAfter: cons.DefaultRequeueIntervalInSecond}, err
+				}
 			}
+
 			if workLoadType == cons.WorkloadStatefulSet {
 				// Create Connector StatefulSet
 				obj = r.generateStatefulSet(connector)
@@ -122,8 +132,7 @@ func (r *ConnectorReconciler) Reconcile(ctx context.Context, req ctrl.Request) (
 				logger.Info("Successfully create Connector", "Kind", workLoadType)
 			}
 
-			// Create Connector Service
-			// Check if the service already exists, if not create a new one
+			// Connector Service
 			connectorSvc := r.generateSvcForConnector(connector)
 			svc := &corev1.Service{}
 			err = r.Get(ctx, types.NamespacedName{Name: connectorSvc.Name, Namespace: connectorSvc.Namespace}, svc)
