@@ -102,7 +102,7 @@ func (c *ClientCache) AddObject(runobj ctrlclient.Object, ns string) error {
 		Scheme: scheme,
 	}
 	if ns != "" {
-		option.Namespace = ns
+		option.Namespaces = []string{ns}
 	}
 
 	reader, err := ctrlcache.New(c.config, option)
